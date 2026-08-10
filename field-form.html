@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Enclosure Field Verification Form v2 — Tungsten Royce</title>
+<title>Enclosure Field Verification Form v2.2 — Tungsten Royce</title>
 <style>
   :root{
     --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea; --line-2:#eef1f4;
@@ -592,8 +592,8 @@
     <div class="task-top">
       <div class="num">6</div>
       <div class="task-title">
-        <h3>Paint / finish color selection (where it applies)</h3>
-        <p class="sub">Final color / finish for the supplied doors — name, code &amp; sheen. Skip if doors ship unfinished.</p>
+        <h3>Paint / stain color selection (where it applies)</h3>
+        <p class="sub">Final paint or stain for the supplied doors — name, code &amp; sheen. Skip if doors ship unfinished. Physical samples available on request — prepared and sent by our team.</p>
       </div>
       <div class="role" data-role="home">
         <span class="rdot"></span>
@@ -617,7 +617,17 @@
     </div>
     <div class="task-body">
       <div class="measure">
-        <div class="m-in" style="min-width:340px"><input class="val" data-val placeholder="e.g. SW 7048 Urbane Bronze · satin"></div>
+        <div class="m-in" style="min-width:340px"><input class="val" data-val placeholder="e.g. SW 7048 Urbane Bronze · satin — or stain: walnut on white oak"></div>
+      </div>
+      <div style="margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--line-2)">
+        <label style="display:flex;align-items:center;gap:9px;font-weight:700;font-size:13.5px;cursor:pointer">
+          <input type="checkbox" data-sample style="width:17px;height:17px;accent-color:var(--accent)">
+          Request physical paint / stain samples before final color sign-off
+        </label>
+        <div class="measure" style="margin-top:9px;gap:10px;display:flex;flex-wrap:wrap">
+          <div class="m-in" style="min-width:300px;flex:1"><input data-samplecolors placeholder="Colors / stains to sample — e.g. SW 7048 + SW 7069 · stain: walnut on white oak"></div>
+          <div class="m-in" style="min-width:260px;flex:1"><input data-sampleship placeholder="Send samples to (site address or other)"></div>
+        </div>
       </div>
       <div class="notes" style="margin-top:10px"><textarea data-tasknote placeholder="Supplier, custom match info, touch-up expectations…"></textarea></div>
       <div class="measure" style="margin-top:10px">
@@ -890,6 +900,9 @@
       const by=t.querySelector('[data-by]'); if(by) o.by=by.value;
       const cd=t.querySelector('[data-cdate]'); if(cd) o.cdate=cd.value;
       const nt=t.querySelector('[data-tasknote]'); if(nt) o.note=nt.value;
+      const sm=t.querySelector('[data-sample]'); if(sm){o.sample=sm.checked;
+        const sc=t.querySelector('[data-samplecolors]'); if(sc)o.sampleColors=sc.value;
+        const sh=t.querySelector('[data-sampleship]'); if(sh)o.sampleShip=sh.value;}
       data.tasks.push(o);
     });
     data.flag=flag.checked;
@@ -931,6 +944,9 @@
           const by=t.querySelector('[data-by]'); if(by&&o.by!=null) by.value=o.by;
           const cd=t.querySelector('[data-cdate]'); if(cd&&o.cdate!=null) cd.value=o.cdate;
           const nt=t.querySelector('[data-tasknote]'); if(nt&&o.note!=null) nt.value=o.note;
+          const sm=t.querySelector('[data-sample]'); if(sm&&o.sample!=null) sm.checked=!!o.sample;
+          const sc=t.querySelector('[data-samplecolors]'); if(sc&&o.sampleColors!=null) sc.value=o.sampleColors;
+          const sh=t.querySelector('[data-sampleship]'); if(sh&&o.sampleShip!=null) sh.value=o.sampleShip;
         });
         flag.checked=!!d.flag; document.getElementById('jambs').classList.toggle('show',!!d.flag);
         document.querySelectorAll('[data-jamb]').forEach(function(c){
