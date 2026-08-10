@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>TR Crew — My Assignments</title>
+<!-- v1.1 — keyed personal links; server returns only YOUR slice -->
 <style>
 :root{
   --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea;
@@ -49,8 +50,8 @@ h1{margin:0 0 2px;font-size:22px;letter-spacing:-.01em}
 const ENDPOINT="https://script.google.com/macros/s/AKfycbzLZIRUIBacgJtMztKE67WTeJudj77Oqb-zVcUnhTklBO1OdxGHVx8YKpCJgokObySG/exec?fn=assign";
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const qs=new URLSearchParams(location.search);
-const W=qs.get("w")||"";
-let data=null;
+const K=(qs.get("k")||"").trim();
+let data=null,err="";
 
 function ago(iso){
   if(!iso)return {txt:"never",cls:"bad"};
@@ -62,19 +63,21 @@ function today(){return new Date().toISOString().slice(0,10)}
 
 function render(){
   const root=document.getElementById("root"),sub=document.getElementById("sub"),hd=document.getElementById("hd");
-  if(!data){root.innerHTML='<div class="err">Couldn’t reach the shop server. Check signal and pull to refresh — if it keeps failing, tell the office.</div>';sub.textContent="";return}
-  const names=(data.workers||[]).map(x=>x.name);
-  if(!W){
-    hd.textContent="Who are you?";
-    sub.textContent="Tap your name — then BOOKMARK the page it opens. That link is yours.";
-    root.innerHTML=names.map(n=>`<button class="namebtn" onclick="location.search='?w='+encodeURIComponent('${esc(n)}')">${esc(n)}</button>`).join("")||'<div class="empty">Nothing published yet.</div>';
+  if(!K){
+    hd.textContent="Personal link needed";
+    sub.textContent="";
+    root.innerHTML='<div class="err">This page only opens with your personal link from the office. Ask Squizz or Dru to text it to you, then BOOKMARK it — it’s yours alone.</div>';
     return;
   }
-  const me=(data.workers||[]).find(x=>x.name.toLowerCase()===W.toLowerCase());
-  hd.textContent=W;
+  if(err==="bad key"){hd.textContent="Link not active";sub.textContent="";
+    root.innerHTML='<div class="err">This link isn’t active — the office may have rotated links. Ask for your new one.</div>';return}
+  if(err==="nothing published"){hd.textContent="Crew assignments";sub.textContent="";
+    root.innerHTML='<div class="empty">Nothing published yet — check back after the office pushes assignments.</div>';return}
+  if(!data||!data.worker){root.innerHTML='<div class="err">Couldn’t reach the shop server. Check signal and pull to refresh — if it keeps failing, tell the office.</div>';sub.textContent="";return}
+  const me=data.worker;
+  hd.textContent=me.name;
   const a=ago(data.publishedAt);
   sub.innerHTML=`Your current assignments · <span class="pill ${a.cls}">updated ${a.txt}</span>`;
-  if(!me){root.innerHTML=`<div class="err">No assignments published under “${esc(W)}”. Check with the office that the name on your link matches the crew list.</div>`;return}
   const sec=(title,rows,rf,emptyTxt)=>`<div class="card"><h2>${title}</h2>${rows.length?rows.map(rf).join(""):`<div class="empty">${emptyTxt}</div>`}</div>`;
   root.innerHTML=
     sec("Ready to run — job steps",me.now||[],x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,"No job steps on your bench right now.")+
@@ -85,9 +88,13 @@ function render(){
 }
 
 async function load(){
+  err="";
+  if(!K){render();return}
   try{
-    const r=await fetch(ENDPOINT,{cache:"no-store"});
-    data=await r.json();
+    const r=await fetch(ENDPOINT+"&k="+encodeURIComponent(K),{cache:"no-store"});
+    const j=await r.json();
+    if(j&&j.error){err=j.error;data=null}
+    else data=j;
   }catch(e){data=null}
   render();
 }
