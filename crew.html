@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>TR Crew — My Assignments</title>
+<style>
+:root{
+  --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea;
+  --bg:#f4f6f8; --card:#ffffff; --accent:#8b2e2e; --accent-soft:#f3e4e4;
+  --ok:#2f855a; --ok-soft:#e6f4ec; --warn:#a96b00; --warn-soft:#f7ead6; --bad:#a33327; --bad-soft:#f8e3e1;
+  --radius:14px; --shadow:0 1px 2px rgba(20,30,40,.06),0 4px 16px rgba(20,30,40,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.45;-webkit-font-smoothing:antialiased;padding:18px 14px 60px}
+.wrap{max-width:640px;margin:0 auto}
+.wordmark{font-weight:700;font-size:12px;letter-spacing:3.5px;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+h1{margin:0 0 2px;font-size:22px;letter-spacing:-.01em}
+.sub{margin:0 0 14px;font-size:13px;color:var(--ink-soft)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+.card h2{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent)}
+.item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.item:last-child{border-bottom:none}
+.item .nm b{display:block}
+.item .nm small{color:var(--ink-soft)}
+.item .est{flex:none;color:var(--ink-soft);font-size:13px;white-space:nowrap;padding-top:2px}
+.pill{display:inline-block;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.empty{color:var(--ink-soft);font-size:14px}
+.namebtn{display:block;width:100%;margin:8px 0;padding:16px;font-size:18px;font-weight:600;font-family:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);cursor:pointer}
+.namebtn:active{background:var(--accent-soft)}
+.stamp{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:13px;color:var(--ink-soft)}
+.stamp button{font-family:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);cursor:pointer}
+.err{background:var(--bad-soft);color:var(--bad);border-radius:var(--radius);padding:14px 16px;font-size:14px}
+.cap{font-size:12px;color:var(--ink-soft);margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="wordmark">Tungsten Royce · BiFolded</div>
+  <h1 id="hd">Crew assignments</h1>
+  <p class="sub" id="sub">Loading…</p>
+  <div id="root"></div>
+  <div class="cap" id="cap"></div>
+</div>
+<script>
+const ENDPOINT="https://script.google.com/macros/s/AKfycbzLZIRUIBacgJtMztKE67WTeJudj77Oqb-zVcUnhTklBO1OdxGHVx8YKpCJgokObySG/exec?fn=assign";
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const qs=new URLSearchParams(location.search);
+const W=qs.get("w")||"";
+let data=null;
+
+function ago(iso){
+  if(!iso)return {txt:"never",cls:"bad"};
+  const m=(Date.now()-new Date(iso).getTime())/60000;
+  const txt=m<2?"just now":m<60?Math.round(m)+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" days ago";
+  return {txt,cls:m>5760?"bad":m>1440?"warn":"ok"};
+}
+function today(){return new Date().toISOString().slice(0,10)}
+
+function render(){
+  const root=document.getElementById("root"),sub=document.getElementById("sub"),hd=document.getElementById("hd");
+  if(!data){root.innerHTML='<div class="err">Couldn’t reach the shop server. Check signal and pull to refresh — if it keeps failing, tell the office.</div>';sub.textContent="";return}
+  const names=(data.workers||[]).map(x=>x.name);
+  if(!W){
+    hd.textContent="Who are you?";
+    sub.textContent="Tap your name — then BOOKMARK the page it opens. That link is yours.";
+    root.innerHTML=names.map(n=>`<button class="namebtn" onclick="location.search='?w='+encodeURIComponent('${esc(n)}')">${esc(n)}</button>`).join("")||'<div class="empty">Nothing published yet.</div>';
+    return;
+  }
+  const me=(data.workers||[]).find(x=>x.name.toLowerCase()===W.toLowerCase());
+  hd.textContent=W;
+  const a=ago(data.publishedAt);
+  sub.innerHTML=`Your current assignments · <span class="pill ${a.cls}">updated ${a.txt}</span>`;
+  if(!me){root.innerHTML=`<div class="err">No assignments published under “${esc(W)}”. Check with the office that the name on your link matches the crew list.</div>`;return}
+  const sec=(title,rows,rf,emptyTxt)=>`<div class="card"><h2>${title}</h2>${rows.length?rows.map(rf).join(""):`<div class="empty">${emptyTxt}</div>`}</div>`;
+  root.innerHTML=
+    sec("Ready to run — job steps",me.now||[],x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,"No job steps on your bench right now.")+
+    sec("Special projects",me.sp||[],x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.note||"")}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}${x.due?"<br>due "+esc(x.due)+(x.due<today()?' <span class="pill bad">late</span>':""):""}</span></div>`,"None.")+
+    ((me.pre||[]).length?sec("Pre-production duties",me.pre,x=>`<div class="item"><span class="nm"><b>${esc(x.duty)}</b><small>${esc(x.job)}</small></span><span class="est">${x.due?"due "+esc(x.due):""}</span></div>`,""):"")+
+    ((me.fut||[]).length?sec("Up next — waiting on signed drawing",me.fut,x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,""):"");
+  document.getElementById("cap").innerHTML=`Log your hours in the crew log as usual — this page is read-only. Auto-refreshes every 5 minutes. <a href="#" onclick="load();return false">Refresh now</a>`;
+}
+
+async function load(){
+  try{
+    const r=await fetch(ENDPOINT,{cache:"no-store"});
+    data=await r.json();
+  }catch(e){data=null}
+  render();
+}
+load();
+setInterval(load,5*60*1000);
+</script>
+</body>
+</html>
