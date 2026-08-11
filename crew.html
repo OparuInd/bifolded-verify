@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>TR Crew — My Assignments</title>
-<!-- v2.1 — keyed personal links + LOG HOURS / MARK DONE from the phone.
-     LEADS (see state.leads in Shop Ops) close a step outright; everyone else's tick is a
-     CLAIM that waits in the office queue until Squizz reviews it. The server decides which
-     you are from your key — the page only changes the wording. -->
+<title>Tungsten Royce — My Assignments</title>
+<!-- v1.4 — keyed personal links; server returns only YOUR slice.
+     Office staff get a corporate-framed page: no fab sections, task status shown.
+     Sending a photo/PDF back is always on for office, and per-person for the shop
+     crew (the office ticks 'can send'). Files go to Drive, never into the app. -->
 <style>
 :root{
   --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea;
@@ -18,58 +18,51 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{font-family:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.45;-webkit-font-smoothing:antialiased;padding:18px 14px 96px}
+body{font-family:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.45;-webkit-font-smoothing:antialiased;padding:18px 14px 60px}
 .wrap{max-width:640px;margin:0 auto}
 .wordmark{font-weight:700;font-size:12px;letter-spacing:3.5px;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
 h1{margin:0 0 2px;font-size:22px;letter-spacing:-.01em}
 .sub{margin:0 0 14px;font-size:13px;color:var(--ink-soft)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
 .card h2{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent)}
-.item{padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
+.item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
 .item:last-child{border-bottom:none}
-.top{display:flex;justify-content:space-between;gap:12px}
-.nm b{display:block}
-.nm small{color:var(--ink-soft)}
-.est{flex:none;color:var(--ink-soft);font-size:13px;white-space:nowrap;padding-top:2px}
-.entry{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
-.entry input[type=number]{width:88px;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:9px}
-.entry input[type=text]{flex:1;min-width:140px;font:inherit;font-size:15px;padding:9px 10px;border:1px solid var(--line);border-radius:9px}
-.entry label{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
-.entry input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
-.item.filled{background:#fbfcfd;border-radius:10px;padding-left:10px;padding-right:10px}
+.item .nm b{display:block}
+.item .nm small{color:var(--ink-soft)}
+.item .est{flex:none;color:var(--ink-soft);font-size:13px;white-space:nowrap;padding-top:2px}
 .pill{display:inline-block;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.gray{background:#eceff2;color:var(--ink-soft)}
+.item .nm b .pill{margin-right:6px;vertical-align:1px}
 .empty{color:var(--ink-soft);font-size:14px}
+.namebtn{display:block;width:100%;margin:8px 0;padding:16px;font-size:18px;font-weight:600;font-family:inherit;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);cursor:pointer}
+.namebtn:active{background:var(--accent-soft)}
+.stamp{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:13px;color:var(--ink-soft)}
+.stamp button{font-family:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--line);border-radius:9px;background:var(--card);cursor:pointer}
 .err{background:var(--bad-soft);color:var(--bad);border-radius:var(--radius);padding:14px 16px;font-size:14px}
 .cap{font-size:12px;color:var(--ink-soft);margin-top:16px}
-.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -3px 16px rgba(20,30,40,.08);display:none}
-.bar.on{display:block}
-.bar .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
-.bar button{flex:none;font:inherit;font-size:16px;font-weight:700;padding:13px 22px;border:none;border-radius:11px;background:var(--accent);color:#fff}
-.bar button:disabled{opacity:.5}
-.bar .txt{font-size:13px;color:var(--ink-soft)}
-.sent{font-size:13px;color:var(--ink-soft);padding:7px 0;border-bottom:1px solid var(--line)}
-.sent:last-child{border-bottom:none}
+.send{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.send label{display:inline-block;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;
+  border:1px solid var(--line);border-radius:9px;padding:7px 12px;background:var(--card)}
+.send input[type=file]{display:none}
+.send .st{font-size:12px;color:var(--ink-soft);margin-left:8px}
+.send .st.bad{color:var(--bad);font-weight:600} .send .st.ok{color:var(--ok);font-weight:600}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="wordmark">Tungsten Royce · BiFolded</div>
-  <h1 id="hd">Crew assignments</h1>
+  <div class="wordmark" id="mark">Tungsten Royce · BiFolded</div>
+  <h1 id="hd">Assignments</h1>
   <p class="sub" id="sub">Loading…</p>
   <div id="root"></div>
   <div class="cap" id="cap"></div>
 </div>
-<div class="bar" id="bar"><div class="in">
-  <button id="sendBtn" onclick="send()">Send to office</button>
-  <span class="txt" id="barTxt"></span>
-</div></div>
 <script>
-const ENDPOINT="https://script.google.com/macros/s/AKfycbzLZIRUIBacgJtMztKE67WTeJudj77Oqb-zVcUnhTklBO1OdxGHVx8YKpCJgokObySG/exec";
+const ENDPOINT="https://script.google.com/macros/s/AKfycbzLZIRUIBacgJtMztKE67WTeJudj77Oqb-zVcUnhTklBO1OdxGHVx8YKpCJgokObySG/exec?fn=assign";
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const qs=new URLSearchParams(location.search);
 const K=(qs.get("k")||"").trim();
-let data=null,err="",sentRows=[],sending=false,isLead=false;
+let data=null,err="";
 
 function ago(iso){
   if(!iso)return {txt:"never",cls:"bad"};
@@ -77,145 +70,109 @@ function ago(iso){
   const txt=m<2?"just now":m<60?Math.round(m)+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" days ago";
   return {txt,cls:m>5760?"bad":m>1440?"warn":"ok"};
 }
-function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-
-/* ---- what the user has typed but not yet sent ---- */
-function collect(){
-  const out=[];
-  document.querySelectorAll("[data-row]").forEach(el=>{
-    const hrs=parseFloat(el.querySelector(".h").value)||0;
-    const done=el.querySelector(".d").checked;
-    if(!hrs&&!done)return;
-    const n=el.querySelector(".n");
-    out.push({date:today(),job:el.dataset.job,task:el.dataset.task,
-      kind:el.dataset.kind,hrs:hrs,done:done,note:n?n.value.trim():""});
-  });
-  return out;
-}
-function dirty(){return collect().length>0}
-window.touch=function(el){
-  const row=el.closest("[data-row]");
-  if(row){const hrs=parseFloat(row.querySelector(".h").value)||0;
-    row.classList.toggle("filled",!!(hrs||row.querySelector(".d").checked))}
-  const n=collect().length;
-  document.getElementById("bar").classList.toggle("on",n>0);
-  document.getElementById("barTxt").textContent=n?(n+" line"+(n===1?"":"s")+" ready"):"";
-};
-
-function entry(kind,job,task){
-  return `<div class="entry" data-row data-kind="${esc(kind)}" data-job="${esc(job)}" data-task="${esc(task)}">
-    <input class="h" type="number" step="0.25" min="0" inputmode="decimal" placeholder="hours" oninput="touch(this)">
-    <label><input class="d" type="checkbox" oninput="touch(this)"> Finished</label>
-    <input class="n" type="text" placeholder="note (optional)">
-  </div>`;
-}
+function today(){return new Date().toISOString().slice(0,10)}
 
 function render(){
   const root=document.getElementById("root"),sub=document.getElementById("sub"),hd=document.getElementById("hd");
   if(!K){
-    hd.textContent="Personal link needed";sub.textContent="";
+    hd.textContent="Personal link needed";
+    sub.textContent="";
     root.innerHTML='<div class="err">This page only opens with your personal link from the office. Ask Squizz or Dru to text it to you, then BOOKMARK it — it’s yours alone.</div>';
     return;
   }
   if(err==="bad key"){hd.textContent="Link not active";sub.textContent="";
     root.innerHTML='<div class="err">This link isn’t active — the office may have rotated links. Ask for your new one.</div>';return}
-  if(err==="nothing published"){hd.textContent="Crew assignments";sub.textContent="";
+  if(err==="nothing published"){hd.textContent="Assignments";sub.textContent="";
     root.innerHTML='<div class="empty">Nothing published yet — check back after the office pushes assignments.</div>';return}
   if(!data||!data.worker){root.innerHTML='<div class="err">Couldn’t reach the shop server. Check signal and pull to refresh — if it keeps failing, tell the office.</div>';sub.textContent="";return}
   const me=data.worker;
-  isLead=!!me.lead;
+  /* v1.2 — office staff (Chase, Dru) are not fabricators. They get the
+     corporate frame and ONLY their task list: no job steps, no pre-production
+     duties, no waiting-on-drawing queue. Those sections are meaningless to
+     someone who never touches a door, and an empty "nothing on your bench"
+     reads like a system that has lost track of them. */
+  const OFFICE=!!me.office||qs.get("o")==="1";   // link flag is a fallback if the server drops the field
   hd.textContent=me.name;
+  document.getElementById("mark").textContent=OFFICE?"Tungsten Royce · Corporate":"Tungsten Royce · BiFolded";
+  document.title=(OFFICE?"Tungsten Royce Corporate":"TR Crew")+" — "+me.name;
   const a=ago(data.publishedAt);
-  sub.innerHTML=`Your current assignments · <span class="pill ${a.cls}">updated ${a.txt}</span>`
-    +(isLead?` <span class="pill ok">lead</span>`:"");
+  sub.innerHTML=`Your current ${OFFICE?"tasks":"assignments"} · <span class="pill ${a.cls}">updated ${a.txt}</span>`;
   const sec=(title,rows,rf,emptyTxt)=>`<div class="card"><h2>${title}</h2>${rows.length?rows.map(rf).join(""):`<div class="empty">${emptyTxt}</div>`}</div>`;
 
-  let html=sec("Ready to run — job steps",me.now||[],x=>
-    `<div class="item"><div class="top"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span>
-      <span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>
-      ${entry("Job",x.job,x.nm)}</div>`,"No job steps on your bench right now.");
+  /* A task row carries what it is, how urgent, where it stands, and when it
+     is needed — the same four facts the office plate shows, so both sides of
+     the conversation are looking at the identical picture. */
+  const CANSEND=OFFICE||!!me.canSend;
+  const sendBox=(uid,label)=>(CANSEND&&data.upload&&uid)?`<div class="send">
+      <label>\ud83d\udcce Send a photo or PDF<input type="file" accept="image/*,application/pdf"
+        onchange="sendFile('${esc(uid)}',this,'${esc(String(label||"").replace(/'/g,"\\'"))}')"></label>
+      <span class="st" id="st${esc(uid)}"></span></div>`:"";
+  const spRow=x=>`<div class="item"><span class="nm"><b>${x.lvln?`<span class="pill ${x.lvl==="now"?"bad":x.lvl==="week"?"warn":"gray"}">${esc(x.lvln)}</span>`:""}${esc(x.nm)}</b>`
+    +`${x.stn&&x.st!=="new"?`<span class="pill ${x.st==="done"?"ok":"warn"}">${esc(x.stn)}</span> `:""}`
+    +`<small>${esc(x.note||"")}</small>`
+    /* v1.3 — send the ANSWER back as a file. It goes straight to the shop's Drive
+       folder tagged with this task and your name; the office sees it against the
+       task. Nothing is stored on this phone or inside the office app. */
+    +sendBox(x.uid,x.nm)
+    +`</span>`
+    +`<span class="est">${x.est?("est "+x.est+" hr"):""}${x.due?"<br>needed by "+esc(x.due)+(x.due<today()?' <span class="pill bad">late</span>':""):""}</span></div>`;
 
-  html+=sec("Special projects",me.sp||[],x=>
-    `<div class="item"><div class="top"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.note||"")}</small></span>
-      <span class="est">${x.est?("est "+x.est+" hr"):""}${x.due?"<br>due "+esc(x.due)+(x.due<today()?' <span class="pill bad">late</span>':""):""}</span></div>
-      ${entry("Special","",x.nm)}</div>`,"None.");
+  root.innerHTML= OFFICE
+    ? sec("My tasks",me.sp||[],spRow,"Nothing on your plate right now.")
+    : sec("Ready to run — job steps",me.now||[],x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small>${sendBox(x.uid,x.job+" — "+x.nm)}</span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,"No job steps on your bench right now.")+
+      sec("Special projects",me.sp||[],spRow,"None.")+
+      ((me.pre||[]).length?sec("Pre-production duties",me.pre,x=>`<div class="item"><span class="nm"><b>${esc(x.duty)}</b><small>${esc(x.job)}</small></span><span class="est">${x.due?"due "+esc(x.due):""}</span></div>`,""):"")+
+      ((me.fut||[]).length?sec("Up next — waiting on signed drawing",me.fut,x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,""):"");
 
-  html+=((me.pre||[]).length?sec("Pre-production duties",me.pre,x=>
-    `<div class="item"><div class="top"><span class="nm"><b>${esc(x.duty)}</b><small>${esc(x.job)}</small></span>
-      <span class="est">${x.due?"due "+esc(x.due):""}</span></div></div>`,""):"");
-
-  html+=((me.fut||[]).length?sec("Up next — waiting on signed drawing",me.fut,x=>
-    `<div class="item"><div class="top"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span>
-      <span class="est">${x.est?("est "+x.est+" hr"):""}</span></div></div>`,""):"");
-
-  if(sentRows.length)
-    html+=`<div class="card"><h2>Sent to the office</h2>${sentRows.map(r=>
-      `<div class="sent">${esc(r.job||r.task)} — ${r.hrs} hr${r.done?" · marked finished":""}
-       <span class="pill ${r.applied?"ok":"warn"}">${r.applied?"logged":(r.done&&!isLead?"waiting on review":"with the office")}</span></div>`).join("")}</div>`;
-
-  root.innerHTML=html;
-  document.getElementById("cap").innerHTML=`Put your hours against each line and tick <b>Finished</b> when it’s done, then hit Send. `
-    +(isLead?`As a lead, your <b>Finished</b> closes the step out.`
-            :`Your <b>Finished</b> tells the office it’s complete — they check it and close it out.`)
-    +` <a href="#" onclick="load();return false">Refresh</a>`;
-  touch(document.body);
+  document.getElementById("cap").innerHTML=(OFFICE
+    ? `Status is set by the office as your task moves. Use <b>Send a photo or PDF</b> on a task to get a sample photo or a vendor quote straight to the office — it files itself against that task.`
+    : `Log your hours in the crew log as usual — this page is read-only.${CANSEND?" You can send a photo against a step with the \u2039Send a photo or PDF\u203a button.":""}`)
+    +` Auto-refreshes every 5 minutes. <a href="#" onclick="load();return false">Refresh now</a>`;
 }
 
-async function send(){
-  if(sending)return;
-  const rows=collect();
-  if(!rows.length)return;
-  sending=true;
-  const btn=document.getElementById("sendBtn"),txt=document.getElementById("barTxt");
-  btn.disabled=true;txt.textContent="sending…";
+const MAX_SEND=12*1024*1024;
+window.sendFile=async function(uid,inp,taskName){
+  const taskId=uid;
+  const f=inp.files&&inp.files[0]; inp.value="";
+  const st=document.getElementById("st"+uid); if(!f||!st)return;
+  const say=(t,c)=>{st.className="st "+(c||"");st.textContent=t};
+  if(f.size>MAX_SEND){say(`That file is ${(f.size/1048576).toFixed(1)} MB — 12 MB is the limit.`,"bad");return}
+  say("sending "+(f.size/1048576).toFixed(1)+" MB\u2026");
+  const b64=await new Promise((res,rej)=>{const r=new FileReader();
+    r.onload=()=>res(String(r.result).split(",")[1]);r.onerror=rej;r.readAsDataURL(f)});
+  const before=await mineCount();
   try{
-    await fetch(ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
-      body:JSON.stringify({app:"tr-crewlog",k:K,rows:rows})});
+    await fetch(data.upload,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify({app:"tr-upload",who:data.worker.name,k:K,rot:data.rot||0,
+        taskId:taskId,taskName:taskName||"",name:f.name,mime:f.type||"application/octet-stream",data:b64})});
   }catch(e){}
-  // confirm by reading back what the server actually holds for us
-  let ok=false;
-  for(let i=0;i<4&&!ok;i++){
-    await new Promise(r=>setTimeout(r,900));
-    try{
-      const r=await fetch(ENDPOINT+"?fn=crewmine&k="+encodeURIComponent(K),{cache:"no-store"});
-      const j=await r.json();
-      if(j&&j.rows){sentRows=j.rows;ok=true}
-    }catch(e){}
-  }
-  sending=false;btn.disabled=false;
-  if(ok){
-    document.querySelectorAll("[data-row]").forEach(el=>{
-      el.querySelector(".h").value="";el.querySelector(".d").checked=false;
-      const n=el.querySelector(".n");if(n)n.value="";
-      el.classList.remove("filled");
-    });
-    txt.textContent="";
-    document.getElementById("bar").classList.remove("on");
-    render();
-  }else{
-    txt.textContent="couldn’t confirm — check signal and hit Send again";
-  }
+  /* The POST is opaque from this page, so a failure looks exactly like a success.
+     Ask the folder whether the file actually arrived before saying it did. */
+  await new Promise(r=>setTimeout(r,1500));
+  const after=await mineCount();
+  if(after>before) say("\u2713 sent to the office","ok");
+  else say("Didn\u2019t go through \u2014 check signal and try again.","bad");
+};
+async function mineCount(){
+  try{
+    const r=await fetch(data.upload+"?fn=mine&who="+encodeURIComponent(data.worker.name)
+      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(data.rot||0),{cache:"no-store"});
+    const j=await r.json(); return (j&&j.ok)?j.count:-1;
+  }catch(e){ return -1 }
 }
-
 async function load(){
   err="";
   if(!K){render();return}
   try{
-    const r=await fetch(ENDPOINT+"?fn=assign&k="+encodeURIComponent(K),{cache:"no-store"});
+    const r=await fetch(ENDPOINT+"&k="+encodeURIComponent(K),{cache:"no-store"});
     const j=await r.json();
     if(j&&j.error){err=j.error;data=null}
     else data=j;
   }catch(e){data=null}
-  try{
-    const r2=await fetch(ENDPOINT+"?fn=crewmine&k="+encodeURIComponent(K),{cache:"no-store"});
-    const j2=await r2.json();
-    if(j2&&j2.rows)sentRows=j2.rows;
-  }catch(e){}
   render();
 }
 load();
-// auto-refresh, but NEVER while there is unsent typing on screen
-setInterval(()=>{if(!dirty()&&!sending)load()},5*60*1000);
+setInterval(load,5*60*1000);
 </script>
 </body>
 </html>
