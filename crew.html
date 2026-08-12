@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Tungsten Royce — My Assignments</title>
-<!-- v1.9 — keyed personal links; server returns only YOUR slice.
+<!-- v2.5 — keyed personal links; server returns only YOUR slice.
      Office staff get a corporate-framed page: no fab sections, task status shown.
      Sending a photo/PDF back is always on for office, and per-person for the shop
      crew (the office ticks 'can send'). Files go to Drive, never into the app.
@@ -25,7 +25,18 @@
      render meant a cold Apps Script (several seconds, sometimes a timeout) left
      the crew staring at "Loading…" or an error for work that was already in
      hand. The page now draws from the published slice immediately and fills in
-     their own statuses a moment later, with a hard 6-second cutoff. -->
+     their own statuses a moment later, with a hard 6-second cutoff.
+     v2.0: a task the office has edited since publishing says so. Somebody who
+     read "Now, needed Tuesday" yesterday should not silently be working to
+     different instructions today.
+     v2.1: a job step now says where the JOB stands — promised date, and clear
+     or slipping. Deliberately the shop's number, not the person's: no estimate
+     on a step, no pace percentage anywhere. Give people the goal, not a score.
+     v2.2: 'Up next' says WHY a step is waiting and roughly when the job starts,
+     so somebody can plan a week instead of just reading a list.
+     v2.5: 'If you're stuck' — unclaimed steps on jobs that are already open,
+     plus the standing shop list. The answer to "my step can't run this morning"
+     should be on the page, not a walk across the shop to find Squizz. -->
 <style>
 :root{
   --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea;
@@ -73,6 +84,9 @@ h1{margin:0 0 2px;font-size:22px;letter-spacing:-.01em}
   border:1px solid var(--line);border-radius:9px;resize:vertical;min-height:56px;background:var(--card)}
 .act .row2{display:flex;align-items:center;gap:8px;margin-top:6px}
 .act .row2 button.send-msg{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pill.edit{background:#efe7f7;color:#5b3f86}
+.jobline{font-size:11.5px;color:var(--ink-soft);margin-top:2px}
+.jobline .pill{font-size:10.5px;padding:1px 7px}
 </style>
 </head>
 <body>
@@ -99,7 +113,17 @@ function effSt(x){
   return x.st;
 }
 const uploadUrl=()=>((data&&data.upload)||UPLOAD_ENDPOINT||"").trim();
-const rotOf=()=>{ const d=data&&data.rot; return d===undefined||d===null?(+qs.get("r")||0):d };
+/* v2.5 — SRV is what the backup script says about the person holding this
+   link: which rotation minted the key, whether they are office, whether they
+   may send. It is asked for on every load, so those things can change without
+   anybody's link having to be re-issued. Until it answers, the published slice
+   and then the URL flags stand in — a page that has never reached the script
+   still works exactly as it did. */
+let SRV=null;
+const rotOf=()=>{
+  if(SRV&&SRV.rot!==undefined&&SRV.rot!==null)return SRV.rot;
+  const d=data&&data.rot; return d===undefined||d===null?(+qs.get("r")||0):d;
+};
 
 function ago(iso){
   if(!iso)return {txt:"never",cls:"bad"};
@@ -128,7 +152,8 @@ function render(){
      duties, no waiting-on-drawing queue. Those sections are meaningless to
      someone who never touches a door, and an empty "nothing on your bench"
      reads like a system that has lost track of them. */
-  const OFFICE=!!me.office||qs.get("o")==="1";   // link flag is a fallback if the server drops the field
+  // v2.5 — the script's answer wins; the published slice and the URL flag are fallbacks.
+  const OFFICE=(SRV&&SRV.roster)?!!SRV.office:(!!me.office||qs.get("o")==="1");
   hd.textContent=me.name;
   document.getElementById("mark").textContent=OFFICE?"Tungsten Royce · Corporate":"Tungsten Royce · BiFolded";
   document.title=(OFFICE?"Tungsten Royce Corporate":"TR Crew")+" — "+me.name;
@@ -139,7 +164,7 @@ function render(){
   /* A task row carries what it is, how urgent, where it stands, and when it
      is needed — the same four facts the office plate shows, so both sides of
      the conversation are looking at the identical picture. */
-  const CANSEND=OFFICE||!!me.canSend||qs.get("s")==="1";
+  const CANSEND=OFFICE||((SRV&&SRV.roster)?!!SRV.canSend:(!!me.canSend||qs.get("s")==="1"));
   const sendBox=(uid,label)=>(CANSEND&&uploadUrl()&&uid)?`<div class="send">
       <label>\ud83d\udcce Send a photo or PDF<input type="file" accept="image/*,application/pdf"
         onchange="sendFile('${esc(uid)}',this,'${esc(String(label||"").replace(/'/g,"\\'"))}')"></label>
@@ -158,6 +183,7 @@ function render(){
   const spRow=x=>`<div class="item"><span class="nm"><b>${x.lvln?`<span class="pill ${x.lvl==="now"?"bad":x.lvl==="week"?"warn":"gray"}">${esc(x.lvln)}</span>`:""}${esc(x.nm)}</b>`
     +(()=>{const e=effSt(x),nm={recv:"Received",work:"Working on it",done:"Resolved"}[e];
         return nm?`<span class="pill ${e==="done"?"ok":"warn"}">${nm}</span> `:""})()
+    +(x.editedAt?`<span class="pill edit" title="The office changed this task">changed ${esc(String(x.editedAt).slice(0,10))}</span> `:"")
     +`<small>${esc(x.note||"")}</small>`
     /* v1.3 — send the ANSWER back as a file. It goes straight to the shop's Drive
        folder tagged with this task and your name; the office sees it against the
@@ -165,18 +191,36 @@ function render(){
     +sendBox(x.uid,x.nm)
     +(OFFICE?actBox(x):"")
     +`</span>`
-    +`<span class="est">${x.est?("est "+x.est+" hr"):""}${x.due?"<br>needed by "+esc(x.due)+(x.due<today()?' <span class="pill bad">late</span>':""):""}</span></div>`;
+    +`<span class="est">${x.due?"needed by "+esc(x.due)+(x.due<today()?' <span class="pill bad">late</span>':""):""}</span></div>`;
+
+  /* v2.5 — two or three people work a set of doors together. A step you are
+     ASSISTING on is yours to work and yours to log hours against, but the lead
+     is the one who closes it out. Saying so here is what stops two people both
+     thinking the other one signed it off. */
+  const roleTag=x=>x.role==="assist"
+    ? `<span class="pill gray" title="${esc(x.withWho||"")} leads this step">assisting${x.withWho?" "+esc(x.withWho):""}</span>`
+    : (x.withWho?`<span class="pill ok" title="You lead this step">you lead \u00b7 with ${esc(x.withWho)}</span>`:"");
 
   root.innerHTML= OFFICE
     ? sec("My tasks",me.sp||[],spRow,"Nothing on your plate right now.")
-    : sec("Ready to run — job steps",me.now||[],x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small>${sendBox(x.uid,x.job+" — "+x.nm)}</span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,"No job steps on your bench right now.")+
+    : sec("Ready to run — job steps",me.now||[],x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b>${roleTag(x)}<small>${esc(x.job)}</small>
+      ${(x.jd||x.js!=null)?`<div class="jobline">${x.jd?`promised ${esc(x.jd)}`:"no promised date"}${
+        x.js==null?"":(x.js>0?` · <span class="pill bad">${x.js} day${x.js===1?"":"s"} behind</span>`
+                             :` <span class="pill ok">${Math.abs(x.js)} day${Math.abs(x.js)===1?"":"s"} clear</span>`)}${
+        x.jr?` · ${x.jr} hr left on this job`:""}</div>`:""}
+      ${sendBox(x.uid,x.job+" — "+x.nm)}</span></div>`,"No job steps on your bench right now.")+
       sec("Special projects",me.sp||[],spRow,"None.")+
       ((me.pre||[]).length?sec("Pre-production duties",me.pre,x=>`<div class="item"><span class="nm"><b>${esc(x.duty)}</b><small>${esc(x.job)}</small></span><span class="est">${x.due?"due "+esc(x.due):""}</span></div>`,""):"")+
-      ((me.fut||[]).length?sec("Up next — waiting on signed drawing",me.fut,x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,""):"");
+      ((me.spare||[]).length?sec("If you're stuck — anyone can pick these up",me.spare,x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b>
+      <small>${x.kind==="shop"?`shop \u00b7 ${esc(x.cat||"")}`:esc(x.job)}</small></span>
+      <span class="est">${x.kind==="job"&&x.due?"job due "+esc(x.due):(x.kind==="shop"?'<span class="pill gray">shop</span>':"")}</span></div>`,""):"")+
+    ((me.fut||[]).length?sec("Up next",me.fut,x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b>${roleTag(x)}<small>${esc(x.job)}</small>
+      ${(x.why||x.jstart)?`<div class="jobline">${x.why?`<span class="pill warn">${esc(x.why)}</span>`:""}${
+        x.jstart?`${x.why?" · ":""}likely starts ${esc(x.jstart)}`:""}</div>`:""}</span></div>`,""):"");
 
   document.getElementById("cap").innerHTML=(OFFICE
     ? `Please respond \u2014 task updates push straight to the office.`
-    : `Log your hours in the crew log as usual.`)
+    : `Log your hours in the crew log as usual \u2014 including on steps you are <b>assisting</b> on, where the lead closes it out but the hours are still yours. If your step can\u2019t run, take something from <b>If you\u2019re stuck</b> and log it the same way.`)
     +` Auto-refreshes every 5 minutes. <a href="#" onclick="load();return false">Refresh now</a>`;
 }
 
@@ -195,8 +239,6 @@ async function postReply(body){                       // opaque POST, then verif
 async function loadMine(){
   if(!uploadUrl()||!K||!data||!data.worker)return;
   const me2=data.worker;
-  if(!(me2.office||me2.canSend||qs.get("o")==="1"||qs.get("s")==="1"))return;
-  if(!(me2.sp||[]).length)return;
   const ctl=("AbortController" in window)?new AbortController():null;
   const bail=setTimeout(()=>{try{ctl&&ctl.abort()}catch(e){}},6000);
   try{
@@ -204,8 +246,16 @@ async function loadMine(){
       +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(rotOf()),
       {cache:"no-store",signal:ctl?ctl.signal:undefined});
     const j=await r.json();
-    if(j&&j.ok&&j.statuses&&JSON.stringify(j.statuses)!==JSON.stringify(mine)){
-      mine=j.statuses; render();                    // second paint, only if it changed anything
+    if(j&&j.ok){
+      /* Two things arrive here: what this person set themselves, which the
+         published slice cannot know, and who they are, which the link no
+         longer has to carry. Repaint only if one of them actually moved. */
+      const wasOffice=SRV?SRV.office:null, wasSend=SRV?SRV.canSend:null;
+      if(j.roster!==undefined)SRV={rot:j.rot,office:!!j.office,canSend:!!j.canSend,lead:!!j.lead,roster:!!j.roster};
+      const idChanged=SRV&&SRV.roster&&(SRV.office!==wasOffice||SRV.canSend!==wasSend);
+      const stChanged=j.statuses&&JSON.stringify(j.statuses)!==JSON.stringify(mine);
+      if(stChanged)mine=j.statuses;
+      if(stChanged||idChanged)render();
     }
   }catch(e){}
   finally{ clearTimeout(bail) }
