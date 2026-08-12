@@ -5,11 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Tungsten Royce — My Assignments</title>
-<!-- v1.5 — keyed personal links; server returns only YOUR slice.
+<!-- v1.6 — keyed personal links; server returns only YOUR slice.
      Office staff get a corporate-framed page: no fab sections, task status shown.
      Sending a photo/PDF back is always on for office, and per-person for the shop
      crew (the office ticks 'can send'). Files go to Drive, never into the app.
-     v1.5: office staff move their own task along and can type a message back. -->
+     v1.5: office staff move their own task along and can type a message back.
+     v1.6: the crew-assignment Apps Script rebuilds each worker's slice from a
+     fixed field list and drops anything it doesn't know — so `upload`, `rot`,
+     `office` and `canSend` never survive the round trip. Rather than reopen that
+     script (it also runs field verification), the page now carries the endpoint
+     itself and takes the per-person flags off the link: &o=1 office, &s=1 may
+     send. A payload that DOES carry the fields still wins, so this heals itself
+     the day that script is updated. -->
 <style>
 :root{
   --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea;
@@ -68,11 +75,14 @@ h1{margin:0 0 2px;font-size:22px;letter-spacing:-.01em}
   <div class="cap" id="cap"></div>
 </div>
 <script>
+const UPLOAD_ENDPOINT="https://script.google.com/macros/s/AKfycbwFz7F1VFP-4Xlrq2rqZwdPX8Vb9ojjclQi1agkcHa8yspihJtrVsrPA1QZ4keoR72Rgw/exec";
 const ENDPOINT="https://script.google.com/macros/s/AKfycbzLZIRUIBacgJtMztKE67WTeJudj77Oqb-zVcUnhTklBO1OdxGHVx8YKpCJgokObySG/exec?fn=assign";
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const qs=new URLSearchParams(location.search);
 const K=(qs.get("k")||"").trim();
 let data=null,err="";
+const uploadUrl=()=>((data&&data.upload)||UPLOAD_ENDPOINT||"").trim();
+const rotOf=()=>{ const d=data&&data.rot; return d===undefined||d===null?(+qs.get("r")||0):d };
 
 function ago(iso){
   if(!iso)return {txt:"never",cls:"bad"};
@@ -112,8 +122,8 @@ function render(){
   /* A task row carries what it is, how urgent, where it stands, and when it
      is needed — the same four facts the office plate shows, so both sides of
      the conversation are looking at the identical picture. */
-  const CANSEND=OFFICE||!!me.canSend;
-  const sendBox=(uid,label)=>(CANSEND&&data.upload&&uid)?`<div class="send">
+  const CANSEND=OFFICE||!!me.canSend||qs.get("s")==="1";
+  const sendBox=(uid,label)=>(CANSEND&&uploadUrl()&&uid)?`<div class="send">
       <label>\ud83d\udcce Send a photo or PDF<input type="file" accept="image/*,application/pdf"
         onchange="sendFile('${esc(uid)}',this,'${esc(String(label||"").replace(/'/g,"\\'"))}')"></label>
       <span class="st" id="st${esc(uid)}"></span></div>`:"";
@@ -122,7 +132,7 @@ function render(){
      queue of claims. The message box matters just as much — half of what comes
      back is a question about a dimension, not an answer. */
   const ST=[["recv","Received"],["work","Working on it"],["done","Resolved"]];
-  const actBox=(x)=>(!data.upload||!x.uid)?"":`<div class="act">
+  const actBox=(x)=>(!uploadUrl()||!x.uid)?"":`<div class="act">
       <div class="btns">${ST.map(([k,n])=>`<button class="${x.st===k?"on":""}"
         onclick="sendStatus('${esc(x.uid)}','${k}',this)">${n}</button>`).join("")}</div>
       <textarea id="msg${esc(x.uid)}" placeholder="Message back \u2014 what you found, or a question (dimension, spec, who to call)\u2026"></textarea>
@@ -155,8 +165,8 @@ function render(){
 async function postReply(body){                       // opaque POST, then verify by counting
   const before=await myReplyCount();
   try{
-    await fetch(data.upload,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
-      body:JSON.stringify(Object.assign({app:"tr-reply",who:data.worker.name,k:K,rot:data.rot||0},body))});
+    await fetch(uploadUrl(),{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify(Object.assign({app:"tr-reply",who:data.worker.name,k:K,rot:rotOf()},body))});
   }catch(e){}
   await new Promise(r=>setTimeout(r,1400));
   const after=await myReplyCount();
@@ -164,8 +174,8 @@ async function postReply(body){                       // opaque POST, then verif
 }
 async function myReplyCount(){
   try{
-    const r=await fetch(data.upload+"?fn=mine&who="+encodeURIComponent(data.worker.name)
-      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(data.rot||0),{cache:"no-store"});
+    const r=await fetch(uploadUrl()+"?fn=mine&who="+encodeURIComponent(data.worker.name)
+      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(rotOf()),{cache:"no-store"});
     const j=await r.json(); return (j&&j.ok)?(j.replyCount||0):-1;
   }catch(e){ return -1 }
 }
@@ -203,8 +213,8 @@ window.sendFile=async function(uid,inp,taskName){
     r.onload=()=>res(String(r.result).split(",")[1]);r.onerror=rej;r.readAsDataURL(f)});
   const before=await mineCount();
   try{
-    await fetch(data.upload,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
-      body:JSON.stringify({app:"tr-upload",who:data.worker.name,k:K,rot:data.rot||0,
+    await fetch(uploadUrl(),{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify({app:"tr-upload",who:data.worker.name,k:K,rot:rotOf(),
         taskId:taskId,taskName:taskName||"",name:f.name,mime:f.type||"application/octet-stream",data:b64})});
   }catch(e){}
   /* The POST is opaque from this page, so a failure looks exactly like a success.
@@ -216,8 +226,8 @@ window.sendFile=async function(uid,inp,taskName){
 };
 async function mineCount(){
   try{
-    const r=await fetch(data.upload+"?fn=mine&who="+encodeURIComponent(data.worker.name)
-      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(data.rot||0),{cache:"no-store"});
+    const r=await fetch(uploadUrl()+"?fn=mine&who="+encodeURIComponent(data.worker.name)
+      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(rotOf()),{cache:"no-store"});
     const j=await r.json(); return (j&&j.ok)?j.count:-1;
   }catch(e){ return -1 }
 }
