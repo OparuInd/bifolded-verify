@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Tungsten Royce — My Assignments</title>
-<!-- v2.7 — keyed personal links; server returns only YOUR slice.
+<!-- v2.8 — keyed personal links; server returns only YOUR slice.
      Office staff get a corporate-framed page: no fab sections, task status shown.
      Sending a photo/PDF back is always on for office, and per-person for the shop
      crew (the office ticks 'can send'). Files go to Drive, never into the app.
@@ -208,33 +208,37 @@ function render(){
      It is written to be read once, standing in a driveway at six in the
      morning: what is true, until when, and who to ring.
 
-     v2.7 — the notice sits ABOVE the task list; it does not replace it. v2.6
-     returned early and showed nothing else, which is wrong twice over: a person
-     told to stay home still needs to see what is on their bench for when they
-     are back, and an empty page gives them no way to tell "stood down" apart
-     from "the app is broken". Their work stays exactly where it was. */
+     v2.7 — the notice sits ABOVE the task list; it does not replace it.
+     v2.8 — and it says ONLY what it has to: no assignments, do not clock in,
+     the date it runs through, and whatever the office typed. Everything else
+     that was here — advice about ringing in, reassurance about the work still
+     being theirs — is the office's to say in its own words, in the note box, or
+     not at all. A short notice is read; a paragraph is skimmed. */
   const SD = (SRV&&SRV.roster) ? (SRV.stand?{until:SRV.standUntil,note:SRV.standNote}:null)
            : (me.stand?{until:me.standUntil||"",note:me.standNote||""}:null);
-  const sdBanner=(()=>{
-    if(!SD)return "";
-    const back=SD.until?(()=>{const d=new Date(SD.until+"T00:00:00");d.setDate(d.getDate()+1);
-      return d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})})():"";
-    return `<div class="sec" style="border-left:5px solid #a33327;background:#fdf4f3;padding:16px 18px">
+  const sdBanner=SD?`<div class="sec" style="border-left:5px solid #a33327;background:#fdf4f3;padding:16px 18px">
       <div style="font-size:19px;font-weight:800;line-height:1.3;margin-bottom:8px">
         You have no assignments at Tungsten Royce today.</div>
       <div style="font-size:15.5px;line-height:1.55">Please <b>do not clock in</b>.${
-        SD.until?` This applies through <b>${esc(SD.until)}</b>${back?` — plan on being back <b>${esc(back)}</b> unless you hear otherwise.`:"."}`:""}</div>
+        SD.until?` This applies through <b>${esc(SD.until)}</b>${(()=>{
+          const d=new Date(SD.until+"T00:00:00"); if(isNaN(d))return ".";
+          d.setDate(d.getDate()+1);
+          return ` — plan on being back <b>${d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})}</b> unless you hear otherwise.`;
+        })()}`:""}</div>
       ${SD.note?`<div style="font-size:14.5px;line-height:1.55;margin-top:10px">${esc(SD.note)}</div>`:""}
-      <div style="font-size:13.5px;color:#6b6558;margin-top:12px;line-height:1.5">
-        This is about the schedule, not about you. If anything here is unclear, or you think it is a mistake,
-        ring the office before you set off &mdash; do not just turn up and do not just stay home wondering.</div>
-      <div style="font-size:13.5px;color:#6b6558;margin-top:10px;line-height:1.5">
-        Your work below has <b>not</b> been reassigned &mdash; it is still yours, waiting for you. Nothing there is
-        for today.</div>
-    </div>`;
-  })();
+    </div>`:"";
 
-  root.innerHTML= sdBanner + (OFFICE
+  /* v2.8 — stood down means the page shows the notice and NOTHING else. Their
+     assignments are untouched in the office's book; they are simply not put in
+     front of somebody who is being told not to come in. A list of work under a
+     "do not clock in" notice is a mixed message. */
+  if(SD){
+    root.innerHTML=sdBanner;
+    document.getElementById("cap").innerHTML=`This page updates itself. <a href="#" onclick="load();return false">Check again</a>`;
+    return;
+  }
+
+  root.innerHTML= (OFFICE
     ? sec("My tasks",me.sp||[],spRow,"Nothing on your plate right now.")
     : sec("Ready to run — job steps",me.now||[],x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b>${roleTag(x)}<small>${esc(x.job)}</small>
       ${(x.jd||x.js!=null)?`<div class="jobline">${x.jd?`promised ${esc(x.jd)}`:"no promised date"}${
@@ -251,9 +255,7 @@ function render(){
       ${(x.why||x.jstart)?`<div class="jobline">${x.why?`<span class="pill warn">${esc(x.why)}</span>`:""}${
         x.jstart?`${x.why?" · ":""}likely starts ${esc(x.jstart)}`:""}</div>`:""}</span></div>`,""):""));
 
-  document.getElementById("cap").innerHTML=(SD
-    ? `Nothing below is for today &mdash; ring the office if this looks wrong. <a href="#" onclick="load();return false">Check again</a>`
-    : OFFICE
+  document.getElementById("cap").innerHTML=(OFFICE
     ? `Please respond \u2014 task updates push straight to the office.`
     : `Log your hours in the crew log as usual \u2014 including on steps you are <b>assisting</b> on, where the lead closes it out but the hours are still yours. If your step can\u2019t run, take something from <b>If you\u2019re stuck</b> and log it the same way.`)
     +` Auto-refreshes every 5 minutes. <a href="#" onclick="load();return false">Refresh now</a>`;
