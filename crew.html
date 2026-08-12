@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Tungsten Royce — My Assignments</title>
-<!-- v1.8 — keyed personal links; server returns only YOUR slice.
+<!-- v1.9 — keyed personal links; server returns only YOUR slice.
      Office staff get a corporate-framed page: no fab sections, task status shown.
      Sending a photo/PDF back is always on for office, and per-person for the shop
      crew (the office ticks 'can send'). Files go to Drive, never into the app.
@@ -20,7 +20,12 @@
      v1.8: the page remembers what THIS person last set. The published snapshot
      only moves when the office republishes, so without this a refresh wiped
      their own tap — mark Received on Monday, and by Tuesday nothing is selected.
-     Their own reply wins unless the office published after it. -->
+     Their own reply wins unless the office published after it.
+     v1.9: that lookup must NEVER hold up the page. Awaiting it before the first
+     render meant a cold Apps Script (several seconds, sometimes a timeout) left
+     the crew staring at "Loading…" or an error for work that was already in
+     hand. The page now draws from the published slice immediately and fills in
+     their own statuses a moment later, with a hard 6-second cutoff. -->
 <style>
 :root{
   --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea;
@@ -185,14 +190,25 @@ async function postReply(body){                       // opaque POST, then verif
   const after=await myReplyCount();
   return after>before;
 }
+/* Background only. Never awaited by load(), always time-limited: this is a
+   nicety on top of a page whose job is to show people their work. */
 async function loadMine(){
   if(!uploadUrl()||!K||!data||!data.worker)return;
+  const me2=data.worker;
+  if(!(me2.office||me2.canSend||qs.get("o")==="1"||qs.get("s")==="1"))return;
+  if(!(me2.sp||[]).length)return;
+  const ctl=("AbortController" in window)?new AbortController():null;
+  const bail=setTimeout(()=>{try{ctl&&ctl.abort()}catch(e){}},6000);
   try{
-    const r=await fetch(uploadUrl()+"?fn=mine&who="+encodeURIComponent(data.worker.name)
-      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(rotOf()),{cache:"no-store"});
+    const r=await fetch(uploadUrl()+"?fn=mine&who="+encodeURIComponent(me2.name)
+      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(rotOf()),
+      {cache:"no-store",signal:ctl?ctl.signal:undefined});
     const j=await r.json();
-    if(j&&j.ok&&j.statuses)mine=j.statuses;
+    if(j&&j.ok&&j.statuses&&JSON.stringify(j.statuses)!==JSON.stringify(mine)){
+      mine=j.statuses; render();                    // second paint, only if it changed anything
+    }
   }catch(e){}
+  finally{ clearTimeout(bail) }
 }
 async function myReplyCount(){
   try{
@@ -263,8 +279,8 @@ async function load(){
     if(j&&j.error){err=j.error;data=null}
     else data=j;
   }catch(e){data=null}
-  await loadMine();
-  render();
+  render();          // draw what the office published, straight away
+  loadMine();        // then quietly fill in what this person set themselves
 }
 load();
 setInterval(load,5*60*1000);
