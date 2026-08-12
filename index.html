@@ -1,42 +1,1575 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tungsten Royce — Field Verification</title>
-<style>
-  :root{--ink:#1d2125;--soft:#54606b;--line:#e2e6ea;--bg:#f4f6f8;--card:#fff;--accent:#8b2e2e;--accent-soft:#f3e4e4}
-  *{box-sizing:border-box} html,body{margin:0}
-  body{font-family:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;padding:48px 20px}
-  .wrap{max-width:640px;margin:0 auto}
-  .wordmark{font-weight:700;font-size:13px;letter-spacing:3.5px;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
-  h1{font-size:26px;margin:0 0 6px}
-  p.lead{color:var(--soft);margin:0 0 28px}
-  a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:16px;text-decoration:none;color:var(--ink);box-shadow:0 1px 2px rgba(20,30,40,.06),0 4px 16px rgba(20,30,40,.05);transition:transform .08s}
-  a.card:hover{transform:translateY(-1px);border-color:var(--accent)}
-  a.card h2{margin:0 0 4px;font-size:18px}
-  a.card h2 .em{color:var(--accent)}
-  a.card p{margin:0;color:var(--soft);font-size:14px}
-  .foot{margin-top:34px;color:var(--soft);font-size:12px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BiFolded Laser Measure</title>
+  <!-- v1.6 — the true-opening outline is now a toggle, and any leg 1/2in or more
+       outside the buildable box draws in red instead of grey. -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(135deg, #3a4260 0%, #5c637a 100%);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
+    }
+
+    .brand-icon {
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      display: block;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .card-title .badge {
+      font-size: 0.7rem;
+      background: #e8f0ff;
+      color: #4361ee;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    /* Unit toggle */
+    .unit-toggle {
+      display: flex;
+      background: #f0f2f5;
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 18px;
+    }
+
+    .unit-toggle button {
+      flex: 1;
+      padding: 7px 0;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .unit-toggle button.active {
+      background: #fff;
+      color: #4361ee;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Measurement group */
+    .mgroup {
+      border: 1.5px solid #e8ecf5;
+      border-radius: 12px;
+      padding: 12px 12px 8px;
+      margin-bottom: 10px;
+      background: #fafbff;
+    }
+
+    .mgroup-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #4361ee;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .pair-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: flex-end;
+    }
+
+    .pair-field {
+      flex: 1;
+    }
+
+    .pair-field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pair-total {
+      flex: 0 0 auto;
+      width: 78px;
+      text-align: center;
+    }
+
+    .pair-total label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pair-total .total-val {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f4ff;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #4361ee;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 1.5px solid #e0e3ea;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .input-group:focus-within { border-color: #4361ee; }
+
+    .input-group input {
+      border: none;
+      background: transparent;
+      padding: 9px 8px;
+      font-size: 0.95rem;
+      width: 100%;
+      outline: none;
+      color: #1a1a2e;
+      -webkit-appearance: none;
+    }
+
+    .input-group .unit {
+      padding: 0 7px;
+      font-size: 0.73rem;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    .ft-pair {
+      display: flex;
+      gap: 4px;
+    }
+
+    .ft-pair .input-group { flex: 1; }
+
+    /* Summary row */
+    .summary-row {
+      display: flex;
+      gap: 10px;
+      background: #f0f4ff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 14px 0 4px;
+    }
+
+    .summary-item {
+      flex: 1;
+      text-align: center;
+    }
+
+    .summary-item .s-val {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #4361ee;
+    }
+
+    .summary-item .s-lbl {
+      font-size: 0.7rem;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .summary-item .s-sub {
+      font-size: 0.67rem;
+      color: #b0b8d0;
+      margin-top: 1px;
+    }
+
+    /* Divider */
+    hr { border: none; border-top: 1px solid #f0f2f5; margin: 14px 0; }
+
+    .opt-label {
+      font-size: 0.72rem;
+      color: #bbb;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 5px;
+    }
+    .field .hint {
+      font-size: 0.72rem;
+      color: #aaa;
+      margin-top: 3px;
+    }
+
+    /* Button */
+    .calc-btn {
+      width: 100%;
+      padding: 15px;
+      background: #4361ee;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .calc-btn:active { transform: scale(0.98); }
+    .calc-btn:hover  { background: #3651d4; }
+
+    /* Results */
+    #results { display: none; }
+
+    .result-main {
+      text-align: center;
+      padding: 10px 0 16px;
+      border-bottom: 1px solid #f0f2f5;
+      margin-bottom: 14px;
+    }
+
+    .door-size {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #4361ee;
+      line-height: 1;
+    }
+
+    .door-label {
+      font-size: 0.82rem;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    .dim-pills {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .dim-pill {
+      background: #f0f4ff;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      color: #4361ee;
+      font-weight: 600;
+    }
+
+    /* Variance table */
+    .variance-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-bottom: 14px;
+    }
+
+    .variance-table th {
+      background: #f7f8fa;
+      padding: 6px 8px;
+      text-align: left;
+      font-size: 0.72rem;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .variance-table td {
+      padding: 7px 8px;
+      border-top: 1px solid #f0f2f5;
+      color: #333;
+    }
+
+    .variance-table td.is-min {
+      color: #e74c3c;
+      font-weight: 700;
+    }
+
+    .variance-table td.is-max { color: #27ae60; }
+
+    /* Checks */
+    .checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 9px 11px;
+      border-radius: 9px;
+      font-size: 0.84rem;
+    }
+
+    .check-item.ok   { background: #e8f5e9; }
+    .check-item.warn { background: #fff8e1; }
+    .check-item.bad  { background: #fdecea; }
+
+    .check-icon { font-size: 1rem; line-height: 1.4; flex-shrink: 0; }
+    .check-text strong { display: block; font-weight: 600; margin-bottom: 1px; }
+    .check-text span { color: #666; }
+
+    /* Size grid */
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 9px;
+    }
+
+    .size-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .size-chip {
+      padding: 7px 4px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1.5px solid #e8ecf5;
+      color: #ccc;
+      background: #fafafa;
+    }
+
+    .size-chip.fits { background: #e8f0ff; border-color: #4361ee; color: #4361ee; }
+    .size-chip.best { background: #4361ee; border-color: #4361ee; color: #fff; }
+
+    .size-chip .chip-note {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 400;
+      margin-top: 2px;
+      opacity: 0.85;
+    }
+
+    .no-fit {
+      text-align: center;
+      padding: 18px;
+      color: #c0392b;
+      font-size: 0.9rem;
+      background: #fdecea;
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+
+    .info-box {
+      background: #f0f4ff;
+      border-left: 3px solid #4361ee;
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: 0.77rem;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .cl-select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1.5px solid #e0e3ea;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.95rem;
+      color: #1a1a2e;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      cursor: pointer;
+    }
+
+    .cl-select:focus {
+      outline: none;
+      border-color: #4361ee;
+    }
+
+    .export-btn {
+      width: 100%;
+      padding: 13px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .export-btn:hover  { background: #2d2d4a; }
+    .export-btn:active { transform: scale(0.98); }
+
+    .reset-btn {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      color: #999;
+      border: 1.5px solid #e0e3ea;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* Diagram */
+    .diagram-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="wordmark">Tungsten Royce · BiFolded.com</div>
-  <h1>Field Verification</h1>
-  <p class="lead">Everything needed to verify an existing enclosure before your doors go into production.</p>
 
-  <a class="card" href="field-form.html">
-    <h2>📋 Enclosure <span class="em">Field Verification Form</span></h2>
-    <p>Measurements, discrepancies, cladding, finishes, hardware &amp; seal package — complete the tasks assigned to you, then Save data and return the file.</p>
-  </a>
-
-  <a class="card" href="https://measure.bifolded.com/" target="_blank" rel="noopener">
-    <h2>📏 BiFolded <span class="em">Laser Measure</span></h2>
-    <p>Guided laser measurement of the opening — 3 widths, 3 heights, minimums computed. Saves your PDF and sends results to Tungsten Royce automatically.</p>
-  </a>
-
-  <div class="foot">Questions? Reply to the email that sent you here, or contact Tungsten Royce.<br>© Tungsten Royce · BiFolded</div>
+<div class="brand-header">
+  <svg class="brand-icon" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Outer door frame -->
+    <rect x="4" y="4" width="36" height="36" stroke="#c9a84c" stroke-width="2" fill="none"/>
+    <!-- Divider offset to right — narrower right panel -->
+    <line x1="29" y1="4" x2="29" y2="40" stroke="#c9a84c" stroke-width="2"/>
+  </svg>
+  <div>
+    <span class="brand-name">BiFolded</span>
+    <span class="brand-sub">Laser Measure</span>
+  </div>
 </div>
+
+<!-- JOB NAME -->
+<div class="card">
+  <div class="card-title">Job</div>
+  <div class="field" style="margin-bottom:0">
+    <label>Job name / reference</label>
+    <div class="input-group" style="background:#f7f8fa">
+      <input type="text" id="job-name" placeholder="Residence — Door Unit" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/>
+    </div>
+  </div>
+</div>
+
+<!-- UNIT CARD -->
+<div class="card">
+  <div class="card-title">Units</div>
+  <div class="unit-toggle">
+    <button class="active" onclick="setUnit('in')" id="btn-in">Inches</button>
+    <button onclick="setUnit('ft')" id="btn-ft">Feet &amp; Inches</button>
+    <button onclick="setUnit('mm')" id="btn-mm">Millimetres</button>
+  </div>
+
+  <!-- Diagram -->
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 400 210" width="400" height="210" xmlns="http://www.w3.org/2000/svg" style="max-width:100%">
+      <defs>
+        <!-- Gradient matching brand header, applied across the full diagram space -->
+        <linearGradient id="jamb-grad" x1="20" y1="18" x2="360" y2="173" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#3a4260" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="#5c637a" stop-opacity="0.85"/>
+        </linearGradient>
+      </defs>
+      <!-- Frame -->
+      <rect x="20" y="18" width="340" height="155" rx="3" fill="url(#jamb-grad)"/>
+      <rect x="38" y="34" width="304" height="139" fill="#fff"/>
+      <rect x="20" y="18" width="18" height="155" fill="url(#jamb-grad)"/>
+      <rect x="342" y="18" width="18" height="155" fill="url(#jamb-grad)"/>
+      <rect x="20" y="18" width="340" height="16" fill="url(#jamb-grad)"/>
+      <line x1="20" y1="173" x2="360" y2="173" stroke="#3a4260" stroke-width="2"/>
+
+      <!-- Laser lines (neutral) -->
+      <line x1="5" y1="105" x2="395" y2="105" stroke="#aaa" stroke-width="1.2" stroke-dasharray="5,3"/>
+      <line x1="190" y1="3" x2="190" y2="202" stroke="#aaa" stroke-width="1.2" stroke-dasharray="5,3"/>
+
+      <!-- HEIGHT position labels -->
+      <text x="56" y="13" font-size="8" fill="#4361ee" font-weight="700" text-anchor="middle">LEFT</text>
+      <text x="190" y="13" font-size="8" fill="#9b59b6" font-weight="700" text-anchor="middle">CENTER</text>
+      <text x="324" y="13" font-size="8" fill="#1aab5f" font-weight="700" text-anchor="middle">RIGHT</text>
+
+      <!-- HEIGHT – Left (#4361ee blue) -->
+      <line x1="56" y1="34" x2="56" y2="105" stroke="#4361ee" stroke-width="1.5"/>
+      <polygon points="56,34 53,41 59,41" fill="#4361ee"/>
+      <polygon points="56,105 53,98 59,98" fill="#4361ee"/>
+      <text x="47" y="73" font-size="9" fill="#4361ee" font-weight="700" text-anchor="middle">U</text>
+      <line x1="56" y1="105" x2="56" y2="173" stroke="#4361ee" stroke-width="1.5"/>
+      <polygon points="56,173 53,166 59,166" fill="#4361ee"/>
+      <text x="47" y="144" font-size="9" fill="#4361ee" font-weight="700" text-anchor="middle">D</text>
+
+      <!-- HEIGHT – Centre (#9b59b6 purple) -->
+      <line x1="190" y1="34" x2="190" y2="102" stroke="#9b59b6" stroke-width="1.5" opacity="0.45"/>
+      <line x1="190" y1="108" x2="190" y2="173" stroke="#9b59b6" stroke-width="1.5" opacity="0.45"/>
+
+      <!-- HEIGHT – Right (#1aab5f green) -->
+      <line x1="324" y1="34" x2="324" y2="105" stroke="#1aab5f" stroke-width="1.5"/>
+      <polygon points="324,34 321,41 327,41" fill="#1aab5f"/>
+      <polygon points="324,105 321,98 327,98" fill="#1aab5f"/>
+      <line x1="324" y1="105" x2="324" y2="173" stroke="#1aab5f" stroke-width="1.5"/>
+      <polygon points="324,173 321,166 327,166" fill="#1aab5f"/>
+
+      <!-- WIDTH position labels -->
+      <text x="368" y="47" font-size="7.5" fill="#0097a7" font-weight="700">TOP</text>
+      <text x="368" y="108" font-size="7.5" fill="#e74c3c" font-weight="700">MID</text>
+      <text x="368" y="169" font-size="7.5" fill="#e67e22" font-weight="700">BOT</text>
+
+      <!-- WIDTH – Top (#0097a7 teal) -->
+      <line x1="38" y1="44" x2="187" y2="44" stroke="#0097a7" stroke-width="1.5"/>
+      <polygon points="38,44 45,41 45,47" fill="#0097a7"/>
+      <polygon points="190,44 183,41 183,47" fill="#0097a7"/>
+      <text x="113" y="42" font-size="9" fill="#0097a7" font-weight="700" text-anchor="middle">L</text>
+      <line x1="193" y1="44" x2="342" y2="44" stroke="#0097a7" stroke-width="1.5"/>
+      <polygon points="342,44 335,41 335,47" fill="#0097a7"/>
+      <text x="267" y="42" font-size="9" fill="#0097a7" font-weight="700" text-anchor="middle">R</text>
+
+      <!-- WIDTH – Mid (#e74c3c red) -->
+      <line x1="40" y1="105" x2="187" y2="105" stroke="#e74c3c" stroke-width="1.5" opacity="0.45"/>
+      <line x1="193" y1="105" x2="340" y2="105" stroke="#e74c3c" stroke-width="1.5" opacity="0.45"/>
+
+      <!-- WIDTH – Bottom (#e67e22 orange) -->
+      <line x1="38" y1="166" x2="187" y2="166" stroke="#e67e22" stroke-width="1.5"/>
+      <polygon points="38,166 45,163 45,169" fill="#e67e22"/>
+      <polygon points="190,166 183,163 183,169" fill="#e67e22"/>
+      <text x="113" y="162" font-size="9" fill="#e67e22" font-weight="700" text-anchor="middle">L</text>
+      <line x1="193" y1="166" x2="342" y2="166" stroke="#e67e22" stroke-width="1.5"/>
+      <polygon points="342,166 335,163 335,169" fill="#e67e22"/>
+      <text x="267" y="162" font-size="9" fill="#e67e22" font-weight="700" text-anchor="middle">R</text>
+
+    </svg>
+  </div>
+</div>
+
+<!-- VERTICAL / HEIGHT MEASUREMENTS -->
+<div class="card">
+  <div class="card-title">
+    <span style="color:#e74c3c">↕</span> Height Measurements
+    <span class="badge">3 positions across width</span>
+  </div>
+  <p style="font-size:0.78rem;color:#999;margin-bottom:12px">At each position: measure from the top of the opening down to the laser line (Up), and from the floor up to the laser line (Down)</p>
+
+  <!-- Left position -->
+  <div class="mgroup" id="mg-0">
+    <div class="mgroup-title">Left end of opening</div>
+    <div class="pair-row">
+      <div class="pair-field">
+        <label>⬆ Up (to header)</label>
+        <div id="ul-field"></div>
+      </div>
+      <div class="pair-field">
+        <label>⬇ Down (to floor)</label>
+        <div id="dl-field"></div>
+      </div>
+      <div class="pair-total">
+        <label>Height</label>
+        <div class="total-val" id="hl-total">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center position -->
+  <div class="mgroup" id="mg-1">
+    <div class="mgroup-title">Centre of opening</div>
+    <div class="pair-row">
+      <div class="pair-field">
+        <label>⬆ Up (to header)</label>
+        <div id="uc-field"></div>
+      </div>
+      <div class="pair-field">
+        <label>⬇ Down (to floor)</label>
+        <div id="dc-field"></div>
+      </div>
+      <div class="pair-total">
+        <label>Height</label>
+        <div class="total-val" id="hc-total">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right position -->
+  <div class="mgroup" id="mg-2">
+    <div class="mgroup-title">Right end of opening</div>
+    <div class="pair-row">
+      <div class="pair-field">
+        <label>⬆ Up (to header)</label>
+        <div id="ur-field"></div>
+      </div>
+      <div class="pair-field">
+        <label>⬇ Down (to floor)</label>
+        <div id="dr-field"></div>
+      </div>
+      <div class="pair-total">
+        <label>Height</label>
+        <div class="total-val" id="hr-total">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HORIZONTAL / WIDTH MEASUREMENTS -->
+<div class="card">
+  <div class="card-title">
+    <span style="color:#27ae60">↔</span> Width Measurements
+    <span class="badge">3 heights up the opening</span>
+  </div>
+  <p style="font-size:0.78rem;color:#999;margin-bottom:12px">At each height: measure from the left jamb to the laser line (Left), and from the right jamb to the laser line (Right)</p>
+
+  <!-- Top -->
+  <div class="mgroup" id="mg-5">
+    <div class="mgroup-title">Top of opening</div>
+    <div class="pair-row">
+      <div class="pair-field">
+        <label>⬅ Left (to left jamb)</label>
+        <div id="lt-field"></div>
+      </div>
+      <div class="pair-field">
+        <label>➡ Right (to right jamb)</label>
+        <div id="rt-field"></div>
+      </div>
+      <div class="pair-total">
+        <label>Width</label>
+        <div class="total-val" id="wt-total">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mid -->
+  <div class="mgroup" id="mg-4">
+    <div class="mgroup-title">Mid-height of opening</div>
+    <div class="pair-row">
+      <div class="pair-field">
+        <label>⬅ Left (to left jamb)</label>
+        <div id="lm-field"></div>
+      </div>
+      <div class="pair-field">
+        <label>➡ Right (to right jamb)</label>
+        <div id="rm-field"></div>
+      </div>
+      <div class="pair-total">
+        <label>Width</label>
+        <div class="total-val" id="wm-total">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="mgroup" id="mg-3">
+    <div class="mgroup-title">Bottom of opening</div>
+    <div class="pair-row">
+      <div class="pair-field">
+        <label>⬅ Left (to left jamb)</label>
+        <div id="lb-field"></div>
+      </div>
+      <div class="pair-field">
+        <label>➡ Right (to right jamb)</label>
+        <div id="rb-field"></div>
+      </div>
+      <div class="pair-total">
+        <label>Width</label>
+        <div class="total-val" id="wb-total">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLEARANCES -->
+<div class="card">
+  <div class="card-title">Clearances <span class="opt-label">(optional)</span></div>
+  <p style="font-size:0.78rem;color:#999;margin-bottom:14px">Gap to deduct from the opening on each side</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px">
+    <div class="field" style="margin-bottom:0">
+      <label>Top</label>
+      <select id="cl-top" class="cl-select" onchange="onInput()">
+        <option value="0">0</option>
+        <option value="0.25">¼″</option>
+        <option value="0.375">⅜″</option>
+        <option value="0.5">½″</option>
+        <option value="0.625">⅝″</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>Left</label>
+      <select id="cl-left" class="cl-select" onchange="onInput()">
+        <option value="0">0</option>
+        <option value="0.25">¼″</option>
+        <option value="0.375">⅜″</option>
+        <option value="0.5">½″</option>
+        <option value="0.625">⅝″</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>Right</label>
+      <select id="cl-right" class="cl-select" onchange="onInput()">
+        <option value="0">0</option>
+        <option value="0.25">¼″</option>
+        <option value="0.375">⅜″</option>
+        <option value="0.5">½″</option>
+        <option value="0.625">⅝″</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">Calculate Door Size</button>
+</div>
+
+<!-- RESULTS -->
+<div class="card" id="results">
+  <div class="card-title">Results</div>
+  <label style="display:inline-flex;align-items:center;gap:7px;font-size:.85rem;color:#555;margin-bottom:8px;cursor:pointer">
+    <input type="checkbox" id="show-true" checked onchange="toggleTrue()" style="width:16px;height:16px;cursor:pointer">
+    Show true opening
+  </label>
+  <div id="result-content"></div>
+  <button class="export-btn" id="pdf-btn" onclick="exportPDF()" style="display:none;background:#4361ee">
+    ⬇ Save / Download PDF
+  </button>
+  <button class="export-btn" id="shopops-btn" onclick="exportShopOps()" style="display:none;background:#26221b">
+    ⬇ Export for Shop Ops (.json)
+  </button>
+  <button class="export-btn" id="both-btn" onclick="exportBoth()" style="display:none;background:#7a2e2e">
+    ⬇ Save BOTH — PDF (records) + JSON
+  </button>
+  <button class="export-btn" id="drive-btn" onclick="sendToDrive()" style="display:none;background:#1a7340">
+    ☁ Save to Drive table
+  </button>
+  <button class="export-btn" id="export-btn" onclick="exportDXF()" style="display:none">
+    ⬇ Export for SketchUp (.dxf)
+  </button>
+  <button class="reset-btn" onclick="reset()">Clear &amp; Start Over</button>
+</div>
+
+<script>
+  let unit = 'in';
+  // === SHOP CONFIG (set once before deploy) ===
+  // Paste your Google Apps Script web-app URL here to enable "Save to Drive table"
+  // (see TR_measurements_setup.md — the script appends each export as a row in the
+  //  TR Measurements & Verification sheet). Leave "" to disable the button.
+  const DRIVE_ENDPOINT = "https://script.google.com/macros/s/AKfycbzLZIRUIBacgJtMztKE67WTeJudj77Oqb-zVcUnhTklBO1OdxGHVx8YKpCJgokObySG/exec";
+  let lastCalc = null; // stores { widthIn, heightIn } after each calculation
+
+  // Group colours — exact match to diagram line colours
+  const COLORS = [
+    { bg: '#eef3ff', inputBg: '#f5f8ff', accent: '#4361ee' }, // Height Left   — blue
+    { bg: '#f7f0fd', inputBg: '#faf5fe', accent: '#9b59b6' }, // Height Centre — purple
+    { bg: '#edfaf3', inputBg: '#f4fdf8', accent: '#1aab5f' }, // Height Right  — green
+    { bg: '#fff4e6', inputBg: '#fffaf2', accent: '#e67e22' }, // Width Bottom  — orange
+    { bg: '#fef0f0', inputBg: '#fff6f6', accent: '#e74c3c' }, // Width Mid     — red
+    { bg: '#e6f7f9', inputBg: '#f2fcfd', accent: '#0097a7' }, // Width Top     — teal
+  ];
+
+  const HEIGHT_PAIRS = [
+    { up:'ul', dn:'dl', tot:'hl-total', label:'Left',   ci: 0 },
+    { up:'uc', dn:'dc', tot:'hc-total', label:'Centre', ci: 1 },
+    { up:'ur', dn:'dr', tot:'hr-total', label:'Right',  ci: 2 },
+  ];
+  const WIDTH_PAIRS = [
+    { lf:'lb', rt:'rb', tot:'wb-total', label:'Bottom', ci: 3 },
+    { lf:'lm', rt:'rm', tot:'wm-total', label:'Mid',    ci: 4 },
+    { lf:'lt', rt:'rt', tot:'wt-total', label:'Top',    ci: 5 },
+  ];
+  // Collect all raw input IDs (clearances are now selects, not rendered by buildInput)
+  function allFieldIds() {
+    const ids = [];
+    HEIGHT_PAIRS.forEach(p => { ids.push(p.up); ids.push(p.dn); });
+    WIDTH_PAIRS.forEach(p => { ids.push(p.lf); ids.push(p.rt); });
+    return ids;
+  }
+
+  function getClearances() {
+    return {
+      top:   parseFloat(document.getElementById('cl-top')?.value)   || 0,
+      left:  parseFloat(document.getElementById('cl-left')?.value)  || 0,
+      right: parseFloat(document.getElementById('cl-right')?.value) || 0,
+    };
+  }
+
+  function setUnit(u) {
+    unit = u;
+    ['in','ft','mm'].forEach(x =>
+      document.getElementById('btn-'+x).classList.toggle('active', x===u));
+    renderFields();
+  }
+
+  function buildInput(id) {
+    if (unit === 'ft') {
+      return `<div class="ft-pair">
+        <div class="input-group">
+          <input type="number" inputmode="decimal" min="0" id="${id}-ft" placeholder="0" oninput="onInput()"/>
+          <span class="unit">ft</span>
+        </div>
+        <div class="input-group">
+          <input type="number" inputmode="decimal" min="0" max="11.99" id="${id}-in" placeholder="0" oninput="onInput()"/>
+          <span class="unit">in</span>
+        </div>
+      </div>`;
+    } else if (unit === 'mm') {
+      return `<div class="input-group">
+        <input type="number" inputmode="decimal" min="0" id="${id}-mm" placeholder="0" oninput="onInput()"/>
+        <span class="unit">mm</span>
+      </div>`;
+    } else {
+      return `<div class="input-group">
+        <input type="number" inputmode="decimal" min="0" id="${id}-raw" placeholder="0" oninput="onInput()"/>
+        <span class="unit">in</span>
+      </div>`;
+    }
+  }
+
+  function applyColors() {
+    [...HEIGHT_PAIRS, ...WIDTH_PAIRS].forEach(p => {
+      const c = COLORS[p.ci];
+      const mg = document.getElementById('mg-' + p.ci);
+      if (!mg) return;
+      mg.style.background = c.bg;
+      mg.style.borderColor = c.accent + '55';
+      const title = mg.querySelector('.mgroup-title');
+      if (title) title.style.color = c.accent;
+      mg.querySelectorAll('.input-group').forEach(ig => {
+        ig.style.background = c.inputBg;
+        ig.style.borderColor = c.accent + '55';
+      });
+      const tv = document.getElementById(p.tot);
+      if (tv) { tv.style.background = c.bg; tv.style.color = c.accent; }
+    });
+  }
+
+  function renderFields() {
+    allFieldIds().forEach(id => {
+      const el = document.getElementById(id+'-field');
+      if (el) el.innerHTML = buildInput(id);
+    });
+    applyColors();
+    onInput();
+  }
+
+  function getIn(id) {
+    if (unit === 'ft') {
+      const ft  = parseFloat(document.getElementById(id+'-ft')?.value)  || 0;
+      const inn = parseFloat(document.getElementById(id+'-in')?.value)  || 0;
+      return ft * 12 + inn;
+    } else if (unit === 'mm') {
+      return (parseFloat(document.getElementById(id+'-mm')?.value) || 0) / 25.4;
+    } else {
+      return parseFloat(document.getElementById(id+'-raw')?.value) || 0;
+    }
+  }
+
+  function fmtIn(v) {
+    if (!v) return '—';
+    const ft  = Math.floor(v / 12);
+    const inn = Math.round((v % 12) * 100) / 100;
+    return inn === 0 ? `${ft}′` : `${ft}′ ${inn}″`;
+  }
+
+  function fmt(v) {
+    if (!v) return '—';
+    if (unit === 'mm') return Math.round(v * 25.4) + ' mm';
+    return fmtIn(v);
+  }
+
+  function onInput() {
+    // Update live height totals
+    HEIGHT_PAIRS.forEach(p => {
+      const u = getIn(p.up), d = getIn(p.dn);
+      const el = document.getElementById(p.tot);
+      el.textContent = (u || d) ? fmt(u + d) : '—';
+    });
+    // Update live width totals
+    WIDTH_PAIRS.forEach(p => {
+      const l = getIn(p.lf), r = getIn(p.rt);
+      const el = document.getElementById(p.tot);
+      el.textContent = (l || r) ? fmt(l + r) : '—';
+    });
+  }
+
+  /* The buildable box with a shadow line around it showing the opening as
+     measured. Drawn true to scale — no exaggeration — so a square opening shows
+     the line sitting on the box, and a leaning one shows it lean.
+     Each leg is drawn separately so it can carry its own colour: at 1/2in or
+     more outside the box a leg turns red, because that is the point where it
+     stops being a shim and starts being a scribe. */
+  const OUT_LIMIT = 0.5;
+  function showTrue() {
+    const el = document.getElementById('show-true');
+    return el ? el.checked : true;
+  }
+  window.toggleTrue = function () {
+    try { localStorage.setItem('tr.showTrue', showTrue() ? '1' : '0'); } catch (e) {}
+    if (document.getElementById('results').style.display !== 'none') calculate();
+  };
+  function openingShadow(buildW, buildH) {
+    if (!showTrue()) return '';
+    const tot = (a, b) => getIn(a) + getIn(b);
+    const wB = tot('lb','rb'), wM = tot('lm','rm'), wT = tot('lt','rt');
+    const hL = tot('ul','dl'), hC = tot('uc','dc'), hR = tot('ur','dr');
+    const ws = [wB, wM, wT].filter(v => v > 0), hs = [hL, hC, hR].filter(v => v > 0);
+    if (!ws.length || !hs.length || !(buildW > 0) || !(buildH > 0)) return '';
+    const w0 = Math.min(...ws), h0 = Math.min(...hs);
+    const W2 = wB || w0, M2 = wM || w0, T2 = wT || w0;
+    const L2 = hL || h0, C2 = hC || h0, R2 = hR || h0;
+
+    const maxW = Math.max(W2, M2, T2, buildW), maxH = Math.max(L2, C2, R2, buildH);
+    const PAD = 14, W = 440, sc = (W - PAD * 2) / maxW;
+    const H = Math.round(maxH * sc + PAD * 2), cx = W / 2, base = H - PAD;
+    const bw = buildW * sc, bh = buildH * sc, bx = cx - bw / 2, by = base - bh;
+    const xB = (W2 / 2) * sc, xM = (M2 / 2) * sc, xT = (T2 / 2) * sc;
+    const yL = L2 * sc, yC = C2 * sc, yR = R2 * sc;
+
+    // how far each leg sits outside the buildable box
+    const outBottom = W2 - buildW, outTop = T2 - buildW;
+    const outLeft   = L2 - buildH, outRight = R2 - buildH;
+    const leg = (d, path) => {
+      const hot = d >= OUT_LIMIT;
+      return `<path d="${path}" fill="none" stroke="${hot ? '#c0392b' : '#26221b'}"
+        stroke-width="${hot ? 2.2 : 1.5}" opacity="${hot ? 0.85 : 0.5}"/>`;
+    };
+
+    const pBottom = `M ${cx - xB} ${base} L ${cx + xB} ${base}`;
+    const pLeft   = `M ${cx - xB} ${base} Q ${cx - xM} ${base - yL / 2} ${cx - xT} ${base - yL}`;
+    const pTop    = `M ${cx - xT} ${base - yL} Q ${cx} ${base - yC} ${cx + xT} ${base - yR}`;
+    const pRight  = `M ${cx + xT} ${base - yR} Q ${cx + xM} ${base - yR / 2} ${cx + xB} ${base}`;
+
+    return `<div style="text-align:center;margin-top:12px">
+      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="max-width:100%">
+        ${leg(outBottom, pBottom)}
+        ${leg(outLeft,   pLeft)}
+        ${leg(outTop,    pTop)}
+        ${leg(outRight,  pRight)}
+        <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="none" stroke="#1a7340" stroke-width="2"/>
+      </svg></div>`;
+  }
+
+  try {
+    const pref = localStorage.getItem('tr.showTrue');
+    if (pref === '0') document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('show-true'); if (el) el.checked = false;
+    });
+  } catch (e) {}
+
+  function calculate() {
+    // Collect all individual directional readings (carry ci for colour)
+    const lefts  = WIDTH_PAIRS.map(p => ({ label: p.label, val: getIn(p.lf), ci: p.ci })).filter(x => x.val > 0);
+    const rights  = WIDTH_PAIRS.map(p => ({ label: p.label, val: getIn(p.rt), ci: p.ci })).filter(x => x.val > 0);
+    const ups     = HEIGHT_PAIRS.map(p => ({ label: p.label, val: getIn(p.up), ci: p.ci })).filter(x => x.val > 0);
+    const downs   = HEIGHT_PAIRS.map(p => ({ label: p.label, val: getIn(p.dn), ci: p.ci })).filter(x => x.val > 0);
+
+    if (!lefts.length || !rights.length || !ups.length || !downs.length) {
+      alert('Please enter at least one reading in each direction (Left, Right, Up, Down).');
+      return;
+    }
+
+    // Smallest individual component in each direction
+    const minLeft  = Math.min(...lefts.map(x => x.val));
+    const minRight = Math.min(...rights.map(x => x.val));
+    const minUp    = Math.min(...ups.map(x => x.val));
+    const minDown  = Math.min(...downs.map(x => x.val));
+
+    const rawMinW = minLeft + minRight;
+    const rawMinH = minUp   + minDown;
+
+    const cl = getClearances();
+    const minWidth  = rawMinW - cl.left - cl.right;
+    const minHeight = rawMinH - cl.top;
+
+    let html = '';
+
+    // Formatting helpers for results
+    const decIn = v => `${Math.round(v * 1000) / 1000}″`;
+    const ftIn  = v => {
+      const ft  = Math.floor(v / 12);
+      const inn = Math.round((v % 12) * 1000) / 1000;
+      return inn === 0 ? `${ft}′` : (ft === 0 ? `${inn}″` : `${ft}′ ${inn}″`);
+    };
+
+    // Max door size — primary result
+    html += `<div class="result-main">
+      <div class="door-label" style="margin-bottom:10px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:#888">Maximum door size</div>
+      <div style="display:flex;justify-content:center;gap:24px;align-items:center;margin-bottom:4px">
+        <div style="text-align:center">
+          <div class="door-size">${decIn(minWidth)}</div>
+          <div style="font-size:0.95rem;color:#7a8bbf;font-weight:600;margin-top:3px">${ftIn(minWidth)}</div>
+          <div class="door-label" style="margin-top:4px">Width</div>
+        </div>
+        <div style="font-size:2rem;color:#ccc">×</div>
+        <div style="text-align:center">
+          <div class="door-size">${decIn(minHeight)}</div>
+          <div style="font-size:0.95rem;color:#7a8bbf;font-weight:600;margin-top:3px">${ftIn(minHeight)}</div>
+          <div class="door-label" style="margin-top:4px">Height</div>
+        </div>
+      </div>
+    </div>`;
+
+    // Clearance note
+    const fmtCl = v => v === 0.25 ? '¼″' : v === 0.375 ? '⅜″' : v === 0.5 ? '½″' : v === 0.625 ? '⅝″' : '0';
+    if (cl.top || cl.left || cl.right) {
+      html += `<div class="info-box" style="margin-bottom:14px">
+        Clearances deducted — Top: ${fmtCl(cl.top)}, Left: ${fmtCl(cl.left)}, Right: ${fmtCl(cl.right)}.
+        Opening before clearances: <strong>${fmt(rawMinW)} wide × ${fmt(rawMinH)} tall</strong>.
+      </div>`;
+    }
+
+    // Breakdown table — individual directional readings
+    const allDirs = [
+      { group: 'Left',  rows: lefts,  min: minLeft  },
+      { group: 'Right', rows: rights, min: minRight },
+      { group: 'Up',    rows: ups,    min: minUp    },
+      { group: 'Down',  rows: downs,  min: minDown  },
+    ];
+
+    const hasMultiple = allDirs.some(d => d.rows.length > 1);
+    if (hasMultiple) {
+      html += `<p class="section-title" style="margin-top:14px">Individual readings</p>
+      <table class="variance-table">
+        <thead><tr><th>Direction</th><th>Position</th><th>Reading</th><th></th></tr></thead>
+        <tbody>`;
+
+      allDirs.forEach(d => {
+        d.rows.forEach(r => {
+          const c = COLORS[r.ci];
+          const isMin = r.val === d.min && d.rows.length > 1;
+          const isMax = r.val === Math.max(...d.rows.map(x=>x.val)) && d.rows.length > 1 && r.val !== d.min;
+          const swatch = `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${c.accent};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>`;
+          html += `<tr style="background:${c.bg}">
+            <td>${d.group}</td>
+            <td>${swatch}${r.label}</td>
+            <td class="${isMin?'is-min':isMax?'is-max':''}">${fmt(r.val)}</td>
+            <td style="color:${c.accent};font-weight:600">${isMin?'⬅ used':''}</td>
+          </tr>`;
+        });
+      });
+
+      html += `</tbody></table>
+      <p style="font-size:0.72rem;color:#aaa;margin-top:6px">The smallest reading in each direction is used (marked ⬅ used).</p>`;
+    }
+
+    try { html += openingShadow(minWidth, minHeight); } catch (e) {}
+    document.getElementById('result-content').innerHTML = html;
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('pdf-btn').style.display = 'block';
+    document.getElementById('export-btn').style.display = 'block';
+    document.getElementById('shopops-btn').style.display = 'block';
+    document.getElementById('both-btn').style.display = 'block';
+    if (DRIVE_ENDPOINT) document.getElementById('drive-btn').style.display = 'block';
+    const jobName = (document.getElementById('job-name')?.value || '').trim();
+    lastCalc = { widthIn: minWidth, heightIn: minHeight, jobName };
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function reset() {
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('pdf-btn').style.display = 'none';
+    document.getElementById('shopops-btn').style.display = 'none';
+    document.getElementById('both-btn').style.display = 'none';
+    document.getElementById('drive-btn').style.display = 'none';
+    document.getElementById('export-btn').style.display = 'none';
+    lastCalc = null;
+    renderFields();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  // ── PDF export ───────────────────────────────────────────────────────────
+  function shopOpsPayload() {
+    if (!lastCalc) return null;
+    const rnd = v => Math.round(v * 10000) / 10000;
+    const wid = WIDTH_PAIRS.map(p => ({ pos: p.label, total: rnd((getIn(p.lf)||0) + (getIn(p.rt)||0)) })).filter(x => x.total > 0);
+    const hei = HEIGHT_PAIRS.map(p => ({ pos: p.label, total: rnd((getIn(p.up)||0) + (getIn(p.dn)||0)) })).filter(x => x.total > 0);
+    return {
+      app: 'bifolded-laser', version: 1,
+      job: document.getElementById('job-name').value || '',
+      date: new Date().toISOString().slice(0,10),
+      unit: 'in',
+      widthReadings: wid, heightReadings: hei,
+      clearances: getClearances(),
+      maxDoor: { widthIn: lastCalc.widthIn, heightIn: lastCalc.heightIn }
+    };
+  }
+  function exportBoth() {
+    if (!lastCalc) { alert('Calculate first.'); return; }
+    Promise.resolve(exportPDF()).catch(() => alert('PDF library could not load (offline?) — JSON still saved.'));
+    exportShopOps();
+    if (DRIVE_ENDPOINT) sendToDrive();
+  }
+  async function sendToDrive() {
+    const data = shopOpsPayload();
+    if (!data) { alert('Calculate first.'); return; }
+    if (!DRIVE_ENDPOINT) { alert('No Drive endpoint configured — see TR_measurements_setup.md'); return; }
+    const btn = document.getElementById('drive-btn');
+    const old = btn.textContent;
+    btn.textContent = 'Sending…'; btn.disabled = true;
+    try {
+      await fetch(DRIVE_ENDPOINT, { method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data) });
+      btn.textContent = '✓ Saved to Drive table';
+      setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2500);
+    } catch (e) {
+      btn.textContent = '✗ Failed — JSON downloaded instead'; btn.disabled = false;
+      exportShopOps();
+    }
+  }
+  function exportShopOps() {
+    const data = shopOpsPayload();
+    if (!data) { alert('Calculate first.'); return; }
+    const a3 = document.createElement('a');
+    a3.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+    a3.download = ((data.job || 'opening').replace(/[^A-Za-z0-9_-]+/g, '_')) + '_laser.json';
+    a3.click();
+  }
+
+  async function exportPDF() {
+    if (!lastCalc) return;
+
+    if (!window.jspdf) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    const { widthIn, heightIn, jobName } = lastCalc;
+    const cl = getClearances();
+
+    const decIn = v => `${Math.round(v * 1000) / 1000}"`;
+    const ftIn  = v => {
+      const ft  = Math.floor(v / 12);
+      const inn = Math.round((v % 12) * 1000) / 1000;
+      return inn === 0 ? `${ft}'` : (ft === 0 ? `${inn}"` : `${ft}' ${inn}"`);
+    };
+    const fmtCl = v => v === 0.25 ? '1/4"' : v === 0.375 ? '3/8"' : v === 0.5 ? '1/2"' : v === 0.625 ? '5/8"' : '0';
+    const fmtVal = v => v > 0 ? decIn(v) : '-';
+
+    const lm = 18, pw = 174;
+    let y = 0;
+
+    // ── Logo header (dark brand bar) ──
+    doc.setFillColor(58, 66, 96);
+    doc.rect(0, 0, 210, 22, 'F');
+
+    // Gold door icon — outer box (stroke only)
+    const ix = lm, iy = 4.5, iw = 11, ih = 13;
+    doc.setDrawColor(201, 168, 76);
+    doc.setLineWidth(0.55);
+    doc.rect(ix, iy, iw, ih);
+    // Divider offset to right (~69% across, matching SVG x=29 in 36-wide box)
+    const divX = ix + iw * 0.694;
+    doc.line(divX, iy, divX, iy + ih);
+
+    // "BIFOLDED" brand name
+    doc.setFontSize(13);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('BIFOLDED', lm + 14, 12);
+
+    // "Laser Measure" sub-label
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(160, 170, 200);
+    doc.text('LASER MEASURE', lm + 14, 18.5);
+
+    doc.setTextColor(0);
+    y = 30;
+
+    // ── Date ──
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(140);
+    doc.text(new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' }), lm, y);
+    doc.setTextColor(0);
+    y += 10;
+
+    // ── Job name (under date) ──
+    if (jobName) {
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(30, 38, 70);
+      doc.text(jobName, lm, y);
+      doc.setTextColor(0);
+      y += 9;
+    }
+    y += 4;
+
+    // ── Result box (dark brand color) ──
+    doc.setFillColor(58, 66, 96);
+    doc.roundedRect(lm, y, pw, 28, 3, 3, 'F');
+    doc.setFontSize(7.5);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(160, 170, 200);
+    doc.text('DOOR UNIT SIZE', lm + 5, y + 7);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text(`${decIn(widthIn)}  x  ${decIn(heightIn)}`, lm + 5, y + 20);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(160, 170, 200);
+    doc.text(`${ftIn(widthIn)}  x  ${ftIn(heightIn)}`, lm + pw - 5, y + 20, { align: 'right' });
+    doc.setTextColor(0);
+    y += 34;
+
+    // ── Scaled opening diagram ──
+    {
+      const maxDW = pw - 28;   // reserve 28mm right side for height label
+      const maxDH = 68;
+      const scaleW = maxDW / widthIn;
+      const scaleH = maxDH / heightIn;
+      const sc     = Math.min(scaleW, scaleH);
+      const dW     = widthIn  * sc;
+      const dH     = heightIn * sc;
+      const dX     = lm + (pw - dW - 28) / 2;  // centre within available width
+      const dY     = y;
+
+      // Opening fill + border
+      doc.setFillColor(238, 242, 255);
+      doc.rect(dX, dY, dW, dH, 'F');
+      doc.setDrawColor(58, 66, 96);
+      doc.setLineWidth(0.6);
+      doc.rect(dX, dY, dW, dH);
+
+      // ── Width dimension line (below) ──
+      const dimY = dY + dH + 8;
+      const tkH  = 4;  // tick height
+      doc.setDrawColor(80, 88, 116);
+      doc.setLineWidth(0.35);
+      // extension lines
+      doc.line(dX,      dY + dH, dX,      dimY + tkH / 2);
+      doc.line(dX + dW, dY + dH, dX + dW, dimY + tkH / 2);
+      // dimension line — broken in centre for label
+      const wGap = 18;
+      doc.line(dX, dimY, dX + dW / 2 - wGap / 2, dimY);
+      doc.line(dX + dW / 2 + wGap / 2, dimY, dX + dW, dimY);
+      // arrowheads (filled triangles)
+      doc.setFillColor(80, 88, 116);
+      doc.triangle(dX,      dimY, dX + 2.5, dimY - 1.2, dX + 2.5, dimY + 1.2, 'F');
+      doc.triangle(dX + dW, dimY, dX + dW - 2.5, dimY - 1.2, dX + dW - 2.5, dimY + 1.2, 'F');
+      // width label centred on the dimension line
+      const wLabel1 = decIn(widthIn);
+      doc.setFontSize(8.5);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(30, 38, 70);
+      doc.text(wLabel1, dX + dW / 2, dimY + 1.8, { align: 'center' });
+
+      // ── Height dimension line (right) ──
+      const dimX = dX + dW + 8;
+      const tkW  = 4;
+      doc.setDrawColor(80, 88, 116);
+      doc.setLineWidth(0.35);
+      // extension lines
+      doc.line(dX + dW, dY,      dimX + tkW / 2, dY);
+      doc.line(dX + dW, dY + dH, dimX + tkW / 2, dY + dH);
+      // dimension line — broken in centre for label
+      const hGap = 14;
+      doc.line(dimX, dY, dimX, dY + dH / 2 - hGap / 2);
+      doc.line(dimX, dY + dH / 2 + hGap / 2, dimX, dY + dH);
+      // arrowheads
+      doc.setFillColor(80, 88, 116);
+      doc.triangle(dimX, dY,      dimX - 1.2, dY + 2.5, dimX + 1.2, dY + 2.5, 'F');
+      doc.triangle(dimX, dY + dH, dimX - 1.2, dY + dH - 2.5, dimX + 1.2, dY + dH - 2.5, 'F');
+      // height label centred on the dimension line (rotated)
+      const hLabel1 = decIn(heightIn);
+      doc.setFontSize(8.5);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(30, 38, 70);
+      doc.text(hLabel1, dimX + 1.8, dY + dH / 2, { angle: 90, align: 'center' });
+
+      y = dY + dH + 18;  // advance past diagram + width label
+    }
+
+    // ── Clearance note ──
+    if (cl.top || cl.left || cl.right) {
+      doc.setFontSize(8.5);
+      doc.setTextColor(100);
+      doc.text(
+        `Clearances deducted — Top: ${fmtCl(cl.top)}, Left: ${fmtCl(cl.left)}, Right: ${fmtCl(cl.right)}`,
+        lm, y
+      );
+      doc.setTextColor(0);
+      y += 8;
+    }
+
+    // ── Measurements tables ──
+    const drawTableSection = (title, pairs, colLabels, getA, getB) => {
+      const aVals = pairs.map(p => getA(p)).filter(v => v > 0);
+      const bVals = pairs.map(p => getB(p)).filter(v => v > 0);
+      const minA = aVals.length ? Math.min(...aVals) : null;
+      const maxA = aVals.length > 1 ? Math.max(...aVals) : null;
+      const minB = bVals.length ? Math.min(...bVals) : null;
+      const maxB = bVals.length > 1 ? Math.max(...bVals) : null;
+
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(30, 38, 70);
+      doc.text(title, lm, y);
+      y += 5;
+
+      // Table header row (dark brand)
+      doc.setFillColor(58, 66, 96);
+      doc.rect(lm, y, pw, 6.5, 'F');
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text('Position',    lm + 2,   y + 4.5);
+      doc.text(colLabels[0],  lm + 52,  y + 4.5);
+      doc.text(colLabels[1],  lm + 100, y + 4.5);
+      doc.text('Total',       lm + 151, y + 4.5);
+      y += 6.5;
+
+      pairs.forEach((p, i) => {
+        const a = getA(p), b = getB(p);
+        const colAx = lm + 48, colBx = lm + 96, colW = 50;
+
+        // Row base
+        doc.setFillColor(i % 2 === 0 ? 246 : 255, i % 2 === 0 ? 247 : 255, i % 2 === 0 ? 252 : 255);
+        doc.rect(lm, y, pw, 6.5, 'F');
+
+        // Column A highlight
+        if (a > 0 && minA !== null && a === minA && aVals.length > 1) {
+          doc.setFillColor(213, 243, 221);
+          doc.rect(colAx, y, colW, 6.5, 'F');
+        } else if (a > 0 && maxA !== null && a === maxA) {
+          doc.setFillColor(255, 242, 210);
+          doc.rect(colAx, y, colW, 6.5, 'F');
+        }
+
+        // Column B highlight
+        if (b > 0 && minB !== null && b === minB && bVals.length > 1) {
+          doc.setFillColor(213, 243, 221);
+          doc.rect(colBx, y, colW, 6.5, 'F');
+        } else if (b > 0 && maxB !== null && b === maxB) {
+          doc.setFillColor(255, 242, 210);
+          doc.rect(colBx, y, colW, 6.5, 'F');
+        }
+
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(0);
+        doc.text(p.label, lm + 2, y + 4.5);
+
+        if (a > 0 && a === minA && aVals.length > 1)  doc.setTextColor(25, 110, 50);
+        else if (a > 0 && a === maxA)                  doc.setTextColor(150, 85, 0);
+        else                                           doc.setTextColor(0);
+        doc.text(fmtVal(a), lm + 52, y + 4.5);
+
+        if (b > 0 && b === minB && bVals.length > 1)  doc.setTextColor(25, 110, 50);
+        else if (b > 0 && b === maxB)                  doc.setTextColor(150, 85, 0);
+        else                                           doc.setTextColor(0);
+        doc.text(fmtVal(b), lm + 100, y + 4.5);
+
+        doc.setTextColor(0);
+        doc.text((a || b) ? decIn(a + b) : '-', lm + 151, y + 4.5);
+        y += 6.5;
+      });
+      y += 5;
+    };
+
+    drawTableSection(
+      'Height Measurements', HEIGHT_PAIRS,
+      ['Up (top to laser)', 'Down (floor to laser)'],
+      p => getIn(p.up), p => getIn(p.dn)
+    );
+
+    const widthOrder = [WIDTH_PAIRS[2], WIDTH_PAIRS[1], WIDTH_PAIRS[0]];
+    drawTableSection(
+      'Width Measurements', widthOrder,
+      ['Left (edge to laser)', 'Right (edge to laser)'],
+      p => getIn(p.lf), p => getIn(p.rt)
+    );
+
+    // ── Highlight legend ──
+    doc.setFontSize(7.5);
+    doc.setFillColor(213, 243, 221);
+    doc.rect(lm, y, 6, 4, 'F');
+    doc.setTextColor(25, 110, 50);
+    doc.text('Lowest value (used in calculation)', lm + 8, y + 3.2);
+    doc.setFillColor(255, 242, 210);
+    doc.rect(lm + 95, y, 6, 4, 'F');
+    doc.setTextColor(150, 85, 0);
+    doc.text('Highest value', lm + 103, y + 3.2);
+    doc.setTextColor(0);
+    y += 10;
+
+    // ── Footer ──
+    doc.setFontSize(7.5);
+    doc.setTextColor(180);
+    doc.text('BiFolded Laser Measure', lm, 290);
+    doc.text(new Date().toLocaleString(), lm + pw, 290, { align: 'right' });
+
+    const safeName = (jobName || 'door-opening').replace(/[^a-z0-9\-_]/gi, '_');
+    doc.save(`${safeName}.pdf`);
+  }
+
+  // ── DXF export ────────────────────────────────────────────────────────────
+  function fmtFt(inches) {
+    const ft  = Math.floor(Math.abs(inches) / 12);
+    const inn = Math.round((Math.abs(inches) % 12) * 1000) / 1000;
+    const s   = inn === 0 ? `${ft}'` : (ft === 0 ? `${inn}"` : `${ft}' ${inn}"`);
+    return inches < 0 ? '-' + s : s;
+  }
+
+  function buildDXF(W, H, job='') {
+    // All units in inches. Origin = bottom-left corner of opening.
+    const dimGap  = Math.max(W, H) * 0.07;  // gap between opening and dim line
+    const tickExt = dimGap * 0.4;            // extension line overshoot
+    const textH   = Math.max(W, H) * 0.045; // text height
+
+    const ln = (x1,y1,x2,y2,layer='OPENING') =>
+      `0\nLINE\n8\n${layer}\n10\n${x1}\n20\n${y1}\n30\n0.0\n11\n${x2}\n21\n${y2}\n31\n0.0\n`;
+
+    const txt = (x, y, h, str, angle=0, layer='DIMS', halign=1) =>
+      `0\nTEXT\n8\n${layer}\n10\n${x}\n20\n${y}\n30\n0.0\n40\n${h}\n1\n${str}\n50\n${angle}\n72\n${halign}\n11\n${x}\n21\n${y}\n31\n0.0\n`;
+
+    let e = '';
+
+    // Opening rectangle
+    e += ln(0,0, W,0);
+    e += ln(W,0, W,H);
+    e += ln(W,H, 0,H);
+    e += ln(0,H, 0,0);
+
+    // ── Width dimension (below opening) ──────────────────────────
+    const wy = -(dimGap);
+    // extension lines
+    e += ln(0, 0, 0, wy - tickExt, 'DIMS');
+    e += ln(W, 0, W, wy - tickExt, 'DIMS');
+    // dimension line with arrows
+    e += ln(0, wy, W, wy, 'DIMS');
+    // arrowheads (tick marks at 45°)
+    const aw = textH * 0.8;
+    e += ln(0, wy, aw, wy + aw*0.4, 'DIMS');
+    e += ln(0, wy, aw, wy - aw*0.4, 'DIMS');
+    e += ln(W, wy, W-aw, wy + aw*0.4, 'DIMS');
+    e += ln(W, wy, W-aw, wy - aw*0.4, 'DIMS');
+    // text
+    e += txt(W/2, wy - textH*1.4, textH, fmtFt(W));
+
+    // ── Height dimension (left of opening) ───────────────────────
+    const hx = -(dimGap);
+    e += ln(0, 0, hx - tickExt, 0, 'DIMS');
+    e += ln(0, H, hx - tickExt, H, 'DIMS');
+    e += ln(hx, 0, hx, H, 'DIMS');
+    e += ln(hx, 0, hx + aw*0.4, aw, 'DIMS');
+    e += ln(hx, 0, hx - aw*0.4, aw, 'DIMS');
+    e += ln(hx, H, hx + aw*0.4, H-aw, 'DIMS');
+    e += ln(hx, H, hx - aw*0.4, H-aw, 'DIMS');
+    // rotated text
+    e += txt(hx - textH*1.4, H/2, textH, fmtFt(H), 90);
+
+    // ── Title text (top-right corner) ────────────────────────────
+    const titleStr = job
+      ? `${job}  —  ${fmtFt(W)} x ${fmtFt(H)}`
+      : `BiFold Opening: ${fmtFt(W)} x ${fmtFt(H)}`;
+    e += txt(W, H + textH*0.5, textH*0.85, titleStr, 0, 'TITLE', 2);
+
+    return [
+      '0\nSECTION\n2\nHEADER\n',
+      '9\n$INSUNITS\n70\n1\n',          // 1 = inches
+      '9\n$MEASUREMENT\n70\n0\n',        // 0 = Imperial
+      '0\nENDSEC\n',
+      '0\nSECTION\n2\nTABLES\n',
+      '0\nTABLE\n2\nLAYER\n70\n3\n',
+      '0\nLAYER\n2\nOPENING\n70\n0\n62\n7\n6\nContinuous\n',
+      '0\nLAYER\n2\nDIMS\n70\n0\n62\n3\n6\nContinuous\n',
+      '0\nLAYER\n2\nTITLE\n70\n0\n62\n1\n6\nContinuous\n',
+      '0\nENDTAB\n',
+      '0\nENDSEC\n',
+      '0\nSECTION\n2\nENTITIES\n',
+      e,
+      '0\nENDSEC\n0\nEOF\n',
+    ].join('');
+  }
+
+  function exportDXF() {
+    if (!lastCalc) return;
+    const { widthIn, heightIn, jobName } = lastCalc;
+    const dxf      = buildDXF(widthIn, heightIn, jobName);
+    const blob     = new Blob([dxf], { type: 'application/dxf' });
+    const url      = URL.createObjectURL(blob);
+    const a        = document.createElement('a');
+    a.href         = url;
+    const safeName = jobName
+      ? jobName.replace(/[^a-z0-9_\-\s]/gi, '').trim().replace(/\s+/g, '-')
+      : 'bifold-opening';
+    a.download     = `${safeName}.dxf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  renderFields();
+</script>
 </body>
 </html>
