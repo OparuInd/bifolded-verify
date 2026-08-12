@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Tungsten Royce — My Assignments</title>
-<!-- v1.4 — keyed personal links; server returns only YOUR slice.
+<!-- v1.5 — keyed personal links; server returns only YOUR slice.
      Office staff get a corporate-framed page: no fab sections, task status shown.
      Sending a photo/PDF back is always on for office, and per-person for the shop
-     crew (the office ticks 'can send'). Files go to Drive, never into the app. -->
+     crew (the office ticks 'can send'). Files go to Drive, never into the app.
+     v1.5: office staff move their own task along and can type a message back. -->
 <style>
 :root{
   --ink:#1d2125; --ink-soft:#54606b; --line:#e2e6ea;
@@ -47,6 +48,15 @@ h1{margin:0 0 2px;font-size:22px;letter-spacing:-.01em}
 .send input[type=file]{display:none}
 .send .st{font-size:12px;color:var(--ink-soft);margin-left:8px}
 .send .st.bad{color:var(--bad);font-weight:600} .send .st.ok{color:var(--ok);font-weight:600}
+.act{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.act .btns{display:flex;gap:6px;flex-wrap:wrap}
+.act button{font-family:inherit;font-size:13px;font-weight:600;padding:8px 12px;border:1px solid var(--line);
+  border-radius:9px;background:var(--card);cursor:pointer;color:var(--ink)}
+.act button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.act textarea{width:100%;margin-top:7px;font-family:inherit;font-size:14px;padding:9px 10px;
+  border:1px solid var(--line);border-radius:9px;resize:vertical;min-height:56px;background:var(--card)}
+.act .row2{display:flex;align-items:center;gap:8px;margin-top:6px}
+.act .row2 button.send-msg{background:var(--ink);color:#fff;border-color:var(--ink)}
 </style>
 </head>
 <body>
@@ -107,6 +117,17 @@ function render(){
       <label>\ud83d\udcce Send a photo or PDF<input type="file" accept="image/*,application/pdf"
         onchange="sendFile('${esc(uid)}',this,'${esc(String(label||"").replace(/'/g,"\\'"))}')"></label>
       <span class="st" id="st${esc(uid)}"></span></div>`:"";
+  /* v1.5 — all three are theirs to press. Squizz asked for it plainly: he would
+     rather see the thing move in real time and archive it himself than police a
+     queue of claims. The message box matters just as much — half of what comes
+     back is a question about a dimension, not an answer. */
+  const ST=[["recv","Received"],["work","Working on it"],["done","Resolved"]];
+  const actBox=(x)=>(!data.upload||!x.uid)?"":`<div class="act">
+      <div class="btns">${ST.map(([k,n])=>`<button class="${x.st===k?"on":""}"
+        onclick="sendStatus('${esc(x.uid)}','${k}',this)">${n}</button>`).join("")}</div>
+      <textarea id="msg${esc(x.uid)}" placeholder="Message back \u2014 what you found, or a question (dimension, spec, who to call)\u2026"></textarea>
+      <div class="row2"><button class="send-msg" onclick="sendMsg('${esc(x.uid)}',this)">Send message</button>
+        <span class="st" id="ms${esc(x.uid)}"></span></div></div>`;
   const spRow=x=>`<div class="item"><span class="nm"><b>${x.lvln?`<span class="pill ${x.lvl==="now"?"bad":x.lvl==="week"?"warn":"gray"}">${esc(x.lvln)}</span>`:""}${esc(x.nm)}</b>`
     +`${x.stn&&x.st!=="new"?`<span class="pill ${x.st==="done"?"ok":"warn"}">${esc(x.stn)}</span> `:""}`
     +`<small>${esc(x.note||"")}</small>`
@@ -114,6 +135,7 @@ function render(){
        folder tagged with this task and your name; the office sees it against the
        task. Nothing is stored on this phone or inside the office app. */
     +sendBox(x.uid,x.nm)
+    +(OFFICE?actBox(x):"")
     +`</span>`
     +`<span class="est">${x.est?("est "+x.est+" hr"):""}${x.due?"<br>needed by "+esc(x.due)+(x.due<today()?' <span class="pill bad">late</span>':""):""}</span></div>`;
 
@@ -125,11 +147,50 @@ function render(){
       ((me.fut||[]).length?sec("Up next — waiting on signed drawing",me.fut,x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,""):"");
 
   document.getElementById("cap").innerHTML=(OFFICE
-    ? `Status is set by the office as your task moves. Use <b>Send a photo or PDF</b> on a task to get a sample photo or a vendor quote straight to the office — it files itself against that task.`
+    ? `Tap where a task is up to, send a photo, or type a message back — a question about a dimension is as useful as an answer. Everything lands on that task in the office.`
     : `Log your hours in the crew log as usual — this page is read-only.${CANSEND?" You can send a photo against a step with the \u2039Send a photo or PDF\u203a button.":""}`)
     +` Auto-refreshes every 5 minutes. <a href="#" onclick="load();return false">Refresh now</a>`;
 }
 
+async function postReply(body){                       // opaque POST, then verify by counting
+  const before=await myReplyCount();
+  try{
+    await fetch(data.upload,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify(Object.assign({app:"tr-reply",who:data.worker.name,k:K,rot:data.rot||0},body))});
+  }catch(e){}
+  await new Promise(r=>setTimeout(r,1400));
+  const after=await myReplyCount();
+  return after>before;
+}
+async function myReplyCount(){
+  try{
+    const r=await fetch(data.upload+"?fn=mine&who="+encodeURIComponent(data.worker.name)
+      +"&k="+encodeURIComponent(K)+"&rot="+encodeURIComponent(data.rot||0),{cache:"no-store"});
+    const j=await r.json(); return (j&&j.ok)?(j.replyCount||0):-1;
+  }catch(e){ return -1 }
+}
+window.sendStatus=async function(uid,st,btn){
+  const row=btn.parentNode; [...row.children].forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on"); btn.textContent=btn.textContent+" \u2026";
+  const label=btn.textContent.replace(" \u2026","");
+  const ok=await postReply({uid,st});
+  btn.textContent=label;
+  const el=document.getElementById("ms"+uid);
+  if(el){el.className="st "+(ok?"ok":"bad");
+    el.textContent=ok?"\u2713 the office can see this":"Didn\u2019t go through \u2014 check signal and tap again";}
+  if(!ok)btn.classList.remove("on");
+};
+window.sendMsg=async function(uid,btn){
+  const ta=document.getElementById("msg"+uid), el=document.getElementById("ms"+uid);
+  const text=(ta&&ta.value||"").trim();
+  if(!text){ if(el){el.className="st bad";el.textContent="Type something first."} return }
+  btn.disabled=true; if(el){el.className="st";el.textContent="sending\u2026"}
+  const ok=await postReply({uid,note:text});
+  btn.disabled=false;
+  if(el){el.className="st "+(ok?"ok":"bad");
+    el.textContent=ok?"\u2713 sent \u2014 it lands on the task":"Didn\u2019t go through \u2014 check signal and try again";}
+  if(ok&&ta)ta.value="";
+};
 const MAX_SEND=12*1024*1024;
 window.sendFile=async function(uid,inp,taskName){
   const taskId=uid;
