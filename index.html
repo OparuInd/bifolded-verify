@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BiFolded Laser Measure</title>
-  <!-- v1.6 — the true-opening outline is now a toggle, and any leg 1/2in or more
+  <!-- v1.7 — the true-opening outline is now a toggle, and any leg 1/2in or more
        outside the buildable box draws in red instead of grey. -->
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -792,21 +792,35 @@
     Show true opening
   </label>
   <div id="result-content"></div>
-  <button class="export-btn" id="pdf-btn" onclick="exportPDF()" style="display:none;background:#4361ee">
-    ⬇ Save / Download PDF
-  </button>
-  <button class="export-btn" id="shopops-btn" onclick="exportShopOps()" style="display:none;background:#26221b">
-    ⬇ Export for Shop Ops (.json)
-  </button>
-  <button class="export-btn" id="both-btn" onclick="exportBoth()" style="display:none;background:#7a2e2e">
-    ⬇ Save BOTH — PDF (records) + JSON
-  </button>
-  <button class="export-btn" id="drive-btn" onclick="sendToDrive()" style="display:none;background:#1a7340">
-    ☁ Save to Drive table
-  </button>
-  <button class="export-btn" id="export-btn" onclick="exportDXF()" style="display:none">
-    ⬇ Export for SketchUp (.dxf)
-  </button>
+  <!-- v1.7 — one obvious thing to do, and one thing to keep.
+       What was here before was five buttons, three of which said "JSON" at a
+       person who has never heard the word and is standing in somebody's garage
+       holding a laser. The file format is our problem, not theirs. -->
+  <div id="sendPanel" style="display:none">
+    <button class="export-btn" id="send-btn" onclick="sendMeasurements()"
+      style="background:#1a7340;font-size:16px;padding:16px">
+      Confirm and send my measurements to Tungsten Royce
+    </button>
+    <div id="send-note" style="font-size:12.5px;color:#6b6558;text-align:center;margin:-6px 0 12px;line-height:1.5">
+      Sent straight to the shop, filed against this job. Nothing to download, nothing to attach.
+    </div>
+    <button class="export-btn" id="pdf-btn" onclick="exportPDF()"
+      style="background:#fff;color:#26221b;border:1px solid #cfc8ba">
+      Save a copy for my records &nbsp;·&nbsp; PDF
+    </button>
+    <div style="text-align:center;margin:4px 0 10px">
+      <a href="#" id="officeToggle" onclick="toggleOffice();return false"
+         style="font-size:11.5px;color:#9a9287;text-decoration:none;letter-spacing:.04em">Shop use ▾</a>
+    </div>
+    <div id="officeRow" style="display:none;border-top:1px solid #e6e0d4;padding-top:10px">
+      <button class="export-btn" id="shopops-btn" onclick="exportShopOps()" style="background:#26221b">
+        Data file for Shop Ops (.json)
+      </button>
+      <button class="export-btn" id="export-btn" onclick="exportDXF()">
+        Drawing file for SketchUp (.dxf)
+      </button>
+    </div>
+  </div>
   <button class="reset-btn" onclick="reset()">Clear &amp; Start Over</button>
 </div>
 
@@ -1117,11 +1131,7 @@
     try { html += openingShadow(minWidth, minHeight); } catch (e) {}
     document.getElementById('result-content').innerHTML = html;
     document.getElementById('results').style.display = 'block';
-    document.getElementById('pdf-btn').style.display = 'block';
-    document.getElementById('export-btn').style.display = 'block';
-    document.getElementById('shopops-btn').style.display = 'block';
-    document.getElementById('both-btn').style.display = 'block';
-    if (DRIVE_ENDPOINT) document.getElementById('drive-btn').style.display = 'block';
+    document.getElementById('sendPanel').style.display = 'block';
     const jobName = (document.getElementById('job-name')?.value || '').trim();
     lastCalc = { widthIn: minWidth, heightIn: minHeight, jobName };
     document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
@@ -1129,11 +1139,7 @@
 
   function reset() {
     document.getElementById('results').style.display = 'none';
-    document.getElementById('pdf-btn').style.display = 'none';
-    document.getElementById('shopops-btn').style.display = 'none';
-    document.getElementById('both-btn').style.display = 'none';
-    document.getElementById('drive-btn').style.display = 'none';
-    document.getElementById('export-btn').style.display = 'none';
+    document.getElementById('sendPanel').style.display = 'none';
     lastCalc = null;
     renderFields();
     window.scrollTo({top:0,behavior:'smooth'});
@@ -1155,27 +1161,45 @@
       maxDoor: { widthIn: lastCalc.widthIn, heightIn: lastCalc.heightIn }
     };
   }
-  function exportBoth() {
-    if (!lastCalc) { alert('Calculate first.'); return; }
-    Promise.resolve(exportPDF()).catch(() => alert('PDF library could not load (offline?) — JSON still saved.'));
-    exportShopOps();
-    if (DRIVE_ENDPOINT) sendToDrive();
-  }
-  async function sendToDrive() {
+  /* v1.7 — ONE action. It goes to the shop, and the person is told plainly
+     what happened. The old version had a "Save BOTH" button and a Drive button
+     and a JSON button, which between them asked somebody standing in a garage
+     to understand our file formats. If the send fails we say so in a sentence
+     and offer the PDF, rather than silently dropping a .json in their Downloads
+     folder and hoping they email it to us. */
+  window.toggleOffice = function () {
+    const r = document.getElementById('officeRow'), t = document.getElementById('officeToggle');
+    const open = r.style.display === 'none';
+    r.style.display = open ? 'block' : 'none';
+    t.textContent = open ? 'Shop use \u25b4' : 'Shop use \u25be';
+  };
+  async function sendMeasurements() {
     const data = shopOpsPayload();
-    if (!data) { alert('Calculate first.'); return; }
-    if (!DRIVE_ENDPOINT) { alert('No Drive endpoint configured — see TR_measurements_setup.md'); return; }
-    const btn = document.getElementById('drive-btn');
-    const old = btn.textContent;
-    btn.textContent = 'Sending…'; btn.disabled = true;
+    if (!data) { alert('Take the measurements and press Calculate first.'); return; }
+    const btn  = document.getElementById('send-btn');
+    const note = document.getElementById('send-note');
+    if (!data.job) {
+      const j = prompt('Which job are these for?\n\nA name is enough \u2014 it is how the shop finds them.', '');
+      if (j === null) return;
+      if (j.trim()) { document.getElementById('job-name').value = j.trim(); data.job = j.trim(); }
+    }
+    if (!DRIVE_ENDPOINT) {
+      note.innerHTML = 'This copy of the tool has no shop address set. Save the PDF and send it across instead.';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Sending\u2026';
     try {
       await fetch(DRIVE_ENDPOINT, { method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data) });
-      btn.textContent = '✓ Saved to Drive table';
-      setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2500);
+      btn.textContent = '\u2713 Sent to Tungsten Royce';
+      btn.style.background = '#0f5c33';
+      note.innerHTML = 'Filed against <b>' + (data.job || 'this job').replace(/[<>&]/g,'') +
+        '</b> on ' + data.date + '. Keep a copy below if you would like one.';
     } catch (e) {
-      btn.textContent = '✗ Failed — JSON downloaded instead'; btn.disabled = false;
-      exportShopOps();
+      btn.disabled = false; btn.textContent = 'Try sending again';
+      note.innerHTML = '<b style="color:#a33327">That did not go through.</b> ' +
+        'You are probably offline. Save the PDF below and it can be sent on later \u2014 ' +
+        'nothing has been lost.';
     }
   }
   function exportShopOps() {
