@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>Tungsten Royce — My Assignments</title>
-<!-- v1.6 — keyed personal links; server returns only YOUR slice.
+<!-- v1.7 — keyed personal links; server returns only YOUR slice.
      Office staff get a corporate-framed page: no fab sections, task status shown.
      Sending a photo/PDF back is always on for office, and per-person for the shop
      crew (the office ticks 'can send'). Files go to Drive, never into the app.
@@ -157,8 +157,8 @@ function render(){
       ((me.fut||[]).length?sec("Up next — waiting on signed drawing",me.fut,x=>`<div class="item"><span class="nm"><b>${esc(x.nm)}</b><small>${esc(x.job)}</small></span><span class="est">${x.est?("est "+x.est+" hr"):""}</span></div>`,""):"");
 
   document.getElementById("cap").innerHTML=(OFFICE
-    ? `Tap where a task is up to, send a photo, or type a message back — a question about a dimension is as useful as an answer. Everything lands on that task in the office.`
-    : `Log your hours in the crew log as usual — this page is read-only.${CANSEND?" You can send a photo against a step with the \u2039Send a photo or PDF\u203a button.":""}`)
+    ? `Please respond \u2014 task updates push straight to the office.`
+    : `Log your hours in the crew log as usual.`)
     +` Auto-refreshes every 5 minutes. <a href="#" onclick="load();return false">Refresh now</a>`;
 }
 
