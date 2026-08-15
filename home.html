@@ -969,6 +969,11 @@ var ENDPOINT="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
 var APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; /* publishable — public by design */
 var ENQUIRY="https://verify.bifolded.com/enquiry.html";
 
+/* un-freeze the scroll-in animations the capture froze at opacity 0 —
+   this is why Materials / Case Studies / Engineering appeared empty */
+document.querySelectorAll("[style]").forEach(function(el){
+  if(el.style.opacity==="0"){ el.style.transition="opacity .7s ease, transform .7s ease"; el.style.opacity="1"; el.style.transform="none"; }
+});
 function txt(el){ return (el.textContent||"").replace(/\s+/g," ").trim(); }
 function btns(){ return Array.prototype.slice.call(document.querySelectorAll("button")); }
 function go(sel){ var el=document.querySelector(sel); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }
@@ -1127,7 +1132,8 @@ if(cfg){
       b.disabled=true; b.textContent="SENDING…";
       fetch(ENDPOINT,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},
         body:JSON.stringify({action:"enquiry",name:state.name,email:state.email,phone:state.phone,site:"",website:"",
-          details:"Configurator: "+state.w+"×"+state.h+" ft, "+state.panels+" panels, frame "+state.frame+", infill "+state.infill+", automation "+state.auto})})
+          message:"Configurator: "+state.w+"×"+state.h+" ft, "+state.panels+" panels, frame "+state.frame+", infill "+state.infill+", automation "+state.auto,
+          config:{w:state.w,h:state.h,panels:state.panels,frame:state.frame,infill:state.infill,automation:state.auto,source:"web-configurator"}})})
       .then(function(r){return r.json();})
       .then(function(j){ b.textContent=j.ok?"RECEIVED — A REAL PERSON WILL BE IN TOUCH":"SOMETHING WENT WRONG — CALL US"; })
       .catch(function(){ b.textContent="OFFLINE — TRY AGAIN OR CALL US"; b.disabled=false; });
