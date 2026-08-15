@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tungsten Royce — My Day</title>
 <!--
-  TR FINAL SOLUTION — My Day 1.1 (2026-08-15)  ·  PUBLIC (worker token)
+  TR FINAL SOLUTION — My Day 1.2 (2026-08-15)  ·  PUBLIC (worker token)
+  1.2 adds JOB MEDIA: walkaround video before paint (shop sign-off) and
+  install photos/video, uploaded full-quality from the phone.
   The worker's whole day on their phone, no login: NOW (pushed duties),
   NEXT (gate-locked queue), ASKED OF ME (photo requests — camera opens,
   shot lands in the job's files), ASK THE OFFICE (a question rides to
   the Crew Hub; the answer rides back here), MY HOURS (week total, no $).
   One tap on Done signs the duty, logs hours, moves the job's rail.
-  Backend: tr-intake v2.8 (migration 0019). Mounts at verify.bifolded.com/myday.html.
+  Backend: tr-intake v3.2. Mounts at verify.bifolded.com/myday.html.
 -->
 <style>
   :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
@@ -64,6 +66,18 @@
         <button class="ask" onclick="ask()">Send</button>
       </div>
       <div id="qs" style="margin-top:12px"></div>
+    </div>
+    <div class="card"><h2>Job media</h2>
+      <div class="empty" style="margin-bottom:8px">Walkaround before paint · install photos + a video of the doors moving. Full quality.</div>
+      <div class="row" style="margin-top:0"><select id="medJob" onchange="medStatus()" style="flex:1"></select></div>
+      <div id="medChips" style="margin:6px 0"></div>
+      <div class="row">
+        <button class="ask" onclick="medPick('walkaround','video')">🎥 Walkaround</button>
+        <button class="go" onclick="medPick('install','photo')">📷 Install</button>
+        <button class="go" onclick="medPick('install','video')">🎥 Install</button>
+      </div>
+      <div class="empty" id="medMsg"></div>
+      <input type="file" id="medFile" style="display:none" onchange="medGo()">
     </div>
     <div class="card"><h2>Up next</h2><div id="next"></div></div>
     <div class="card"><h2>My hours</h2><div class="hrsbig" id="hrs">—</div>
@@ -118,6 +132,45 @@ async function boot(){
     </div>`).join(""):"";
 }
 
+let MJOBS=[],MPUR="other",MKIND="photo";
+async function loadMedia(){
+  const j=await pub({action:"media_jobs"});
+  if(!j.ok)return;
+  MJOBS=j.rows;
+  const sel=$("medJob").value;
+  $("medJob").innerHTML='<option value="">pick the job…</option>'+j.rows.map(r=>`<option value="${r.id}" ${r.id===sel?"selected":""}>${r.job_no}${r.walkaround_done?"":" · needs walkaround"}${r.install_done?"":" · needs install"}</option>`).join("");
+  medStatus();
+}
+function medStatus(){
+  const r=MJOBS.find(x=>x.id===$("medJob").value);
+  $("medChips").innerHTML=r?`${r.walkaround_done?'<span class="wait" style="color:var(--ok)">walkaround ✓</span>':'<span class="wait">walkaround needed</span>'} · ${r.install_done?'<span class="wait" style="color:var(--ok)">install ✓</span>':'<span class="wait">install shots needed</span>'}`:"";
+}
+function medPick(p,k){
+  if(!$("medJob").value){ $("medMsg").textContent="Pick the job first."; return; }
+  MPUR=p; MKIND=k;
+  const f=$("medFile");
+  f.accept=k==="video"?"video/*":"image/*";
+  f.setAttribute("capture","environment");
+  f.click();
+}
+async function medGo(){
+  const f=$("medFile").files[0]; if(!f)return;
+  const job=$("medJob").value;
+  let ext=(f.name.split(".").pop()||"").toLowerCase();
+  if(!["jpg","jpeg","png","webp","heic","mp4","mov","webm"].includes(ext)) ext=f.type.includes("video")?"mp4":"jpg";
+  $("medMsg").textContent="Uploading ("+Math.round(f.size/1048576*10)/10+" MB)… keep this page open.";
+  const u=await pub({action:"media_upload_url",job_id:job,ext});
+  if(!u.ok){ $("medMsg").textContent=u.error; return; }
+  try{
+    const put=await fetch(u.url,{method:"PUT",headers:{"content-type":f.type||"application/octet-stream"},body:f});
+    if(!put.ok){ $("medMsg").textContent="Upload failed ("+put.status+") — try a shorter clip."; return; }
+  }catch(e){ $("medMsg").textContent="Upload failed — connection dropped. Try again."; return; }
+  const rec=await pub({action:"media_record",job_id:job,path:u.path,purpose:MPUR,kind:MKIND});
+  $("medFile").value="";
+  if(!rec.ok){ $("medMsg").textContent=rec.error; return; }
+  $("medMsg").textContent="✓ Saved to the job. Another angle?";
+  loadMedia();
+}
 async function ask(){
   const q=$("q").value.trim();
   if(q.length<3){ $("msg").textContent="Type the question first."; return; }
@@ -149,7 +202,7 @@ function shoot(id){
   };
   img.src=URL.createObjectURL(f);
 }
-boot();
+boot();loadMedia();
 </script>
 </body>
 </html>
