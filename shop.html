@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 3.0 (2026-08-15)  ·  PUBLIC (station token)
+  TR FINAL SOLUTION — Shop Floor 3.1 (2026-08-15)  ·  PUBLIC (station token)
+  3.1 adds the MEDIA tab: pick a job, shoot the WALKAROUND video before
+  paint (the shop's sign-off + documentation) or the INSTALL photos and
+  video ("the doors sell themselves when people see them move").
+  Full-quality direct uploads — nothing is downscaled. tr-intake v3.2.
   The shop tablet, three tabs:
   BOARD — every worker's day: NOW duties w/ big Done ✓ (hours/step/labor ride),
   NEXT queue, photo asks, questions w/ answers, ask strip.
@@ -17,7 +21,7 @@
   OVERDUE/due-soon and roll forward on "Sharpened ✓", and 📷 send-a-picture
   straight into the office's view.
   MACHINES — issue reporting + the maintenance table w/ due flags.
-  Backend: tr-intake v3.1 (migrations 0020–0022). Mounts at verify.bifolded.com/shop.html?k=…
+  Backend: tr-intake v3.2 (migrations 0020–0023). Mounts at verify.bifolded.com/shop.html?k=…
 -->
 <style>
   :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
@@ -110,6 +114,7 @@
   <button id="t_board" class="on" onclick="tab('board')">Board</button>
   <button id="t_inv" onclick="tab('inv')">Inventory</button>
   <button id="t_mach" onclick="tab('mach')">Machines</button>
+  <button id="t_med" onclick="tab('med')">📹 Media</button>
 </nav>
 <main>
   <div id="gate">Checking the station link…</div>
@@ -152,6 +157,24 @@
       <table id="maintT"></table>
     </div>
   </div>
+  <div id="v_med" style="display:none">
+    <div class="wcard">
+      <h2 style="margin-top:0">Job media — walkaround &amp; install shots</h2>
+      <div class="empty">Walkaround: once the doors are mortised and ready for paint — your sign-off. Install: photos AND a video of the doors moving. Full quality, straight off the phone.</div>
+      <div class="row">
+        <select id="medJob" onchange="medStatus()"></select>
+        <span id="medChips"></span>
+      </div>
+      <div class="row">
+        <button class="p" onclick="medPick('walkaround','video')">🎥 Walkaround video</button>
+        <button class="go" onclick="medPick('install','photo')">📷 Install photo</button>
+        <button class="go" onclick="medPick('install','video')">🎥 Install video</button>
+        <button class="sm" style="background:#f1ecf7;color:var(--purple)" onclick="medPick('other','photo')">Other</button>
+      </div>
+      <div id="medMsg" class="empty"></div>
+    </div>
+    <input type="file" id="medFile" style="display:none" onchange="medGo()">
+  </div>
   <div id="msg"></div>
 </main>
 <div id="askbar">
@@ -173,8 +196,48 @@ const jn=id=>id&&V?(V.job_names[id]||""):"";
 const who=()=>$("aWho").value||"";
 
 function tab(t){ TAB=t;
-  for(const x of ["board","inv","mach"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; }
-  if(t!=="board")loadShop(); else loadBoard();
+  for(const x of ["board","inv","mach","med"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; }
+  if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else loadShop();
+}
+let MJOBS=[],MPUR="other",MKIND="photo";
+async function loadMedia(){
+  const j=await pub({action:"media_jobs"});
+  if(!j.ok){ $("medMsg").textContent=j.error; return; }
+  MJOBS=j.rows;
+  const sel=$("medJob").value;
+  $("medJob").innerHTML='<option value="">pick the job…</option>'+j.rows.map(r=>`<option value="${r.id}" ${r.id===sel?"selected":""}>${esc(r.job_no)}${r.walkaround_done?"":" · needs walkaround"}${r.install_done?"":" · needs install shots"}</option>`).join("");
+  medStatus();
+}
+function medStatus(){
+  const r=MJOBS.find(x=>x.id===$("medJob").value);
+  $("medChips").innerHTML=r?`${r.walkaround_done?'<span class="chip ok">walkaround ✓ ('+r.n_walkaround+')</span>':'<span class="chip due">walkaround needed</span>'}
+    ${r.install_done?'<span class="chip ok">install ✓ ('+r.n_install+')</span>':'<span class="chip over">install shots needed</span>'}`:"";
+}
+function medPick(p,k){
+  if(!$("medJob").value){ $("medMsg").textContent="Pick the job first."; return; }
+  MPUR=p; MKIND=k;
+  const f=$("medFile");
+  f.accept=k==="video"?"video/*":"image/*";
+  f.setAttribute("capture","environment");
+  f.click();
+}
+async function medGo(){
+  const f=$("medFile").files[0]; if(!f)return;
+  const job=$("medJob").value;
+  let ext=(f.name.split(".").pop()||"").toLowerCase();
+  if(!["jpg","jpeg","png","webp","heic","mp4","mov","webm"].includes(ext)) ext=f.type.includes("video")?"mp4":"jpg";
+  $("medMsg").textContent="Uploading "+(f.name||MKIND)+" ("+Math.round(f.size/1048576*10)/10+" MB)… keep the page open.";
+  const u=await pub({action:"media_upload_url",job_id:job,ext});
+  if(!u.ok){ $("medMsg").textContent=u.error; return; }
+  try{
+    const put=await fetch(u.url,{method:"PUT",headers:{"content-type":f.type||"application/octet-stream"},body:f});
+    if(!put.ok){ $("medMsg").textContent="Upload failed ("+put.status+") — try a shorter clip."; return; }
+  }catch(e){ $("medMsg").textContent="Upload failed — connection dropped. Try again."; return; }
+  const rec=await pub({action:"media_record",job_id:job,path:u.path,purpose:MPUR,kind:MKIND,by:who()||undefined});
+  $("medFile").value="";
+  if(!rec.ok){ $("medMsg").textContent=rec.error; return; }
+  $("medMsg").textContent="✓ Saved to the job. Shoot another angle?";
+  loadMedia();
 }
 
 async function loadBoard(){
