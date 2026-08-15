@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tungsten Royce — Your Agreement</title>
+<style>
+/* ============================================================================
+   TYPE — Helvetica, and only Helvetica.
+   One family set properly beats two families set carelessly, and an all-Swiss
+   document is the oldest "quality manufacturer" signal there is. What makes it
+   read as designed rather than generated is not the typeface, it is the five
+   things below, every one of which the default gets wrong:
+     · two weights only, and hierarchy carried by size and air, not by bold
+     · caps always tracked (0 tracking on caps is the loudest amateur tell)
+     · tabular numerals, so a column of prices does not jitter
+     · measure held near 62 characters, never the width of the window
+     · rules in a soft grey, never hairline black
+   Long prose runs at a slightly larger size and looser leading than the UI,
+   which is what stops a wall of Helvetica reading as a spreadsheet.
+============================================================================ */
+:root{
+  --sans:"Helvetica Neue",Helvetica,"Inter",Arial,"Liberation Sans",sans-serif;
+
+  /* Deep purple. Near-black with plum in it for the ink, a true aubergine for
+     structure, and one lighter violet used sparingly enough to still mean
+     something when it appears. */
+  --ink:#201829; --ink2:#3E344A; --soft:#6E6579; --faint:#968EA0;
+  --plum:#41275C;         /* structure: rules, marks, the selected state */
+  --plum2:#6B4A8F;        /* the one bright note */
+  --plumSoft:#F4F0F7;     /* tint */
+  --paper:#FBF9FB; --card:#FFFEFF; --line:#CFCAD3; --rule:#BAB1C1;
+  --gold:#9C7A3E; --goldSoft:#FBF6EC;
+  --alert:#8C2B48;        /* a wine that lives beside purple, not a fire-engine red */
+  --ok:#2F6B4F;
+
+  --s0:12.5px; --s1:14.5px; --s2:16.5px; --s3:20px; --s4:26px; --s5:33px; --s6:46px;
+  --measure:33rem;
+}
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:var(--s1)/1.5 var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.005em}
+p,li{font-size:var(--s2);line-height:1.62;color:var(--ink2);max-width:var(--measure);
+  margin:0 0 1.05em;letter-spacing:-.004em}
+h1,h2,h3{font-weight:600;letter-spacing:-.022em;margin:0}
+h1{font-size:var(--s5);line-height:1.1}
+h2{font-size:var(--s4);line-height:1.18}
+h3{font-size:var(--s3);line-height:1.25;letter-spacing:-.016em}
+.eyebrow{font-size:13.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--plum);
+  font-weight:700;margin:0 0 12px}
+.lede{font-size:var(--s3);line-height:1.5;color:var(--ink2);max-width:var(--measure);letter-spacing:-.012em}
+.num{font-variant-numeric:tabular-nums}
+a{color:var(--plum2)}
+hr{border:none;border-top:1px solid var(--rule);margin:40px 0}
+
+/* ---- shell ---- */
+.wrap{max-width:1060px;margin:0 auto;padding:0 34px}
+header.tr{background:linear-gradient(120deg,#1B1324 0%,#271A33 55%,#33223F 100%);
+  color:#F4F0F7;padding:19px 0;border-bottom:3px solid var(--plum2)}
+header.tr .wrap{display:flex;align-items:center;gap:15px}
+header.tr .mk{height:38px;width:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+header.tr .co{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;font-weight:500}
+header.tr .sub{font-size:10.5px;letter-spacing:.12em;color:#A497B4;text-transform:uppercase;margin-top:4px}
+header.tr .who{margin-left:auto;text-align:right;font-size:var(--s0);color:#B5A8C2;line-height:1.45}
+header.tr .who b{color:#F4F0F7;font-weight:500}
+
+/* ---- rail ---- */
+.rail{display:flex;border-bottom:1px solid var(--line);background:var(--card)}
+.rail .r{flex:1;padding:14px 8px 12px;text-align:center;font-size:10.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--faint);border-bottom:2px solid transparent;cursor:pointer;
+  font-weight:500;transition:color .15s,border-color .15s}
+.rail .r:hover{color:var(--soft)}
+.rail .r.on{color:var(--plum);border-bottom-color:var(--plum2)}
+
+main{padding:62px 0 100px;min-height:60vh}
+
+/* ---- option cards ---- */
+.opts{display:flex;flex-direction:column;gap:12px;margin:26px 0 0;max-width:44rem}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:2px;padding:22px 24px;
+  transition:border-color .14s,box-shadow .14s;position:relative}
+.opt.on{border-color:var(--plum);box-shadow:inset 3px 0 0 var(--plum2)}
+.opt .t{font-size:var(--s2);font-weight:500;letter-spacing:-.014em}
+.opt .c{font-size:var(--s1);color:var(--soft);margin-top:6px;line-height:1.55;max-width:30rem}
+.opt .d{position:absolute;right:24px;top:21px;font-size:var(--s1);color:var(--plum);
+  font-variant-numeric:tabular-nums;font-weight:500}
+.opt .rec{display:inline-block;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--plum2);border:1px solid var(--plum2);border-radius:2px;padding:2px 7px;
+  margin-left:10px;vertical-align:2px;font-weight:500}
+
+/* ---- fields: a line, not a box ---- */
+.field{margin:24px 0;display:flex;flex-direction:column}
+/* paper-form order: you write ON the line, the descriptor sits UNDER it */
+.field label{display:block;order:2;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--soft);margin:7px 0 0;font-weight:500}
+.field input,.field select,.field textarea{order:1}
+.field .help{order:3}
+.field input,.field select,.field textarea{
+  font:var(--s2)/1.4 var(--sans);color:var(--ink);background:transparent;
+  border:none;border-bottom:1px solid var(--rule);padding:8px 2px;width:100%;max-width:28rem;
+  border-radius:0;font-variant-numeric:tabular-nums;letter-spacing:-.006em}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-bottom-color:var(--plum2)}
+.field input::placeholder,.field textarea::placeholder{color:var(--faint)}
+.field .help{font-size:var(--s1);color:var(--soft);margin-top:7px;max-width:30rem;line-height:1.5}
+.inline{display:flex;gap:28px;flex-wrap:wrap}
+.inline .field{margin:0;flex:0 0 auto}
+.inline .field input{width:7.5rem}
+/* grow-fields (flex:1) get the full row — names must never be squeezed */
+.inline .field[style*="flex:1"] input{width:100%;max-width:none}
+textarea{font:var(--s2)/1.55 var(--sans);color:var(--ink);background:var(--card);
+  border:1px solid var(--rule);padding:12px 14px;width:100%;max-width:33rem;border-radius:2px}
+textarea:focus{outline:none;border-color:var(--plum2)}
+
+/* ---- chips ---- */
+.chip{display:inline-block;font:500 var(--s1)/1 var(--sans);border:1px solid var(--line);
+  background:var(--card);border-radius:2px;padding:10px 15px;cursor:pointer;color:var(--ink2);
+  letter-spacing:-.004em;transition:border-color .12s,color .12s,background .12s}
+.chip:hover{border-color:var(--plum2);color:var(--plum)}
+.chip.on{background:var(--plum);border-color:var(--plum);color:#fff}
+.needs{border-bottom-color:var(--alert) !important;background:#FDF5F7}
+
+/* ---- buttons ---- */
+button.go{font:500 var(--s1)/1 var(--sans);letter-spacing:.03em;background:var(--plum);color:#fff;
+  border:1px solid var(--plum);border-radius:2px;padding:15px 30px;cursor:pointer;
+  transition:background .14s}
+button.go:hover{background:#331F49}
+button.ghost{font:500 var(--s1)/1 var(--sans);letter-spacing:.03em;background:transparent;
+  color:var(--ink2);border:1px solid var(--rule);border-radius:2px;padding:15px 26px;cursor:pointer}
+button.ghost:hover{border-color:var(--plum2);color:var(--plum)}
+
+/* ---- summary ---- */
+.summary{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--plum2);
+  padding:32px 34px;max-width:40rem}
+.summary p{font-size:var(--s3);line-height:1.5;color:var(--ink);max-width:none;letter-spacing:-.014em}
+.spec{width:100%;max-width:44rem;border-collapse:collapse;margin-top:10px}
+.spec td{padding:13px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:var(--s1)}
+.spec td:first-child{width:11rem;color:var(--soft);font-size:10.5px;letter-spacing:.15em;
+  text-transform:uppercase;padding-top:16px;font-weight:500}
+.spec td:last-child{text-align:right;color:var(--plum);width:7.5rem;font-weight:500;
+  font-variant-numeric:tabular-nums}
+.spec .v{font-size:var(--s2);color:var(--ink);letter-spacing:-.01em}
+.spec .n{color:var(--soft);font-size:var(--s1);display:block;margin-top:4px;line-height:1.5;max-width:28rem}
+
+/* ---- notes ---- */
+.terms{max-width:var(--measure)}
+.terms h3{font-size:var(--s2);margin:34px 0 9px;color:var(--plum)}
+.terms p,.terms li{font-size:var(--s1);line-height:1.62}
+.note{background:var(--plumSoft);border:1px solid #E3D9EC;border-left:3px solid var(--plum2);
+  padding:18px 22px;max-width:var(--measure);margin:24px 0}
+.note p{font-size:var(--s1);margin:0;color:#4A3A5C}
+.warn{background:#FCF4F6;border-color:#EBD5DC;border-left-color:var(--alert)}
+.warn p{color:#6B2F42}
+.gold{background:var(--goldSoft);border-color:#EADCC2;border-left-color:var(--gold)}
+.gold p{color:#5C4A28}
+
+/* ---- milestones ---- */
+.mile{display:flex;gap:20px;padding:19px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.mile .dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--rule);margin-top:7px;flex:0 0 auto}
+.mile.now .dot{background:var(--plum2);border-color:var(--plum2);box-shadow:0 0 0 4px rgba(107,74,143,.15)}
+.mile .b{flex:1}
+.mile .t{font-size:var(--s2);font-weight:500;letter-spacing:-.012em}
+.mile .c{font-size:var(--s1);color:var(--soft);margin-top:4px;max-width:30rem;line-height:1.55}
+.mile .w{font-size:var(--s1);color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* Print is a different medium, not a narrow screen. The stacking rule below
+   is scoped to `screen` for exactly this reason — it was leaking into the PDF
+   and breaking the specification table into stubs. */
+@media print{
+  header.tr,.rail,.noprint{display:none !important}
+  body{background:#fff;font-size:10.5pt;color:#1a1a1a}
+  main{padding:0} .wrap{max-width:none;padding:0}
+  p,li{font-size:10pt;color:#2a2a2a;max-width:none}
+  .eyebrow{color:#5a5a5a}
+  h1{font-size:22pt} h3{font-size:12.5pt}
+  .note{background:#fafafa;border-color:#ddd;break-inside:avoid}
+  .summary{break-inside:avoid;padding:20px 24px}
+  .spec{max-width:none} .spec tr{break-inside:avoid}
+  .spec td:first-child{width:9rem}
+  .terms h3{break-after:avoid} .terms p{orphans:2;widows:2}
+  .mile{break-inside:avoid}
+  hr{margin:24px 0}
+  a{color:#1a1a1a;text-decoration:none}
+}
+@media screen and (max-width:760px){
+  .wrap{padding:0 20px}
+  h1{font-size:var(--s4)}
+  .rail .r{font-size:9.5px;letter-spacing:.08em}
+  .opt .d{position:static;display:block;margin-top:10px}
+  .spec td:first-child{width:auto;display:block;padding-bottom:0;border:none}
+  .spec td{display:block;text-align:left !important;padding:6px 0}
+  .spec tr{display:block;border-bottom:1px solid var(--line);padding:10px 0}
+}
+
+
+/* sign-page additions */
+.noprint{display:none !important}
+#signBar{max-width:var(--measure);margin:10px auto 60px;padding:26px 28px;background:var(--card);
+  border:1px solid var(--line);border-radius:4px}
+#signBar h3{margin-bottom:12px}
+#signBar input[type=text]{font:var(--s3)/1.3 var(--sans);color:var(--ink);background:transparent;
+  border:none;border-bottom:2px solid var(--ink);padding:10px 2px;width:100%;max-width:26rem}
+#signBar input[type=text]:focus{outline:none;border-bottom-color:var(--plum2)}
+#signBar label.consent{display:flex;gap:11px;align-items:flex-start;font-size:var(--s1);color:var(--ink2);
+  margin-top:18px;cursor:pointer;max-width:34rem;line-height:1.5}
+#signBar button{font:600 var(--s2)/1 var(--sans);background:var(--plum);color:#fff;border:0;border-radius:3px;
+  padding:15px 26px;margin-top:22px;cursor:pointer;letter-spacing:.02em}
+#signBar button:hover{background:var(--plum2)}
+#signBar button:disabled{opacity:.5;cursor:default}
+#err{display:none;border-left:4px solid var(--alert);background:#FDF5F7;color:#6E2238;font-size:var(--s1);
+  padding:12px 14px;border-radius:3px;margin-top:16px;max-width:34rem}
+#state{max-width:var(--measure);margin:80px auto;text-align:center}
+#state h2{margin-bottom:12px}
+#state p{margin:0 auto}
+</style>
+</head>
+<body>
+<div id="state"><h2>Loading your agreement…</h2><p style="color:var(--soft)">One moment.</p></div>
+<div id="doc" style="display:none"></div>
+<div id="signBar" style="display:none">
+  <p class="eyebrow">Sign</p>
+  <h3>Sign your agreement</h3>
+  <p style="font-size:var(--s1);color:var(--ink2);max-width:34rem">Type your full legal name below. Under the federal
+  ESIGN Act your typed name, with your consent, is your signature — the same as ink.</p>
+  <input type="text" id="sigName" placeholder="Your full legal name" autocomplete="name">
+  <label class="consent"><input type="checkbox" id="sigConsent" style="width:auto;margin-top:3px">
+    I agree to do business electronically and intend my typed name to be my electronic signature on this agreement,
+    including the payment schedule and terms above.</label>
+  <div id="err"></div>
+  <button id="sigGo" onclick="doSign()">Sign the agreement</button>
+</div>
+<script>
+"use strict";
+const EP="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
+const AK="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; /* publishable — public by design; the token is the auth */
+const TOKEN=new URLSearchParams(location.search).get("t")||"";
+async function call(body){
+  try{
+    const r=await fetch(EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+AK},
+      body:JSON.stringify(body)});
+    return await r.json();
+  }catch(e){ return {ok:false,error:"We could not reach the server — please try again."} }
+}
+function state(h,p){ const s=document.getElementById("state");
+  s.style.display="block"; s.innerHTML="<h2>"+h+"</h2><p style='color:var(--soft)'>"+p+"</p>"; }
+async function load(){
+  if(TOKEN.length<20){ state("This page opens from a signing link.",
+    "Your agreement link ends in <b>?t=</b> followed by a long code — use the complete link from your email or text, or call us and we will resend it.<br><br><span style='font-size:12px'>TR office: open the agreement, load the customer, and press <b>Publish for e-sign</b> to generate the link.</span>"); return }
+  const j=await call({action:"agree_view",token:TOKEN});
+  if(!j.ok){ state("This link is not valid.", j.error||"Call us and we will send a fresh one."); return }
+  document.getElementById("state").style.display="none";
+  const doc=document.getElementById("doc");
+  doc.innerHTML=(j.doc&&j.doc.html)||"";
+  doc.style.display="block";
+  if(j.signed){
+    state("Signed by "+(j.signed_name||"you")+".","This agreement is complete — job "+j.quote_no+" is in motion. Welcome to the wait.");
+    document.getElementById("doc").style.display="block";
+    return;
+  }
+  document.getElementById("signBar").style.display="block";
+}
+async function doSign(){
+  const err=document.getElementById("err"), go=document.getElementById("sigGo");
+  err.style.display="none";
+  const name=document.getElementById("sigName").value;
+  const consent=document.getElementById("sigConsent").checked;
+  go.disabled=true; go.textContent="Signing…";
+  const j=await call({action:"agree_sign",token:TOKEN,name:name,consent:consent});
+  if(!j.ok){ err.textContent=j.error||"Something went wrong."; err.style.display="block";
+    go.disabled=false; go.textContent="Sign the agreement"; return }
+  document.getElementById("signBar").style.display="none";
+  state("Thank you, "+j.name+".","Signed. Your job number is <b style='color:var(--ink)'>"+j.job_no+"</b> — it is born the moment you signed. We will be in touch about your deposit and the drawing. Welcome to the wait.");
+  window.scrollTo(0,0);
+}
+load();
+</script>
+</body>
+</html>

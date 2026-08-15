@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tungsten Royce — Field Verification</title>
+<!--
+  TR FINAL SOLUTION — Field Verification 3.0 (2026-08-15)  ·  PUBLIC PAGE
+  Successor to Enclosure_Field_Verification_Form 2.2: same five tasks,
+  but submissions go straight to the database against the job — no more
+  emailing .json files back, and every laser leg is kept (the old rail
+  dropped them). Opens by tokened link only. Mountable on bifolded.com.
+  Backend: tr-intake v2.5 (verify_view / verify_submit).
+-->
+<style>
+  :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
+         --line:#d9d4e0; --bg:#f7f5fa; --muted:#8a8194; --ok:#1d7a46; --warn:#a01212; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:var(--purple);color:#fff;padding:22px;text-align:center}
+  header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:.05em}
+  header .sub{opacity:.8;font-size:12.5px;margin-top:4px}
+  main{max-width:640px;margin:22px auto 60px;padding:0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:16px}
+  h2{color:var(--purple);font-size:15px;margin:0 0 6px}
+  .note{color:var(--muted);font-size:12.5px;margin:0 0 12px;line-height:1.5}
+  label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--purple);margin:10px 0 3px}
+  input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:14px;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--purple2)}
+  textarea{min-height:70px;resize:vertical}
+  .legs{display:flex;gap:8px}
+  .legs input{text-align:right}
+  .gov{font-size:13px;margin-top:5px}
+  .gov b{color:var(--purple)}
+  .chip{display:inline-block;border:1px solid var(--line);border-radius:14px;padding:5px 13px;font-size:13px;cursor:pointer;margin:0 6px 6px 0;background:#fff;user-select:none}
+  .chip.on{background:var(--purple);color:#fff;border-color:var(--purple)}
+  .sub2{margin-left:4px;padding-left:12px;border-left:3px solid var(--line)}
+  button.go{width:100%;margin-top:16px;padding:13px;font:inherit;font-size:15px;font-weight:700;border:0;border-radius:8px;cursor:pointer;background:var(--purple);color:#fff}
+  button.go:hover{background:var(--purple2)}
+  button.go:disabled{opacity:.55}
+  #err{display:none;border-left:4px solid var(--warn);background:#fbf1f1;color:#7a1010;font-size:13.5px;padding:11px 13px;border-radius:7px;margin-top:14px}
+  #done{display:none;text-align:center;padding:36px 12px}
+  #done .big{font-size:42px}
+  #done h2{margin:10px 0 6px}
+  #done p{color:var(--muted);font-size:14px;line-height:1.55}
+  #gate{text-align:center;padding:50px 20px;color:var(--muted);font-size:14px;line-height:1.6}
+  #form{display:none}
+  a{color:var(--purple)}
+  footer{text-align:center;font-size:11.5px;color:var(--muted);margin-top:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>TUNGSTEN ROYCE</h1>
+  <div class="sub">Field verification — measure the opening the doors must pass</div>
+</header>
+<main>
+  <div id="gate">Checking your link…</div>
+
+  <div id="form">
+    <div class="card">
+      <h2 id="jTitle"></h2>
+      <p class="note" id="jSite" style="margin:0"></p>
+    </div>
+
+    <div class="card">
+      <h2>1 · Width, by laser</h2>
+      <p class="note">Three readings across the opening — top, middle, bottom. The smallest one governs. Laser app: <a href="https://bifolded.netlify.app/" target="_blank" rel="noopener">bifolded.netlify.app</a></p>
+      <div class="legs">
+        <input id="w1" inputmode="decimal" placeholder="reading 1" oninput="gov()">
+        <input id="w2" inputmode="decimal" placeholder="reading 2" oninput="gov()">
+        <input id="w3" inputmode="decimal" placeholder="reading 3" oninput="gov()">
+      </div>
+      <div class="gov" id="wGov"></div>
+      <h2 style="margin-top:18px">2 · Height, by laser</h2>
+      <p class="note">Three readings — left, center, right. Smallest governs.</p>
+      <div class="legs">
+        <input id="h1" inputmode="decimal" placeholder="reading 1" oninput="gov()">
+        <input id="h2" inputmode="decimal" placeholder="reading 2" oninput="gov()">
+        <input id="h3" inputmode="decimal" placeholder="reading 3" oninput="gov()">
+      </div>
+      <div class="gov" id="hGov"></div>
+      <div style="margin-top:12px"><span class="chip" id="lv" onclick="this.classList.toggle('on')">Verified from the laser app</span></div>
+      <label>Opening</label>
+      <input id="opening" value="Opening 1">
+    </div>
+
+    <div class="card">
+      <h2>3 · Anything out of the ordinary?</h2>
+      <p class="note">Tap what applies, add a word on each.</p>
+      <div id="flags"></div>
+    </div>
+
+    <div class="card">
+      <h2>4 · Cladding</h2>
+      <p class="note">Are you applying cladding to the outside face of the supplied doors?</p>
+      <span class="chip" id="cladY" onclick="clad(true)">Yes</span>
+      <span class="chip on" id="cladN" onclick="clad(false)">No</span>
+      <div id="cladF" class="sub2" style="display:none;margin-top:8px">
+        <label>Material</label><input id="cMat" placeholder="e.g. cedar, corten, ACM">
+        <label>Thickness (in)</label><input id="cThk" inputmode="decimal">
+        <label>Attachment method</label><input id="cMet" placeholder="e.g. screws, lags, adhesive">
+        <label>Final finish distance (in)</label><input id="cDis" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>5 · Special requests</h2>
+      <textarea id="special" placeholder="Anything we should know before we build."></textarea>
+      <label>Completed by</label>
+      <input id="byName" list="ppl" placeholder="Your name">
+      <datalist id="ppl"></datalist>
+      <label>You are the</label>
+      <select id="byRole">
+        <option value="contractor">Contractor</option>
+        <option value="homeowner">Homeowner</option>
+        <option value="rep">TR representative</option>
+        <option value="architect">Architect</option>
+        <option value="other">Other</option>
+      </select>
+      <div id="err"></div>
+      <button class="go" id="goBtn" onclick="submitV()">Send to Tungsten Royce</button>
+    </div>
+  </div>
+
+  <div id="done" class="card">
+    <div class="big">✓</div>
+    <h2>Received.</h2>
+    <p id="doneP"></p>
+  </div>
+  <footer>Tungsten Royce · Bifolded.com</footer>
+</main>
+
+<script>
+const ENDPOINT="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
+const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; // publishable — public by design
+const TOKEN=new URLSearchParams(location.search).get("t")||"";
+const $=id=>document.getElementById(id);
+const FLAGS=["Left jamb","Top jamb","Right jamb","Slab defects"];
+const pub=async(b)=>{try{const r=await fetch(ENDPOINT,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(b)});return await r.json();}catch(e){return{ok:false,error:"We could not reach the server — try again, or call us."};}};
+
+function legsOf(p){ return [1,2,3].map(i=>parseFloat($(p+i).value)).filter(n=>Number.isFinite(n)&&n>1&&n<400); }
+function gov(){
+  const w=legsOf("w"),h=legsOf("h");
+  $("wGov").innerHTML=w.length?`Governing width: <b>${Math.min(...w)}"</b>${w.length>1&&Math.max(...w)-Math.min(...w)>0.25?' — readings vary more than 1/4"; that is worth a note in 3':''}`:"";
+  $("hGov").innerHTML=h.length?`Governing height: <b>${Math.min(...h)}"</b>`:"";
+}
+function clad(y){
+  $("cladY").classList.toggle("on",y); $("cladN").classList.toggle("on",!y);
+  $("cladF").style.display=y?"":"none";
+}
+$("flags").innerHTML=FLAGS.map((f,i)=>`<div style="margin-bottom:6px">
+  <span class="chip" id="f${i}" onclick="this.classList.toggle('on');document.getElementById('fn${i}').style.display=this.classList.contains('on')?'':'none'">${f}</span>
+  <input id="fn${i}" placeholder="what you see" style="display:none;margin-top:4px"></div>`).join("");
+
+async function boot(){
+  if(TOKEN.length<20){ $("gate").innerHTML="This page opens from the link Tungsten Royce sent for your job.<br>Nothing here without it — call us if yours is missing."; return; }
+  const j=await pub({action:"verify_view",token:TOKEN});
+  if(!j.ok){ $("gate").textContent=j.error; return; }
+  $("gate").style.display="none"; $("form").style.display="block";
+  $("jTitle").textContent="Job "+j.job_no+" — "+j.customer;
+  $("jSite").textContent=(j.site?j.site+" · ":"")+(j.returned.length?j.returned.length+" return(s) already in — another opening is welcome.":"First verification for this job.");
+  $("ppl").innerHTML=(j.people||[]).map(p=>`<option value="${String(p.name).replace(/"/g,"&quot;")}">`).join("");
+}
+
+async function submitV(){
+  const err=$("err"); err.style.display="none";
+  const w=legsOf("w"),h=legsOf("h");
+  if(!w.length||!h.length){ err.textContent="At least one width and one height reading, in inches."; err.style.display="block"; return; }
+  const flags={};
+  FLAGS.forEach((f,i)=>{ if($("f"+i).classList.contains("on")) flags[f]={on:true,note:$("fn"+i).value.trim()}; });
+  const cladY=$("cladY").classList.contains("on");
+  $("goBtn").disabled=true; $("goBtn").textContent="Sending…";
+  const j=await pub({action:"verify_submit",token:TOKEN,opening:$("opening").value,
+    wLegs:w,hLegs:h,laser_verified:$("lv").classList.contains("on"),flags,
+    cladding:cladY?{yn:"yes",fields:{material:$("cMat").value,thickness:$("cThk").value,method:$("cMet").value,distance:$("cDis").value}}:{yn:"no"},
+    special:$("special").value,by_name:$("byName").value,by_role:$("byRole").value});
+  if(!j.ok){ err.textContent=j.error; err.style.display="block"; $("goBtn").disabled=false; $("goBtn").textContent="Send to Tungsten Royce"; return; }
+  $("form").style.display="none"; $("done").style.display="block";
+  $("doneP").textContent="Job "+j.job_no+" · "+j.opening+" — governing "+j.w+'" wide × '+j.h+'" tall. The shop builds to the tightest point.';
+}
+boot();
+</script>
+</body>
+</html>

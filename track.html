@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tungsten Royce — Your Job</title>
+<!--
+  TR FINAL SOLUTION — Track 1.0 (2026-08-15)  ·  PUBLIC PAGE
+  The customer/contractor-facing live tracker. Opens by tokened link;
+  shows the job's visible steps and what we still need from their side.
+  Never prices, never internals. Mountable on bifolded.com.
+  Backend: tr-intake v2.5 (track).
+-->
+<style>
+  :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
+         --line:#d9d4e0; --bg:#f7f5fa; --muted:#8a8194; --ok:#1d7a46; --warn:#a01212; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:var(--purple);color:#fff;padding:22px;text-align:center}
+  header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:.05em}
+  header .sub{opacity:.8;font-size:12.5px;margin-top:4px}
+  main{max-width:560px;margin:22px auto 60px;padding:0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:16px}
+  h2{color:var(--purple);font-size:15px;margin:0 0 8px}
+  .note{color:var(--muted);font-size:12.5px;line-height:1.5;margin:0}
+  #gate{text-align:center;padding:50px 20px;color:var(--muted);font-size:14px;line-height:1.6}
+  #app{display:none}
+  .rushbar{border-left:4px solid var(--gold);background:#faf6ee;padding:10px 14px;border-radius:7px;font-size:13.5px;margin-bottom:14px}
+  .phase{margin:16px 0 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--gold)}
+  .step{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:0}
+  .dot{width:22px;height:22px;border-radius:50%;flex:0 0 22px;display:flex;align-items:center;justify-content:center;
+       font-size:13px;border:2px solid var(--line);color:#fff;margin-top:1px}
+  .dot.done{background:var(--ok);border-color:var(--ok)}
+  .dot.doing{background:var(--gold);border-color:var(--gold)}
+  .step .n{font-size:14px}
+  .step.done .n{color:var(--muted)}
+  .step .w{font-size:12px;color:var(--muted);margin-top:1px}
+  .needs{border-left:4px solid var(--purple);background:#f8f5fc;padding:12px 15px;border-radius:7px}
+  .needs .item{font-size:13.5px;padding:4px 0}
+  .needs .item b{color:var(--purple)}
+  footer{text-align:center;font-size:11.5px;color:var(--muted);margin-top:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>TUNGSTEN ROYCE</h1>
+  <div class="sub">Where your doors are</div>
+</header>
+<main>
+  <div id="gate">Checking your link…</div>
+  <div id="app">
+    <div class="card">
+      <h2 id="tTitle"></h2>
+      <p class="note" id="tSub"></p>
+      <div class="rushbar" id="tRush" style="display:none"></div>
+    </div>
+    <div class="card" id="tNeedsCard" style="display:none">
+      <h2>What we need from you</h2>
+      <div class="needs" id="tNeeds"></div>
+    </div>
+    <div class="card">
+      <h2>The road to your doors</h2>
+      <div id="tSteps"></div>
+    </div>
+    <div class="card">
+      <p class="note">Questions? Call the shop — a person answers. This page updates as the work moves.</p>
+    </div>
+  </div>
+  <footer>Tungsten Royce · Bifolded.com · handcrafted bifold doors</footer>
+</main>
+
+<script>
+const ENDPOINT="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
+const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; // publishable — public by design
+const TOKEN=new URLSearchParams(location.search).get("t")||"";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const PHASES={pre:"Before production",gate:"The gate",prod:"In the shop",ship:"Ready to ship",close:"Delivery & beyond"};
+const WHO={customer:"yours",contractor:"your contractor's",rep:"our rep's",architect:"your architect's"};
+
+async function boot(){
+  if(TOKEN.length<20){ $("gate").innerHTML="This page opens from the link Tungsten Royce sent for your job.<br>Call us if yours is missing."; return; }
+  let j;
+  try{
+    const r=await fetch(ENDPOINT,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify({action:"track",token:TOKEN})});
+    j=await r.json();
+  }catch(e){ j={ok:false,error:"We could not reach the server — try again in a moment."}; }
+  if(!j.ok){ $("gate").textContent=j.error; return; }
+  $("gate").style.display="none"; $("app").style.display="block";
+  $("tTitle").textContent="Job "+j.job_no;
+  const done=(j.steps||[]).filter(s=>s.status==="done").length, tot=(j.steps||[]).filter(s=>s.status!=="na").length;
+  $("tSub").textContent=esc(j.customer)+" · "+done+" of "+tot+" steps complete";
+  if(j.rush_by){ $("tRush").style.display=""; $("tRush").innerHTML="<b>Rush guarantee:</b> your doors are promised by "+esc(j.rush_by)+"."; }
+  if((j.needs||[]).length){
+    $("tNeedsCard").style.display="";
+    $("tNeeds").innerHTML=j.needs.map(n=>`<div class="item"><b>${esc(n.name)}</b> — this one is ${WHO[n.actor]||"your side's"} to move.</div>`).join("");
+  }
+  let h="",ph="";
+  for(const s of j.steps||[]){
+    if(s.status==="na")continue;
+    if(s.phase!==ph){ ph=s.phase; h+=`<div class="phase">${PHASES[ph]||ph}</div>`; }
+    h+=`<div class="step ${s.status}">
+      <div class="dot ${s.status}">${s.status==="done"?"✓":s.status==="doing"?"·":""}</div>
+      <div><div class="n">${esc(s.name)}</div>
+      ${s.status==="done"&&s.done_at?`<div class="w">${s.done_at.slice(0,10)}</div>`:s.status==="doing"?'<div class="w">happening now</div>':""}</div>
+    </div>`;
+  }
+  $("tSteps").innerHTML=h;
+}
+boot();
+</script>
+</body>
+</html>
