@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tungsten Royce — Shop Floor</title>
+<!--
+  TR FINAL SOLUTION — Shop Floor 1.0 (2026-08-15)  ·  PUBLIC (station token)
+  The shop tablet: every worker's day on one board, big touch targets.
+  One column per worker — NOW duties with a big Done ✓ (hours ride along,
+  step signs, labor logs), the NEXT queue, photo asks, and every question
+  with its answer. Ask strip at the bottom: pick your name, type, send.
+  No dollars, no rates — ever. Refreshes itself; the office pushes work
+  and it appears here and on the worker's own phone at the same moment.
+  Backend: tr-intake v2.9 (migration 0020). Mounts at verify.bifolded.com/shop.html?k=…
+  Mint the station link in Crew Hub / Job Desk: + Worker named e.g.
+  "Shop Tablet" with kind station (worker_add {kind:"station"}).
+-->
+<style>
+  :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
+         --line:#d9d4e0; --bg:#f7f5fa; --muted:#8a8194; --ok:#1d7a46; --warn:#a01212; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:var(--purple);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.05em}
+  header .d{opacity:.85;font-size:15px}
+  main{padding:14px;max-width:1400px;margin:0 auto}
+  #board{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+  .wcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+  .wname{font-size:19px;font-weight:700;color:var(--purple);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+  .wname .h{font-size:13px;color:var(--muted);font-weight:400}
+  .duty{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .duty .j{font-size:13px;color:var(--gold);font-weight:700}
+  .duty b{font-size:17px;line-height:1.35}
+  .duty .n{font-size:13px;color:var(--muted);margin-top:3px}
+  .row{display:flex;gap:10px;align-items:center;margin-top:10px}
+  input.hrs{width:6rem;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:17px;text-align:right}
+  button{font:inherit;cursor:pointer;border-radius:10px;border:0;padding:13px 20px;font-size:17px;font-weight:700}
+  button.go{background:var(--ok);color:#fff;flex:1}
+  .next{opacity:.66}
+  .next .tag{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .askp{font-size:14px;color:var(--purple);padding:4px 0}
+  .q{border-left:4px solid var(--gold);background:#faf8fc;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:14px}
+  .q.ans{border-left-color:var(--ok)}
+  .q .a{background:#f1ecf7;border-radius:6px;padding:6px 9px;margin-top:5px}
+  .q .a b{color:var(--purple)}
+  .wait{color:var(--gold);font-weight:700;font-size:12.5px}
+  .empty{color:var(--muted);font-size:14px}
+  .donel{color:var(--ok);font-size:14px;padding:3px 0}
+  #askbar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--line);padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  #askbar select,#askbar input{padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:#fff}
+  #askbar input{flex:1;min-width:220px}
+  button.send{background:var(--purple);color:#fff}
+  #gate{text-align:center;padding:60px 20px;color:var(--muted);font-size:16px;line-height:1.6}
+  #msg{color:var(--warn);font-size:14px;min-height:18px;padding:4px 14px}
+  footer{text-align:center;font-size:12px;color:var(--muted);padding:10px 0 20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>TUNGSTEN ROYCE — SHOP FLOOR</h1>
+  <div class="d" id="today"></div>
+</header>
+<main>
+  <div id="gate">Checking the station link…</div>
+  <div id="board"></div>
+  <div id="msg"></div>
+</main>
+<div id="askbar" style="display:none">
+  <select id="aWho"></select>
+  <input id="aQ" placeholder="Ask the office — it lands on their screen and comes back answered here">
+  <button class="send" onclick="ask()">Send</button>
+</div>
+<footer>Tungsten Royce · Shop Floor station · no dollars live here</footer>
+
+<script>
+const ENDPOINT="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
+const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; // publishable — public by design
+const TOKEN=new URLSearchParams(location.search).get("k")||"";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pub=async(b)=>{try{const r=await fetch(ENDPOINT,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN},b))});return await r.json();}catch(e){return{ok:false,error:"Offline — trying again shortly."};}};
+let V=null;
+const jn=id=>id&&V?(V.job_names[id]||""):"";
+
+async function boot(){
+  if(TOKEN.length<20){ $("gate").textContent="This board opens from the station link — ask the office."; return; }
+  const j=await pub({action:"shop_view"});
+  if(!j.ok){ $("gate").textContent=j.error; return; }
+  V=j;
+  $("gate").style.display="none"; $("askbar").style.display="flex";
+  $("today").textContent=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+  $("aWho").innerHTML='<option value="">who is asking?</option>'+j.crew.map(w=>`<option>${esc(w)}</option>`).join("");
+  $("board").innerHTML=j.crew.map(w=>{
+    const d=j.duties.filter(x=>x.worker===w);
+    const now=d.filter(x=>x.status==="now"), next=d.filter(x=>x.status==="next"), doneT=d.filter(x=>x.status==="done");
+    const asks=j.asks.filter(x=>x.worker===w);
+    const qs=j.questions.filter(x=>x.worker===w);
+    const hrsT=doneT.reduce((s,x)=>s+Number(x.hours||0),0);
+    return `<div class="wcard"><div class="wname">${esc(w)}<span class="h">${hrsT?`${Math.round(hrsT*10)/10} h today`:""}</span></div>`+
+      (now.length?now.map(x=>`<div class="duty">
+          ${x.job_id?`<div class="j">${esc(jn(x.job_id))}</div>`:""}
+          <b>${esc(x.title)}</b>${x.note?`<div class="n">${esc(x.note)}</div>`:""}
+          <div class="row"><input class="hrs" id="h_${x.id}" inputmode="decimal" placeholder="hrs">
+          <button class="go" onclick="done('${x.id}')">Done ✓</button></div>
+        </div>`).join(""):'<div class="empty">Nothing on the board.</div>')+
+      next.map(x=>`<div class="duty next"><span class="tag">next</span> ${x.job_id?`<span class="j">${esc(jn(x.job_id))}</span>`:""}
+        <b style="font-size:15px">${esc(x.title)}</b></div>`).join("")+
+      doneT.map(x=>`<div class="donel">✓ ${esc(x.title)}${x.hours?` · ${x.hours} h`:""}</div>`).join("")+
+      asks.map(x=>`<div class="askp">📷 ${esc(x.what)} — <span class="wait">use your phone link</span></div>`).join("")+
+      qs.map(q=>`<div class="q ${q.status==="answered"?"ans":""}">${esc(q.question)}
+        ${q.status==="answered"?`<div class="a"><b>${esc(q.answered_by||"office")}:</b> ${esc(q.answer)}</div>`
+          :'<div class="wait">sent — answer comes back here</div>'}</div>`).join("")+
+      `</div>`;
+  }).join("")||'<div class="empty">No crew yet — add workers in the Crew Hub.</div>';
+}
+
+async function done(id){
+  const hrs=parseFloat($("h_"+id).value)||0;
+  const j=await pub({action:"shop_done",duty_id:id,hours:hrs>0?hrs:undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("msg").textContent=""; boot();
+}
+
+async function ask(){
+  const w=$("aWho").value, q=$("aQ").value.trim();
+  if(!w){ $("msg").textContent="Pick your name first."; return; }
+  if(q.length<3){ $("msg").textContent="Type the question first."; return; }
+  const j=await pub({action:"shop_ask",worker:w,question:q});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("aQ").value=""; $("msg").textContent=""; boot();
+}
+
+boot();
+setInterval(boot, 45000); // the board keeps itself honest
+</script>
+</body>
+</html>
