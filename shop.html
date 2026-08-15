@@ -5,27 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 1.0 (2026-08-15)  ·  PUBLIC (station token)
-  The shop tablet: every worker's day on one board, big touch targets.
-  One column per worker — NOW duties with a big Done ✓ (hours ride along,
-  step signs, labor logs), the NEXT queue, photo asks, and every question
-  with its answer. Ask strip at the bottom: pick your name, type, send.
-  No dollars, no rates — ever. Refreshes itself; the office pushes work
-  and it appears here and on the worker's own phone at the same moment.
-  Backend: tr-intake v2.9 (migration 0020). Mounts at verify.bifolded.com/shop.html?k=…
-  Mint the station link in Crew Hub / Job Desk: + Worker named e.g.
-  "Shop Tablet" with kind station (worker_add {kind:"station"}).
+  TR FINAL SOLUTION — Shop Floor 2.0 (2026-08-15)  ·  PUBLIC (station token)
+  The shop tablet, three tabs:
+  BOARD — every worker's day: NOW duties w/ big Done ✓ (hours/step/labor ride),
+  NEXT queue, photo asks, questions w/ answers, ask strip.
+  INVENTORY — live counts (the shelf number IS the number), request stock;
+  office confirmations and orders ride back here.
+  MACHINES — report an issue (normal/urgent/DOWN) and the maintenance table:
+  every service line w/ last done, next due (flags when close), who's tasked,
+  and a "Serviced today" button that rolls the due date forward.
+  Backend: tr-intake v3.0 (migrations 0020, 0021). Mounts at verify.bifolded.com/shop.html?k=…
 -->
 <style>
   :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
          --line:#d9d4e0; --bg:#f7f5fa; --muted:#8a8194; --ok:#1d7a46; --warn:#a01212; }
   *{box-sizing:border-box}
   body{margin:0;font-family:Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-  header{background:var(--purple);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
-  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.05em}
-  header .d{opacity:.85;font-size:15px}
+  header{background:var(--purple);color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{margin:0;font-size:18px;font-weight:700;letter-spacing:.05em}
+  header .d{opacity:.85;font-size:14px}
+  nav{display:flex;gap:8px;background:var(--purple);padding:0 14px 12px}
+  nav button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:10px;padding:12px 22px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+  nav button.on{background:#fff;color:var(--purple)}
   main{padding:14px;max-width:1400px;margin:0 auto}
-  #board{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
   .wcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
   .wname{font-size:19px;font-weight:700;color:var(--purple);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline}
   .wname .h{font-size:13px;color:var(--muted);font-weight:400}
@@ -33,27 +36,42 @@
   .duty .j{font-size:13px;color:var(--gold);font-weight:700}
   .duty b{font-size:17px;line-height:1.35}
   .duty .n{font-size:13px;color:var(--muted);margin-top:3px}
-  .row{display:flex;gap:10px;align-items:center;margin-top:10px}
-  input.hrs{width:6rem;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:17px;text-align:right}
-  button{font:inherit;cursor:pointer;border-radius:10px;border:0;padding:13px 20px;font-size:17px;font-weight:700}
-  button.go{background:var(--ok);color:#fff;flex:1}
+  .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  input,select{padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:#fff}
+  input.hrs{width:6rem;text-align:right}
+  input.qty{width:6.5rem;text-align:right;font-size:17px}
+  button{font:inherit;cursor:pointer;border-radius:10px;border:0;padding:13px 20px;font-size:16px;font-weight:700}
+  button.go{background:var(--ok);color:#fff}
+  button.p{background:var(--purple);color:#fff}
+  button.sm{padding:9px 14px;font-size:14px}
   .next{opacity:.66}
-  .next .tag{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .tag{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
   .askp{font-size:14px;color:var(--purple);padding:4px 0}
   .q{border-left:4px solid var(--gold);background:#faf8fc;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:14px}
   .q.ans{border-left-color:var(--ok)}
   .q .a{background:#f1ecf7;border-radius:6px;padding:6px 9px;margin-top:5px}
   .q .a b{color:var(--purple)}
   .wait{color:var(--gold);font-weight:700;font-size:12.5px}
-  .empty{color:var(--muted);font-size:14px}
+  .empty{color:var(--muted);font-size:14px;padding:8px 0}
   .donel{color:var(--ok);font-size:14px;padding:3px 0}
-  #askbar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--line);padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  #askbar select,#askbar input{padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th{text-align:left;color:var(--purple);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--line);padding:6px}
+  td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  .low{color:var(--warn);font-weight:700}
+  .chip{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:3px 9px;background:#f1ecf7;color:var(--purple)}
+  .chip.due{background:#f5f1e8;color:var(--gold)}
+  .chip.over{background:#f9e9e4;color:var(--warn)}
+  .chip.ok{background:#e7f3ec;color:var(--ok)}
+  .chip.down{background:var(--warn);color:#fff}
+  .msgline{font-size:14px;padding:6px 0;border-bottom:1px solid var(--line)}
+  .msgline:last-child{border-bottom:0}
+  #askbar{position:sticky;bottom:0;background:#fff;border-top:2px solid var(--line);padding:12px 14px;display:none;gap:10px;flex-wrap:wrap;align-items:center}
   #askbar input{flex:1;min-width:220px}
-  button.send{background:var(--purple);color:#fff}
   #gate{text-align:center;padding:60px 20px;color:var(--muted);font-size:16px;line-height:1.6}
   #msg{color:var(--warn);font-size:14px;min-height:18px;padding:4px 14px}
   footer{text-align:center;font-size:12px;color:var(--muted);padding:10px 0 20px}
+  h2{color:var(--purple);font-size:16px;margin:18px 0 8px}
 </style>
 </head>
 <body>
@@ -61,15 +79,53 @@
   <h1>TUNGSTEN ROYCE — SHOP FLOOR</h1>
   <div class="d" id="today"></div>
 </header>
+<nav id="tabs" style="display:none">
+  <button id="t_board" class="on" onclick="tab('board')">Board</button>
+  <button id="t_inv" onclick="tab('inv')">Inventory</button>
+  <button id="t_mach" onclick="tab('mach')">Machines</button>
+</nav>
 <main>
   <div id="gate">Checking the station link…</div>
-  <div id="board"></div>
+  <div id="v_board" style="display:none"><div class="grid" id="board"></div></div>
+  <div id="v_inv" style="display:none">
+    <div class="wcard">
+      <h2 style="margin-top:0">Stock — the number on the shelf</h2>
+      <div class="empty">Count something? Type what you actually see and hit Set — the office sees it live.</div>
+      <table id="invT"></table>
+      <div class="row">
+        <input id="reqName" placeholder="need something not listed?" style="flex:1;min-width:200px">
+        <input id="reqQty" class="qty" inputmode="decimal" placeholder="qty">
+        <button class="p" onclick="reqFree()">Request</button>
+      </div>
+    </div>
+    <div class="wcard" style="margin-top:14px">
+      <h2 style="margin-top:0">Requests &amp; orders</h2>
+      <div id="invMsgs"></div>
+    </div>
+  </div>
+  <div id="v_mach" style="display:none">
+    <div class="wcard">
+      <h2 style="margin-top:0">Report a machine issue</h2>
+      <div class="row">
+        <select id="isMach"></select>
+        <input id="isWhat" placeholder="what's wrong — be specific" style="flex:1;min-width:220px">
+        <select id="isSev"><option value="normal">Can wait</option><option value="urgent">Urgent</option><option value="down">MACHINE DOWN</option></select>
+        <button class="p" onclick="reportIssue()">Report</button>
+      </div>
+      <div id="issues" style="margin-top:10px"></div>
+    </div>
+    <div class="wcard" style="margin-top:14px">
+      <h2 style="margin-top:0">Maintenance</h2>
+      <div class="empty">Serviced today rolls the due date forward by the machine's interval.</div>
+      <table id="maintT"></table>
+    </div>
+  </div>
   <div id="msg"></div>
 </main>
-<div id="askbar" style="display:none">
+<div id="askbar">
   <select id="aWho"></select>
   <input id="aQ" placeholder="Ask the office — it lands on their screen and comes back answered here">
-  <button class="send" onclick="ask()">Send</button>
+  <button class="p" onclick="ask()">Send</button>
 </div>
 <footer>Tungsten Royce · Shop Floor station · no dollars live here</footer>
 
@@ -80,17 +136,24 @@ const TOKEN=new URLSearchParams(location.search).get("k")||"";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pub=async(b)=>{try{const r=await fetch(ENDPOINT,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN},b))});return await r.json();}catch(e){return{ok:false,error:"Offline — trying again shortly."};}};
-let V=null;
+let V=null,S=null,TAB="board";
 const jn=id=>id&&V?(V.job_names[id]||""):"";
+const who=()=>$("aWho").value||"";
 
-async function boot(){
-  if(TOKEN.length<20){ $("gate").textContent="This board opens from the station link — ask the office."; return; }
+function tab(t){ TAB=t;
+  for(const x of ["board","inv","mach"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; }
+  if(t!=="board")loadShop(); else loadBoard();
+}
+
+async function loadBoard(){
   const j=await pub({action:"shop_view"});
   if(!j.ok){ $("gate").textContent=j.error; return; }
   V=j;
-  $("gate").style.display="none"; $("askbar").style.display="flex";
+  $("gate").style.display="none"; $("tabs").style.display="flex"; $("askbar").style.display="flex";
+  $("v_board").style.display=TAB==="board"?"block":"none";
   $("today").textContent=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-  $("aWho").innerHTML='<option value="">who is asking?</option>'+j.crew.map(w=>`<option>${esc(w)}</option>`).join("");
+  const sel=$("aWho").value;
+  $("aWho").innerHTML='<option value="">who is asking?</option>'+j.crew.map(w=>`<option ${w===sel?"selected":""}>${esc(w)}</option>`).join("");
   $("board").innerHTML=j.crew.map(w=>{
     const d=j.duties.filter(x=>x.worker===w);
     const now=d.filter(x=>x.status==="now"), next=d.filter(x=>x.status==="next"), doneT=d.filter(x=>x.status==="done");
@@ -102,7 +165,7 @@ async function boot(){
           ${x.job_id?`<div class="j">${esc(jn(x.job_id))}</div>`:""}
           <b>${esc(x.title)}</b>${x.note?`<div class="n">${esc(x.note)}</div>`:""}
           <div class="row"><input class="hrs" id="h_${x.id}" inputmode="decimal" placeholder="hrs">
-          <button class="go" onclick="done('${x.id}')">Done ✓</button></div>
+          <button class="go" style="flex:1" onclick="done('${x.id}')">Done ✓</button></div>
         </div>`).join(""):'<div class="empty">Nothing on the board.</div>')+
       next.map(x=>`<div class="duty next"><span class="tag">next</span> ${x.job_id?`<span class="j">${esc(jn(x.job_id))}</span>`:""}
         <b style="font-size:15px">${esc(x.title)}</b></div>`).join("")+
@@ -115,24 +178,99 @@ async function boot(){
   }).join("")||'<div class="empty">No crew yet — add workers in the Crew Hub.</div>';
 }
 
+async function loadShop(){
+  const j=await pub({action:"shop_ops_view"});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  S=j;
+  // inventory
+  $("invT").innerHTML=(S.items.length?`<tr><th>Item</th><th style="text-align:right">On shelf</th><th></th><th></th></tr>`:"")+
+    S.items.map(it=>{
+      const low=it.min_qty!=null&&Number(it.qty)<=Number(it.min_qty);
+      return `<tr><td><b>${esc(it.name)}</b> <span class="tag">${esc(it.unit)}</span>${low?' <span class="chip over">LOW</span>':""}</td>
+        <td style="text-align:right" class="${low?"low":""}"><b style="font-size:17px">${it.qty}</b></td>
+        <td><input class="qty" id="c_${it.id}" inputmode="decimal" placeholder="${it.qty}">
+            <button class="sm p" onclick="setCount('${it.id}')">Set</button></td>
+        <td><button class="sm" style="background:#f1ecf7;color:var(--purple)" onclick="reqItem('${it.id}')">Need more</button></td></tr>`;
+    }).join("")||'<div class="empty">No items yet — the office adds them in the Crew Hub.</div>';
+  const K={request:"asked",order:"ORDERED",count:"counted"};
+  $("invMsgs").innerHTML=S.msgs.length?S.msgs.filter(m=>m.kind!=="count").map(m=>`<div class="msgline">
+      ${m.from_side==="office"?'<span class="chip ok">office</span>':'<span class="chip">floor</span>'}
+      <b>${esc(m.item_name)}</b>${m.qty?` × ${m.qty}`:""} — ${K[m.kind]||m.kind}
+      ${m.note?` · ${esc(m.note)}`:""} <span class="tag">${esc(m.by_name||"")}</span>
+      ${m.status==="confirmed"?'<span class="chip due">confirmed</span>':m.status==="done"?'<span class="chip ok">done ✓</span>':'<span class="wait">waiting on the office</span>'}
+    </div>`).join("")||'<div class="empty">Quiet.</div>':'<div class="empty">Quiet.</div>';
+  // machines
+  const selM=$("isMach").value;
+  $("isMach").innerHTML='<option value="">which machine?</option>'+S.machines.map(m=>`<option value="${m.id}" ${m.id===selM?"selected":""}>${esc(m.name)}</option>`).join("");
+  $("issues").innerHTML=S.issues.length?S.issues.map(i=>`<div class="msgline">
+      ${i.severity==="down"?'<span class="chip down">DOWN</span>':i.severity==="urgent"?'<span class="chip over">urgent</span>':""}
+      <b>${esc(i.machine||"?")}</b> — ${esc(i.what)} <span class="tag">${esc(i.by_name||"")}</span>
+      ${i.status==="fixed"?'<span class="chip ok">fixed ✓</span>':i.status==="ack"?'<span class="chip due">office on it</span>':'<span class="wait">reported</span>'}
+    </div>`).join(""):'<div class="empty">No open issues — keep it that way.</div>';
+  const mn=id=>{const m=S.machines.find(x=>x.id===id);return m?m.name:"?";};
+  const today=new Date().toISOString().slice(0,10);
+  const soon=new Date(Date.now()+14*86400000).toISOString().slice(0,10);
+  $("maintT").innerHTML=(S.maintenance.length?`<tr><th>Machine</th><th>Service</th><th>Last done</th><th>Next due</th><th>Tasked</th><th></th></tr>`:"")+
+    S.maintenance.map(m=>{
+      const flag=!m.next_due?"":m.next_due<today?`<span class="chip over">OVERDUE</span>`:m.next_due<=soon?`<span class="chip due">due soon</span>`:`<span class="chip ok">ok</span>`;
+      return `<tr><td><b>${esc(mn(m.machine_id))}</b></td><td>${esc(m.service)}${m.performed?`<div class="tag">${esc(m.performed)}</div>`:""}</td>
+        <td>${m.last_done||"—"}</td><td>${m.next_due||"—"} ${flag}</td><td>${esc(m.tasked_to||"—")}</td>
+        <td><button class="sm go" onclick="serviced('${m.id}')">Serviced today ✓</button></td></tr>`;
+    }).join("")||'<div class="empty">No service lines yet — the office builds the table in the Crew Hub.</div>';
+}
+
+async function setCount(id){
+  const v=parseFloat($("c_"+id).value);
+  if(!Number.isFinite(v)||v<0){ $("msg").textContent="Type the number on the shelf."; return; }
+  const j=await pub({action:"inv_count",item_id:id,qty:v,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("msg").textContent=""; loadShop();
+}
+async function reqItem(id){
+  const q=prompt("How many do you need? (blank = just flag it)");
+  const j=await pub({action:"inv_request",item_id:id,qty:q&&parseFloat(q)>0?parseFloat(q):undefined,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("msg").textContent=""; loadShop();
+}
+async function reqFree(){
+  const n=$("reqName").value.trim(); if(n.length<2){ $("msg").textContent="Name what you need."; return; }
+  const q=parseFloat($("reqQty").value);
+  const j=await pub({action:"inv_request",name:n,qty:q>0?q:undefined,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("reqName").value=""; $("reqQty").value=""; $("msg").textContent=""; loadShop();
+}
+async function reportIssue(){
+  const m=$("isMach").value, w=$("isWhat").value.trim();
+  if(w.length<3){ $("msg").textContent="Say what's wrong."; return; }
+  const j=await pub({action:"issue_report",machine_id:m||undefined,machine:m?undefined:"(general)",what:w,severity:$("isSev").value,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("isWhat").value=""; $("msg").textContent=""; loadShop();
+}
+async function serviced(id){
+  const p=prompt("What was performed? (blank keeps the line's usual service note)");
+  const j=await pub({action:"maint_done",id,performed:p&&p.trim()?p.trim():undefined,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("msg").textContent=""; loadShop();
+}
+
 async function done(id){
   const hrs=parseFloat($("h_"+id).value)||0;
   const j=await pub({action:"shop_done",duty_id:id,hours:hrs>0?hrs:undefined});
   if(!j.ok){ $("msg").textContent=j.error; return; }
-  $("msg").textContent=""; boot();
+  $("msg").textContent=""; loadBoard();
 }
-
 async function ask(){
   const w=$("aWho").value, q=$("aQ").value.trim();
   if(!w){ $("msg").textContent="Pick your name first."; return; }
   if(q.length<3){ $("msg").textContent="Type the question first."; return; }
   const j=await pub({action:"shop_ask",worker:w,question:q});
   if(!j.ok){ $("msg").textContent=j.error; return; }
-  $("aQ").value=""; $("msg").textContent=""; boot();
+  $("aQ").value=""; $("msg").textContent=""; loadBoard();
 }
 
-boot();
-setInterval(boot, 45000); // the board keeps itself honest
+if(TOKEN.length<20){ $("gate").textContent="This board opens from the station link — ask the office."; }
+else { loadBoard(); }
+setInterval(()=>{ if(TAB==="board")loadBoard(); else loadShop(); }, 45000);
 </script>
 </body>
 </html>
