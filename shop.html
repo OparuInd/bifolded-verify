@@ -5,16 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 2.0 (2026-08-15)  ·  PUBLIC (station token)
+  TR FINAL SOLUTION — Shop Floor 3.0 (2026-08-15)  ·  PUBLIC (station token)
   The shop tablet, three tabs:
   BOARD — every worker's day: NOW duties w/ big Done ✓ (hours/step/labor ride),
   NEXT queue, photo asks, questions w/ answers, ask strip.
-  INVENTORY — live counts (the shelf number IS the number), request stock;
-  office confirmations and orders ride back here.
-  MACHINES — report an issue (normal/urgent/DOWN) and the maintenance table:
-  every service line w/ last done, next due (flags when close), who's tasked,
-  and a "Serviced today" button that rolls the due date forward.
-  Backend: tr-intake v3.0 (migrations 0020, 0021). Mounts at verify.bifolded.com/shop.html?k=…
+  INVENTORY 3.0 — GROUPS and SUB-GROUPS created right here, each with its
+  OWN COLOR border/shadow (color picker inline), collapsible. Items carry
+  inventory ID markings, counts (Set = live), requests w/ a dedicated
+  🔥 URGENT button, condition buttons (🦷 chipped tooth · 〰 worn edge —
+  urgent messages ride to the office), sharpening schedules that flag
+  OVERDUE/due-soon and roll forward on "Sharpened ✓", and 📷 send-a-picture
+  straight into the office's view.
+  MACHINES — issue reporting + the maintenance table w/ due flags.
+  Backend: tr-intake v3.1 (migrations 0020–0022). Mounts at verify.bifolded.com/shop.html?k=…
 -->
 <style>
   :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
@@ -72,6 +75,30 @@
   #msg{color:var(--warn);font-size:14px;min-height:18px;padding:4px 14px}
   footer{text-align:center;font-size:12px;color:var(--muted);padding:10px 0 20px}
   h2{color:var(--purple);font-size:16px;margin:18px 0 8px}
+  .grp{background:#fff;border:2px solid;border-radius:14px;padding:0;margin-bottom:14px;overflow:hidden}
+  .ghead{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;flex-wrap:wrap}
+  .ghead b{font-size:18px}
+  .ghead .cnt{color:var(--muted);font-size:13px;font-weight:400}
+  .dot{width:16px;height:16px;border-radius:50%;flex:none}
+  .caret{margin-left:auto;font-size:15px;color:var(--muted)}
+  .gbody{padding:2px 16px 12px}
+  .sub{border:1.5px solid;border-radius:11px;margin:8px 0;overflow:hidden}
+  .sub .ghead{padding:10px 13px}
+  .sub .ghead b{font-size:15.5px}
+  .item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+  .item .nm{font-size:16px;font-weight:700}
+  .code{display:inline-block;font-size:11.5px;font-weight:700;border:1px solid var(--line);border-radius:5px;padding:1px 7px;color:var(--muted);letter-spacing:.04em}
+  .cond{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:2px 8px}
+  .cond.chipped,.cond.out{background:var(--warn);color:#fff}
+  .cond.worn,.cond.sharpen_due{background:#f5f1e8;color:var(--gold)}
+  .ibtns{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+  .ibtns button{padding:9px 13px;font-size:13.5px;border-radius:9px}
+  .ibtns .b1{background:#f1ecf7;color:var(--purple)}
+  .ibtns .b2{background:#f9e9e4;color:var(--warn)}
+  .ibtns .b3{background:#f5f1e8;color:var(--gold)}
+  input[type=color]{width:44px;height:38px;padding:2px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .addrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 0 2px}
+  .addrow input{padding:9px;font-size:14px}
 </style>
 </head>
 <body>
@@ -88,20 +115,25 @@
   <div id="gate">Checking the station link…</div>
   <div id="v_board" style="display:none"><div class="grid" id="board"></div></div>
   <div id="v_inv" style="display:none">
+    <div id="invGroups"></div>
     <div class="wcard">
-      <h2 style="margin-top:0">Stock — the number on the shelf</h2>
-      <div class="empty">Count something? Type what you actually see and hit Set — the office sees it live.</div>
-      <table id="invT"></table>
+      <div class="row" style="margin-top:0">
+        <input id="ngName" placeholder="new group — e.g. Saw Blades" style="min-width:180px">
+        <input id="ngColor" type="color" value="#9C7A3E" title="group color">
+        <button class="p" onclick="grpAdd()">+ Group</button>
+      </div>
       <div class="row">
         <input id="reqName" placeholder="need something not listed?" style="flex:1;min-width:200px">
         <input id="reqQty" class="qty" inputmode="decimal" placeholder="qty">
-        <button class="p" onclick="reqFree()">Request</button>
+        <button class="p" onclick="reqFree(false)">Request</button>
+        <button class="sm b2" style="background:#f9e9e4;color:var(--warn)" onclick="reqFree(true)">🔥 Urgent</button>
       </div>
     </div>
     <div class="wcard" style="margin-top:14px">
       <h2 style="margin-top:0">Requests &amp; orders</h2>
       <div id="invMsgs"></div>
     </div>
+    <input type="file" accept="image/*" capture="environment" id="picFile" style="display:none" onchange="picTaken()">
   </div>
   <div id="v_mach" style="display:none">
     <div class="wcard">
@@ -182,18 +214,10 @@ async function loadShop(){
   const j=await pub({action:"shop_ops_view"});
   if(!j.ok){ $("msg").textContent=j.error; return; }
   S=j;
-  // inventory
-  $("invT").innerHTML=(S.items.length?`<tr><th>Item</th><th style="text-align:right">On shelf</th><th></th><th></th></tr>`:"")+
-    S.items.map(it=>{
-      const low=it.min_qty!=null&&Number(it.qty)<=Number(it.min_qty);
-      return `<tr><td><b>${esc(it.name)}</b> <span class="tag">${esc(it.unit)}</span>${low?' <span class="chip over">LOW</span>':""}</td>
-        <td style="text-align:right" class="${low?"low":""}"><b style="font-size:17px">${it.qty}</b></td>
-        <td><input class="qty" id="c_${it.id}" inputmode="decimal" placeholder="${it.qty}">
-            <button class="sm p" onclick="setCount('${it.id}')">Set</button></td>
-        <td><button class="sm" style="background:#f1ecf7;color:var(--purple)" onclick="reqItem('${it.id}')">Need more</button></td></tr>`;
-    }).join("")||'<div class="empty">No items yet — the office adds them in the Crew Hub.</div>';
-  const K={request:"asked",order:"ORDERED",count:"counted"};
+  renderInv();
+  const K={request:"asked",order:"ORDERED",count:"counted",condition:"condition",photo:"📷 picture"};
   $("invMsgs").innerHTML=S.msgs.length?S.msgs.filter(m=>m.kind!=="count").map(m=>`<div class="msgline">
+      ${m.urgent?'<span class="chip down">URGENT</span> ':""}
       ${m.from_side==="office"?'<span class="chip ok">office</span>':'<span class="chip">floor</span>'}
       <b>${esc(m.item_name)}</b>${m.qty?` × ${m.qty}`:""} — ${K[m.kind]||m.kind}
       ${m.note?` · ${esc(m.note)}`:""} <span class="tag">${esc(m.by_name||"")}</span>
@@ -219,6 +243,114 @@ async function loadShop(){
     }).join("")||'<div class="empty">No service lines yet — the office builds the table in the Crew Hub.</div>';
 }
 
+const OPEN={};
+const CONDL={good:"",sharpen_due:"sharpen due",chipped:"🦷 chipped",worn:"〰 worn edge",out:"OUT"};
+function itemRow(it){
+  const low=it.min_qty!=null&&Number(it.qty)<=Number(it.min_qty);
+  const today=new Date().toISOString().slice(0,10);
+  const soon=new Date(Date.now()+14*86400000).toISOString().slice(0,10);
+  const shp=it.sharpen_due?(it.sharpen_due<today?'<span class="chip over">SHARPEN OVERDUE</span>':it.sharpen_due<=soon?`<span class="chip due">sharpen by ${it.sharpen_due}</span>`:`<span class="tag">sharp ok · next ${it.sharpen_due}</span>`):"";
+  const sharpish=it.sharpen_interval_days||it.sharpen_due||["chipped","worn","sharpen_due"].includes(it.condition);
+  return `<div class="item">
+    <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+      <span class="nm">${esc(it.name)}</span>
+      ${it.inv_code?`<span class="code">${esc(it.inv_code)}</span>`:""}
+      <span class="tag">${esc(it.unit)}</span>
+      ${low?'<span class="chip over">LOW</span>':""}
+      ${it.condition&&it.condition!=="good"?`<span class="cond ${it.condition}">${CONDL[it.condition]||it.condition}</span>`:""}
+      ${shp}
+      <span style="margin-left:auto" class="${low?"low":""}"><b style="font-size:18px">${it.qty}</b></span>
+      <input class="qty" id="c_${it.id}" inputmode="decimal" placeholder="${it.qty}">
+      <button class="sm p" onclick="setCount('${it.id}')">Set</button>
+    </div>
+    <div class="ibtns">
+      <button class="b1" onclick="reqItem('${it.id}',false)">Need more</button>
+      <button class="b2" onclick="reqItem('${it.id}',true)">🔥 Urgent</button>
+      <button class="b2" onclick="cond('${it.id}','chipped')">🦷 Chipped</button>
+      <button class="b3" onclick="cond('${it.id}','worn')">〰 Worn edge</button>
+      ${sharpish?`<button class="go sm" onclick="sharpItem('${it.id}')">Sharpened ✓</button>`:""}
+      ${it.condition&&it.condition!=="good"?`<button class="sm" onclick="cond('${it.id}','good')">All good ✓</button>`:""}
+      <button class="b1" onclick="sendPic('${it.id}')">📷 Picture</button>
+    </div></div>`;
+}
+function grpBlock(g,items,subs,depth){
+  const open=OPEN[g.id]!==false;
+  const inGrp=items.filter(x=>x.group_id===g.id);
+  const n=inGrp.length+subs.reduce((t,sg)=>t+items.filter(x=>x.group_id===sg.id).length,0);
+  return `<div class="${depth?"sub":"grp"}" style="border-color:${g.color};${depth?"":`box-shadow:0 3px 16px ${g.color}55`}">
+    <div class="ghead" onclick="tog('${g.id}')">
+      <span class="dot" style="background:${g.color}"></span><b>${esc(g.name)}</b>
+      <span class="cnt">${n} item${n===1?"":"s"}</span>
+      <input type="color" value="${g.color}" onclick="event.stopPropagation()" onchange="grpColor('${g.id}',this.value)" title="group color">
+      ${depth?"":`<button class="sm" onclick="event.stopPropagation();grpSub('${g.id}')">+ Sub</button>`}
+      <button class="sm" onclick="event.stopPropagation();itemAdd('${g.id}')">+ Item</button>
+      <span class="caret">${open?"▾":"▸"}</span>
+    </div>
+    ${open?`<div class="gbody">${inGrp.map(itemRow).join("")||(subs.length?"":'<div class="empty">Empty — add the first item.</div>')}
+      ${subs.map(sg=>grpBlock(sg,items,[],1)).join("")}</div>`:""}
+  </div>`;
+}
+function renderInv(){
+  const G=S.groups||[];
+  const tops=G.filter(g=>!g.parent_id);
+  const loose=S.items.filter(x=>!x.group_id||!G.find(g=>g.id===x.group_id));
+  $("invGroups").innerHTML=tops.map(g=>grpBlock(g,S.items,G.filter(x=>x.parent_id===g.id),0)).join("")+
+    (loose.length?grpBlock({id:"_none",name:"Ungrouped",color:"#8a8194"},loose.map(x=>({...x,group_id:"_none"})),[],0):"")+
+    (tops.length||loose.length?"":'<div class="wcard"><div class="empty">No inventory yet — make the first group below.</div></div>');
+}
+function tog(id){ OPEN[id]=OPEN[id]===false?true:false; renderInv(); }
+async function grpAdd(){
+  const n=$("ngName").value.trim(); if(n.length<2){ $("msg").textContent="Name the group first."; return; }
+  const j=await pub({action:"grp_add",name:n,color:$("ngColor").value,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("ngName").value=""; $("msg").textContent=""; loadShop();
+}
+async function grpSub(pid){
+  const n=prompt("Sub-group name:"); if(!n||n.trim().length<2)return;
+  const g=(S.groups||[]).find(x=>x.id===pid);
+  const j=await pub({action:"grp_add",name:n.trim(),parent_id:pid,color:g?g.color:"#3d2a56",by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  loadShop();
+}
+async function grpColor(id,c){ const j=await pub({action:"grp_set",id,color:c}); if(!j.ok)$("msg").textContent=j.error; else loadShop(); }
+async function itemAdd(gid){
+  const n=prompt("Item name (e.g. Forrest WW2 12\" blade):"); if(!n||n.trim().length<2)return;
+  const code=prompt("Inventory ID marking? (blank = none)")||"";
+  const q=prompt("How many on the shelf right now?")||"0";
+  const sh=prompt("Sharpening schedule — every how many days? (blank = not a sharpened tool)")||"";
+  const j=await pub({action:"item_add",group_id:gid==="_none"?undefined:gid,name:n.trim(),inv_code:code.trim()||undefined,
+    qty:parseFloat(q)>=0?parseFloat(q):0,sharpen_interval_days:parseInt(sh)>0?parseInt(sh):undefined,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  loadShop();
+}
+async function cond(id,c){
+  const note=c==="good"?"":prompt(c==="chipped"?"Which tooth / how bad?":"How worn — note for the office:")||"";
+  const j=await pub({action:"inv_condition",item_id:id,condition:c,note:note.trim()||undefined,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("msg").textContent=""; loadShop();
+}
+async function sharpItem(id){
+  const j=await pub({action:"inv_sharpened",item_id:id,by:who()||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("msg").textContent=""; loadShop();
+}
+let PIC=null;
+function sendPic(id){ PIC=id; $("picFile").click(); }
+function picTaken(){
+  const f=$("picFile").files[0]; if(!f||!PIC)return;
+  const img=new Image();
+  img.onload=async function(){
+    const M=1600, sc=Math.min(1,M/Math.max(img.width,img.height));
+    const cv=document.createElement("canvas");
+    cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+    cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+    const j=await pub({action:"inv_photo",item_id:PIC,image:cv.toDataURL("image/jpeg",0.82),by:who()||undefined});
+    if(!j.ok){ $("msg").textContent=j.error; return; }
+    $("picFile").value=""; PIC=null; $("msg").textContent=""; loadShop();
+  };
+  img.src=URL.createObjectURL(f);
+}
+
 async function setCount(id){
   const v=parseFloat($("c_"+id).value);
   if(!Number.isFinite(v)||v<0){ $("msg").textContent="Type the number on the shelf."; return; }
@@ -226,16 +358,17 @@ async function setCount(id){
   if(!j.ok){ $("msg").textContent=j.error; return; }
   $("msg").textContent=""; loadShop();
 }
-async function reqItem(id){
-  const q=prompt("How many do you need? (blank = just flag it)");
-  const j=await pub({action:"inv_request",item_id:id,qty:q&&parseFloat(q)>0?parseFloat(q):undefined,by:who()||undefined});
+async function reqItem(id,urgent){
+  const q=prompt((urgent?"URGENT — ":"")+"How many do you need? (blank = just flag it)");
+  if(q===null)return;
+  const j=await pub({action:"inv_request",item_id:id,qty:q&&parseFloat(q)>0?parseFloat(q):undefined,urgent:urgent===true,by:who()||undefined});
   if(!j.ok){ $("msg").textContent=j.error; return; }
   $("msg").textContent=""; loadShop();
 }
-async function reqFree(){
+async function reqFree(urgent){
   const n=$("reqName").value.trim(); if(n.length<2){ $("msg").textContent="Name what you need."; return; }
   const q=parseFloat($("reqQty").value);
-  const j=await pub({action:"inv_request",name:n,qty:q>0?q:undefined,by:who()||undefined});
+  const j=await pub({action:"inv_request",name:n,qty:q>0?q:undefined,urgent:urgent===true,by:who()||undefined});
   if(!j.ok){ $("msg").textContent=j.error; return; }
   $("reqName").value=""; $("reqQty").value=""; $("msg").textContent=""; loadShop();
 }
