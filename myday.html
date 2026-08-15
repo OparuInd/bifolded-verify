@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tungsten Royce — My Day</title>
+<!--
+  TR FINAL SOLUTION — My Day 1.0 (2026-08-15)  ·  PUBLIC (worker token)
+  The worker's whole day on their phone, no login: NOW (pushed duties),
+  NEXT (gate-locked queue), ASKED OF ME (photo requests — camera opens,
+  shot lands in the job's files), MY HOURS (week total, no $ ever).
+  One tap on Done signs the duty, logs hours, moves the job's rail.
+  Backend: tr-intake v2.7. Mountable at verify.bifolded.com/myday.html.
+-->
+<style>
+  :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
+         --line:#d9d4e0; --bg:#f7f5fa; --muted:#8a8194; --ok:#1d7a46; --warn:#a01212; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:var(--purple);color:#fff;padding:18px;text-align:center}
+  header h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.05em}
+  header .sub{opacity:.85;font-size:13px;margin-top:3px}
+  main{max-width:520px;margin:16px auto 50px;padding:0 12px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  h2{color:var(--purple);font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.07em}
+  .duty{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+  .duty b{font-size:15px}
+  .duty .j{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:2px}
+  .duty .n{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .row{display:flex;gap:8px;align-items:center;margin-top:10px}
+  input.hrs{width:5.2rem;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:14px;text-align:right}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:0;padding:10px 16px;font-size:14px;font-weight:700}
+  button.go{background:var(--ok);color:#fff}
+  button.cam{background:var(--purple);color:#fff;width:100%}
+  .empty{color:var(--muted);font-size:13.5px}
+  #gate{text-align:center;padding:46px 18px;color:var(--muted);font-size:14px;line-height:1.6}
+  #app{display:none}
+  .hrsbig{font-size:26px;font-weight:700;color:var(--purple)}
+  .msg{font-size:12.5px;color:var(--warn);min-height:16px}
+  footer{text-align:center;font-size:11px;color:var(--muted);margin-top:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>TUNGSTEN ROYCE</h1>
+  <div class="sub" id="who">My day</div>
+</header>
+<main>
+  <div id="gate">Checking your link…</div>
+  <div id="app">
+    <div class="card"><h2>Now</h2><div id="now"></div></div>
+    <div class="card"><h2>Asked of me</h2><div id="asks"></div></div>
+    <div class="card"><h2>Up next</h2><div id="next"></div></div>
+    <div class="card"><h2>My hours</h2><div class="hrsbig" id="hrs">—</div>
+      <div class="empty">signed this week · rates live in the office, never here</div></div>
+    <div class="msg" id="msg"></div>
+  </div>
+  <footer>Tungsten Royce · this page updates as the office pushes work</footer>
+</main>
+
+<script>
+const ENDPOINT="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
+const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; // publishable — public by design
+const TOKEN=new URLSearchParams(location.search).get("k")||"";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pub=async(b)=>{try{const r=await fetch(ENDPOINT,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN},b))});return await r.json();}catch(e){return{ok:false,error:"Offline — try again in a moment."};}};
+
+async function boot(){
+  if(TOKEN.length<20){ $("gate").innerHTML="This page opens from your personal link.<br>Ask the office if yours is missing."; return; }
+  const j=await pub({action:"crew_view"});
+  if(!j.ok){ $("gate").textContent=j.error; return; }
+  $("gate").style.display="none"; $("app").style.display="block";
+  $("who").textContent=j.name+" — my day";
+  $("hrs").textContent=(Math.round(j.week_hours*10)/10)+" h";
+  $("now").innerHTML=j.now.length?j.now.map(d=>`<div class="duty">
+      ${d.job_no?`<div class="j">${esc(d.job_no)}</div>`:""}
+      <b>${esc(d.title)}</b>${d.note?`<div class="n">${esc(d.note)}</div>`:""}
+      <div class="row"><input class="hrs" id="h_${d.id}" inputmode="decimal" placeholder="hrs">
+      <button class="go" onclick="done('${d.id}')">Done ✓</button></div>
+    </div>`).join(""):'<div class="empty">Nothing pushed right now. Check Up next.</div>';
+  $("next").innerHTML=j.next.length?j.next.map(d=>`<div class="duty">
+      ${d.job_no?`<div class="j">${esc(d.job_no)}</div>`:""}<b>${esc(d.title)}</b>
+      <div class="n">waiting on a gate — the office moves it to Now</div></div>`).join("")
+    :'<div class="empty">Nothing queued.</div>';
+  $("asks").innerHTML=j.asks.length?j.asks.map(a=>`<div class="duty">
+      ${a.job_no?`<div class="j">${esc(a.job_no)}</div>`:""}<b>Photo: ${esc(a.what)}</b>
+      <div class="row" style="flex-direction:column;align-items:stretch">
+        <input type="file" accept="image/*" capture="environment" id="f_${a.id}" style="display:none" onchange="shoot('${a.id}')">
+        <button class="cam" onclick="document.getElementById('f_${a.id}').click()">📷 Take the photo</button>
+      </div></div>`).join(""):'<div class="empty">Nothing asked. You are all caught up.</div>';
+}
+
+async function done(id){
+  const hrs=parseFloat($("h_"+id).value)||0;
+  const j=await pub({action:"duty_done",duty_id:id,hours:hrs>0?hrs:undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("msg").textContent=""; boot();
+}
+
+function shoot(id){
+  const f=$("f_"+id).files[0]; if(!f)return;
+  // downscale on the phone so uploads stay quick
+  const img=new Image();
+  img.onload=async function(){
+    const M=1600, sc=Math.min(1,M/Math.max(img.width,img.height));
+    const cv=document.createElement("canvas");
+    cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+    cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+    const dataUrl=cv.toDataURL("image/jpeg",0.82);
+    const j=await pub({action:"photo_put",request_id:id,image:dataUrl});
+    if(!j.ok){ $("msg").textContent=j.error; return; }
+    $("msg").textContent=""; boot();
+  };
+  img.src=URL.createObjectURL(f);
+}
+boot();
+</script>
+</body>
+</html>
