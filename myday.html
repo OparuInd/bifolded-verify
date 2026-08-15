@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tungsten Royce — My Day</title>
 <!--
-  TR FINAL SOLUTION — My Day 1.0 (2026-08-15)  ·  PUBLIC (worker token)
+  TR FINAL SOLUTION — My Day 1.1 (2026-08-15)  ·  PUBLIC (worker token)
   The worker's whole day on their phone, no login: NOW (pushed duties),
   NEXT (gate-locked queue), ASKED OF ME (photo requests — camera opens,
-  shot lands in the job's files), MY HOURS (week total, no $ ever).
+  shot lands in the job's files), ASK THE OFFICE (a question rides to
+  the Crew Hub; the answer rides back here), MY HOURS (week total, no $).
   One tap on Done signs the duty, logs hours, moves the job's rail.
-  Backend: tr-intake v2.7. Mountable at verify.bifolded.com/myday.html.
+  Backend: tr-intake v2.8 (migration 0019). Mounts at verify.bifolded.com/myday.html.
 -->
 <style>
   :root{ --purple:#3d2a56; --purple2:#5a4178; --gold:#9C7A3E; --ink:#1c1a20;
@@ -27,16 +28,22 @@
   .duty b{font-size:15px}
   .duty .j{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:2px}
   .duty .n{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .duty .a{font-size:13.5px;margin-top:6px;padding:8px 10px;background:#f1ecf7;border-radius:8px}
+  .duty .a b{font-size:12px;color:var(--purple)}
   .row{display:flex;gap:8px;align-items:center;margin-top:10px}
   input.hrs{width:5.2rem;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:14px;text-align:right}
+  textarea{width:100%;min-height:64px;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:14px;resize:vertical}
+  select{padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13.5px;background:#fff;max-width:100%}
   button{font:inherit;cursor:pointer;border-radius:8px;border:0;padding:10px 16px;font-size:14px;font-weight:700}
   button.go{background:var(--ok);color:#fff}
   button.cam{background:var(--purple);color:#fff;width:100%}
+  button.ask{background:var(--purple);color:#fff}
   .empty{color:var(--muted);font-size:13.5px}
   #gate{text-align:center;padding:46px 18px;color:var(--muted);font-size:14px;line-height:1.6}
   #app{display:none}
   .hrsbig{font-size:26px;font-weight:700;color:var(--purple)}
   .msg{font-size:12.5px;color:var(--warn);min-height:16px}
+  .wait{font-size:12px;color:var(--gold);font-weight:700}
   footer{text-align:center;font-size:11px;color:var(--muted);margin-top:14px}
 </style>
 </head>
@@ -50,6 +57,14 @@
   <div id="app">
     <div class="card"><h2>Now</h2><div id="now"></div></div>
     <div class="card"><h2>Asked of me</h2><div id="asks"></div></div>
+    <div class="card"><h2>Ask the office</h2>
+      <textarea id="q" placeholder="Stuck? Missing material? Ask here — it lands on the office screen."></textarea>
+      <div class="row">
+        <select id="qJob"><option value="">no job</option></select>
+        <button class="ask" onclick="ask()">Send</button>
+      </div>
+      <div id="qs" style="margin-top:12px"></div>
+    </div>
     <div class="card"><h2>Up next</h2><div id="next"></div></div>
     <div class="card"><h2>My hours</h2><div class="hrsbig" id="hrs">—</div>
       <div class="empty">signed this week · rates live in the office, never here</div></div>
@@ -89,6 +104,26 @@ async function boot(){
         <input type="file" accept="image/*" capture="environment" id="f_${a.id}" style="display:none" onchange="shoot('${a.id}')">
         <button class="cam" onclick="document.getElementById('f_${a.id}').click()">📷 Take the photo</button>
       </div></div>`).join(""):'<div class="empty">Nothing asked. You are all caught up.</div>';
+  // the job selector for a question: every job on my plate today
+  const seen={}; const opts=[];
+  for(const d of [...j.now,...j.next,...j.asks]){ if(d.job_id&&d.job_no&&!seen[d.job_id]){seen[d.job_id]=1;opts.push(`<option value="${d.job_id}">${esc(d.job_no)}</option>`);} }
+  $("qJob").innerHTML='<option value="">no job</option>'+opts.join("");
+  // my questions: open ones wait, answers ride back for a week
+  const qs=j.questions||[];
+  $("qs").innerHTML=qs.length?qs.map(q=>`<div class="duty">
+      ${q.job_no?`<div class="j">${esc(q.job_no)}</div>`:""}
+      <b>${esc(q.question)}</b>
+      ${q.status==="answered"?`<div class="a"><b>${esc(q.answered_by||"office")}:</b> ${esc(q.answer)}</div>`
+        :'<div class="wait" style="margin-top:5px">sent — the office will answer here</div>'}
+    </div>`).join(""):"";
+}
+
+async function ask(){
+  const q=$("q").value.trim();
+  if(q.length<3){ $("msg").textContent="Type the question first."; return; }
+  const j=await pub({action:"crew_ask",question:q,job_id:$("qJob").value||undefined});
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  $("q").value=""; $("msg").textContent=""; boot();
 }
 
 async function done(id){
