@@ -399,7 +399,11 @@
       const rw = String(ov.reason || "").match(/.{1,54}(\s|$)/g) || [];
       for (let j = 0; j < rw.length && j < 2; j++) s.push('<text x="' + (RX + 12) + '" y="' + (y + 63 + j * 16) + '" font-size="12" fill="' + sk.ink + '">' + X(rw[j].trim()) + "</text>");
       y += bh + 8;
-    } else if (lz && lz.max_w && lz.max_h && !overL) {
+    } else if (lz && lz.max_w && lz.max_h && !overL && (meta.office || spec.laser_show === true)) {
+      // shop data by default — spec.laser_show:true puts the verified line ON
+      // the drawing, forward-facing (Squizz: built the laser calc for himself
+      // + sales guys — accurate reports, no more excuses). Override banner
+      // always shows regardless.
       y += 10;
       s.push('<text x="' + RX + '" y="' + y + '" font-size="12.5" fill="#1d6b38">✓ Within verified lasers — opening max ' + fmtIn(lz.max_w) + " × " + fmtIn(lz.max_h) + (lz.by_name ? " (" + X(lz.by_name) + ")" : "") + "</text>");
       y += 6;
