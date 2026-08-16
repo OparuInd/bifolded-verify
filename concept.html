@@ -347,15 +347,29 @@
       ["FINISH", spec.finish || "—"],
       ["THRESHOLD", spec.threshold || "—"],
       ["DRIVE", spec.motorized ? "Motorized" : "Manual"],
+      ["TRACK", (function () { const t = spec.track_calc;
+        if (!t) return spec.track ? String(spec.track).toUpperCase() : "\u2014";
+        return (t.track === "m10" ? "M10 HEAVY DUTY" : "M8") + (t.forced ? " \u00b7 forced" : "") + " \u00b7 est " + t.leaf_lb + " lb/leaf"; })()],
     ];
     for (const [k, v] of rows) {
       y += 27;
       s.push('<line x1="' + RX + '" y1="' + (y + 8) + '" x2="' + (RX + RW) + '" y2="' + (y + 8) + '" stroke="' + sk.rule + '" stroke-width="0.8"/>');
       s.push('<text x="' + RX + '" y="' + y + '" font-size="12.5" letter-spacing="1.5" fill="' + sk.accent + '">' + k + "</text>");
-      const hot = (k === "FLUSH FIT" && flush) || (k === "MOUNT" && spec.mount === "backset");
+      const hot = (k === "FLUSH FIT" && flush) || (k === "MOUNT" && spec.mount === "backset") ||
+        (k === "TRACK" && spec.track_calc && (!spec.track_calc.ok || spec.track_calc.over_m10));
       s.push('<text x="' + (RX + 118) + '" y="' + y + '" font-size="14.5" fill="' + (hot ? sk.accent : sk.ink) + '"' + (hot ? ' font-weight="bold"' : "") + ">" + X(String(v)).slice(0, 60) + "</text>");
     }
     y += 34;
+    // track weight gate — Squizz's Weight Calc runs server-side; the sheet only
+    // reports. Overweight is LOUD; over-M10 says the flag was raised (rule #8).
+    const tcw = spec.track_calc;
+    if (tcw && (tcw.over_m10 || !tcw.ok)) {
+      s.push('<rect x="' + RX + '" y="' + (y - 12) + '" width="' + RW + '" height="58" fill="#fdf0e7" stroke="#a01212" stroke-width="1.8"/>');
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 8) + '" font-size="14" font-weight="bold" fill="#a01212">\u26a0 ' + (tcw.over_m10 ? "BEYOND M10 TRACK RATING" : "OVER " + String(tcw.track).toUpperCase() + " TRACK RATING") + "</text>");
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 26) + '" font-size="12.5" fill="' + sk.ink + '">Est carriage load ' + tcw.carriage_lb + " lb vs " + tcw.cap + " lb cap (margin " + Math.round(tcw.margin * 100) + "%).</text>");
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 43) + '" font-size="12.5" fill="' + sk.ink + '">' + (tcw.over_m10 ? "Hardware solution to be engineered \u2014 flagged." : "Run M10, lighten the build, or trim cladding.") + "</text>");
+      y += 66;
+    }
     // cladding block
     if (clBy !== "none") {
       const och = 118 + (clBy === "owner" ? 40 : 0);
@@ -370,7 +384,7 @@
       for (const [k, v] of crow) { s.push('<text x="' + (RX + 12) + '" y="' + cy + '" font-size="13.5" fill="' + sk.ink + '"><tspan opacity="0.65">' + k + ":</tspan>  " + X(String(v)).slice(0, 52) + "</text>"); cy += 21; }
       if (clBy === "owner") {
         s.push('<text x="' + (RX + 12) + '" y="' + cy + '" font-size="13.5" fill="' + (cl.spec_file ? "#1d6b38" : "#a33") + '" font-weight="bold">' + (cl.spec_file ? "✓ Owner detail file received" : "✗ Owner detail file NOT received") + "</text>"); cy += 21;
-        s.push('<text x="' + (RX + 12) + '" y="' + cy + '" font-size="12.5" fill="' + sk.ink + '">Hardware rated for owner cladding to ' + (cl.weight || "—") + " lb/leaf.</text>");
+        s.push('<text x="' + (RX + 12) + '" y="' + cy + '" font-size="12.5" fill="' + sk.ink + '">Hardware rated for owner-applied cladding up to ' + ((spec.track_calc && spec.track_calc.clad_allow_lb) || cl.weight || "—") + " lb per leaf.</text>");
       }
       y += och + 12;
     }
@@ -381,6 +395,8 @@
       "Added blocking left + right to fasten jambs",
       spec.motorized ? "Blocking for operator mounting plates behind operators L + R" : null,
     ].filter(Boolean) : [];
+    if (spec.track_calc && spec.track_calc.track === "m10") autoNotes.push(
+      "M10 heavy-duty track \u00b7 carriages rated 1100 lb" + (spec.pour ? " \u2014 sunken bottom track w/ HD guide roller: coordinate with pour" : ""));
     const notes = autoNotes.concat(Array.isArray(spec.notes) ? spec.notes.filter(Boolean) : []).slice(0, 8);
     if (notes.length) {
       y += 8;
