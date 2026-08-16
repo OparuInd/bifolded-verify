@@ -341,6 +341,7 @@
     const rows = [
       ["OPENING", fmtIn(W) + " W × " + fmtIn(H) + " H"],
       ["DOORS", n + " · " + groups.map((g) => g.n + g.dir).join("") + " · " + (spec.swing === "in" ? "inswing" : "outswing")],
+      ["MOUNT", spec.mount === "backset" ? "REAR FLUSH — behind the opening" : "Inset in opening"],
       ["FLUSH FIT", flush ? "YES — track/header/trim/pivots change" : "No"],
       ["GLASS", glass === "none" ? "None" : glass === "full" ? "Full lite" : glass === "awning" ? "Divided + operable awning " + lw + "×" + lh : "Divided lite " + lw + "×" + lh],
       ["FINISH", spec.finish || "—"],
@@ -351,7 +352,7 @@
       y += 27;
       s.push('<line x1="' + RX + '" y1="' + (y + 8) + '" x2="' + (RX + RW) + '" y2="' + (y + 8) + '" stroke="' + sk.rule + '" stroke-width="0.8"/>');
       s.push('<text x="' + RX + '" y="' + y + '" font-size="12.5" letter-spacing="1.5" fill="' + sk.accent + '">' + k + "</text>");
-      const hot = k === "FLUSH FIT" && flush;
+      const hot = (k === "FLUSH FIT" && flush) || (k === "MOUNT" && spec.mount === "backset");
       s.push('<text x="' + (RX + 118) + '" y="' + y + '" font-size="14.5" fill="' + (hot ? sk.accent : sk.ink) + '"' + (hot ? ' font-weight="bold"' : "") + ">" + X(String(v)).slice(0, 60) + "</text>");
     }
     y += 34;
@@ -373,8 +374,14 @@
       }
       y += och + 12;
     }
-    // notes
-    const notes = Array.isArray(spec.notes) ? spec.notes.filter(Boolean).slice(0, 8) : [];
+    // notes — backset carries its build requirements automatically (Abrahamsson)
+    const autoNotes = spec.mount === "backset" ? [
+      "Rear flush mounted — unit fits BEHIND the existing opening",
+      '3×3" angle steel full length carries the track, mounted to back of existing header',
+      "Added blocking left + right to fasten jambs",
+      spec.motorized ? "Blocking for operator mounting plates behind operators L + R" : null,
+    ].filter(Boolean) : [];
+    const notes = autoNotes.concat(Array.isArray(spec.notes) ? spec.notes.filter(Boolean) : []).slice(0, 8);
     if (notes.length) {
       y += 8;
       s.push('<text x="' + RX + '" y="' + (y + 2) + '" font-size="13.5" letter-spacing="2" fill="' + sk.accent + '" font-weight="bold">NOTES</text>'); y += 8;
@@ -388,8 +395,22 @@
     // McKinney header move / Lachman pour-to-suit — build over lasers must be
     // POSSIBLE and LOUD, never silent)
     const lz = meta.laser, ov = spec.laser_override;
-    const overL = lz && lz.max_w && lz.max_h && (W > lz.max_w + 0.01 || H > lz.max_h + 0.01);
-    if (ov && ov.kind && (overL || !lz)) {
+    const mnt = spec.mount === "backset";
+    const rmin = Number(spec.reveal_min) > 0 ? Number(spec.reveal_min) : 0.25;
+    const overL = !mnt && lz && lz.max_w && lz.max_h && (W > lz.max_w + 0.01 || H > lz.max_h + 0.01);
+    const underRev = mnt && lz && lz.max_w && lz.max_h && (W < lz.max_w + 2 * rmin - 0.001 || H < lz.max_h + rmin - 0.001);
+    if (underRev) {
+      y += 14;
+      s.push('<rect x="' + RX + '" y="' + (y - 12) + '" width="' + RW + '" height="60" fill="#fdf0e7" stroke="#a01212" stroke-width="1.8"/>');
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 8) + '" font-size="14" font-weight="bold" fill="#a01212">⚠ BACKSET UNDERSIZED</text>');
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 27) + '" font-size="12.5" fill="' + sk.ink + '">Trim reveal fails at minimum lasers (opening max ' + fmtIn(lz.max_w) + " × " + fmtIn(lz.max_h) + ").</text>");
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 44) + '" font-size="12.5" fill="' + sk.ink + '">Unit must oversize by ' + fmtIn(rmin) + " min per side.</text>");
+      y += 68;
+    } else if (mnt && lz && lz.max_w && lz.max_h && (meta.office || spec.laser_show === true)) {
+      y += 10;
+      s.push('<text x="' + RX + '" y="' + y + '" font-size="12.5" fill="#1d6b38">✓ Backset — oversizes opening (max ' + fmtIn(lz.max_w) + " × " + fmtIn(lz.max_h) + "); reveal inside min lasers</text>");
+      y += 6;
+    } else if (ov && ov.kind && (overL || !lz)) {
       y += 14;
       const bh = 96;
       s.push('<rect x="' + RX + '" y="' + (y - 12) + '" width="' + RW + '" height="' + bh + '" fill="#fdf0e7" stroke="#a01212" stroke-width="1.8"/>');
@@ -417,7 +438,10 @@
         s.push('<text x="' + RX + '" y="' + (sy + 46) + '" font-size="12.5" fill="' + sk.ink + '" opacity="0.75">Signed electronically ' + X(meta.signed_at || "") + "</text>");
       } else {
         s.push('<text x="' + RX + '" y="' + (sy + 20) + '" font-size="13" fill="' + sk.ink + '">X  — sign to release for production</text>');
-        if (spec.laser_override && spec.laser_override.kind === "customer_certified") {
+        if (spec.mount === "backset" && !(spec.laser_override && spec.laser_override.kind === "customer_certified")) {
+          s.push('<text x="' + RX + '" y="' + (sy + 40) + '" font-size="12" fill="' + sk.ink + '" opacity="0.85">I confirm these units will fit BEHIND the existing openings</text>');
+          s.push('<text x="' + RX + '" y="' + (sy + 58) + '" font-size="12" fill="' + sk.ink + '" opacity="0.85">and the opening has not changed since the laser date.</text>');
+        } else if (spec.laser_override && spec.laser_override.kind === "customer_certified") {
           s.push('<text x="' + RX + '" y="' + (sy + 40) + '" font-size="12" font-weight="bold" fill="#a01212">By signing I CERTIFY the opening/site will accept ' + fmtIn(W) + " × " + fmtIn(H) + ".</text>");
           s.push('<text x="' + RX + '" y="' + (sy + 58) + '" font-size="12" fill="' + sk.ink + '" opacity="0.7">The door is built to this number — site fit is my responsibility.</text>');
         } else {
@@ -487,6 +511,8 @@ function render(){
     const ov=C.spec&&C.spec.laser_override;
     $("consenttext").innerHTML=(ov&&ov.kind==="customer_certified")
       ?'<b style="color:var(--warn)">I CERTIFY the opening/site will accept this door size.</b> The door is built to this number and site fit is my responsibility. I agree my typed name below is my electronic signature.'
+      :(C.spec&&C.spec.mount==="backset")
+      ?'I confirm all details are correct, <b>these units will fit behind the existing openings</b>, and the opening has not changed since the laser measurements. I agree my typed name below is my electronic signature.'
       :'I have reviewed this drawing. I agree my typed name below is my electronic signature.';
     $("signedbanner").innerHTML=open?'<div class="banner warn">'+open+' change request'+(open>1?"s":"")+' still open — we resolve those first, then you sign the clean rev.</div>':"";
   } else {$("signcard").style.display="none";}
