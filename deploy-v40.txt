@@ -1,0 +1,2840 @@
+// ============================================================
+// TR FINAL SOLUTION — Edge Function: tr-intake  v4.0
+// v4.0 (2026-08-16): ORDERING ENGINE + TRAVELERS (Shop Ops 4.0 modules 2+3).
+// Kit engines PORTED VERBATIM from Shop Ops 3.49 — Centor E3 layout tables
+// (verified vs Centor's printed Common Panel Layouts; real part codes
+// E3TAM/E22FCR/E3CPSS/E3WPSS/E3CICSS/E3CLCSS/E3CRCSS/E3HSS/E3HHSS/
+// DBSY200NRQ) + M8/Johnson I-Track package + WOODWORK list + real seals
+// (DSP 10850 BL pile brush, Schlegel EC417 Q-lon). job_needs computes
+// SHOULD-HAVE per system/layout, nets vs inventory (name/code match) and
+// open PO lines -> SHORT list. po_create/po_list/po_receive — receiving
+// increments linked stock. TRAVELERS spawn from fab_steps templates
+// (trav_spawn/travs_list/trav_step_set/trav_del office; trav_view/
+// trav_step PUBLIC worker-token — crew checks steps off, all-done closes
+// the traveler). Migration 0027.
+// v3.9 (2026-08-16): NAMES — "Squizz" was the dog. Official surfaces say
+// RYAN: over-M10 flags route to_name Ryan; flag people are catalog data
+// (flag_people: Ryan/Chase/Dru, desk adds anyone). doc_senders row for
+// Squizz removed, Dru added (samples/hardware/invoicing).
+// v3.8 (2026-08-16): PDF RAIL — signed docs become PDFs automatically.
+// The signing pages rasterize the doc THEY rendered the moment it is
+// signed -> PUBLIC doc_capture (token-gated, signed-only) -> pdf-lib
+// assembles US-Letter pages -> job-files/docs/... + doc_files registry.
+// OFFICE: pdf_make (Desk regenerates any sheet) · docs_list · doc_url
+// (7-day signed link) · doc_send — sends AS THE REAL PERSON via their
+// TR email (catalog doc_senders: Squizz/Ryan/Chase, emails they fill);
+// Resend-gated on RESEND_API_KEY, graceful copy-link fallback until
+// the domain is verified. Migration 0026 (doc_files + doc_senders).
+// v3.7 (2026-08-16): M8/M10 TRACK GATE — Squizz's Weight Calc 1.6 model
+// (CALCULATOR-DEEP-DIVE) runs server-side on every concept_save:
+// leaf = area x (family psf + clad psf) + hardware; carriage = share x
+// leaf vs Cavity Sliders M6 200 / M8 500 / M10 1100 lb (verified).
+// Auto-picks M8/M10 at an adjustable margin; spec.track m8|m10 forces
+// (override warns, never blocks — rule #8); over-M10 auto-flags Squizz.
+// Constants tunable in catalog_options track_cfg/default (his numbers).
+// spec.track_calc = server snapshot; owner-cladding sign-off line gets
+// clad_allow_lb (hardware rated for owner cladding up to X lb/leaf).
+// v3.6 (2026-08-16): REAR FLUSH / BACKSET MOUNT (Abrahamsson pattern,
+// 2 built + 1 sold) — spec.mount inset|backset. Backset INVERTS the
+// laser math: unit OVERSIZES the opening (build = max + 2x side
+// overlap / + head overlap, spec.overlap default 2) so trim shows a
+// 1/4 in min reveal at minimum lasers and conceals track header +
+// jambs. Gate flips too: backset REFUSES an UNDERSIZED build (reveal
+// fails) instead of an oversized one. Requires L-steel header mount
+// behind the beam + L/R blocking for jambs (auto build notes).
+// v3.5 (2026-08-16): LASER ABSORPTION — the Calcs sheet is server math.
+// laserFor(job): latest legs, smallest governs, max WxH + out-of-square
+// flag (spread over 3/8). laser_adopt: one click writes verified build
+// (max minus shim gaps, spec.gaps {side,head} default 0.5) into spec.
+// concept_publish LASER GATE: sign-off over the lasers refuses UNLESS
+// spec.laser_override {kind: site_change | customer_certified, reason
+// 10+ chars} — McKinney header-move / Lachman pour-to-suit cases —
+// and the sheet + e-sign then carry the override LOUD (certified
+// consent wording). concept_get/concept_view attach laser. Reminder
+// rule signoff_no_laser (seeded, 24h). PUBLIC measure_jobs /
+// measure_submit (any active worker token) — the bifolded measure
+// app absorbed: phone lasers -> measurements, 2+ legs per axis,
+// verify step auto-signs, out-of-square in the event log.
+// v3.4 (2026-08-16): REMINDERS RAIL (migration 0025) — tunable auto-
+// rules (each ON/OFF + adjustable threshold: concept_unopened,
+// signoff_unsigned, flag_unanswered, flag_stuck, maint_due lookahead,
+// install_media owed) + Squizz's CUSTOM reminders (any title, any
+// date+time, repeat none|daily|weekly|monthly rolls forward on done,
+// toggle on/off, delete) + per-item MUTE of one auto nag. OFFICE:
+// rem_rules/rem_rule_set/rem_add/rem_set/rem_del/rem_mute/reminders
+// (merged due feed, sorted, overdue count).
+// v3.3 (2026-08-15): CONCEPT RAIL (migration 0024) — the Pillar–Lachman
+// fix. concepts (spec jsonb: flush-fit first-class; owner-cladding GATE:
+// no sign-off publish without material/OAL/weight/detail-file), tap-to-
+// pin revision requests, typed-name concept/sign-off e-sign w/ receipt
+// stamping (viewed_at on first open). office_flags: Squizz ⇄ Chase
+// exception rail sent→received→working→resolved(+resolution) + verdict
+// (done_all|partial|not_done) for the response-metrics ledger.
+// OFFICE: concepts/concept_get/concept_save/concept_publish/concept_del/pin_set/
+// flag_add/flag_set/flag_verdict/flags_list. PUBLIC: concept_view/
+// concept_pin/concept_sign (view token auth).
+// v3.2 (2026-08-15): JOB MEDIA RAIL (migration 0023) — walkaround
+// video before paint (the shop's sign-off, documentation) + install
+// photos/video (HIGHLIGHTED, never blocks closing: "the doors sell
+// themselves when people see them move"). Full-quality direct uploads
+// via signed Storage URLs (no size squeeze). PUBLIC: media_jobs /
+// media_upload_url / media_record (any active token). OFFICE:
+// office_media_url / office_media_record; job_get returns media.
+// Both steps auto-sign when their media lands. New rails seed them;
+// 0023 backfills existing rails (walkaround sort 75, install 115).
+// v3.1 (2026-08-15): GROUPED INVENTORY + TOOL CONDITION (migration 0022)
+// — groups/sub-groups with their own COLOR (tablet-managed: grp_add /
+// grp_set / item_add, any active token); items carry inv_code markings,
+// condition (chipped tooth / worn edge / out — inv_condition, urgent
+// msgs for chipped/out), sharpening schedules (inv_sharpened rolls
+// sharpen_due by interval); inv_request takes urgent:true; inv_photo
+// sends an item picture to Storage. OFFICE adds group_del.
+// v3.0 (2026-08-15): INVENTORY RAIL + MACHINE CARE (migration 0021) —
+// the floor counts and requests stock, the office confirms and orders
+// (inv_msgs: every move a message both sides see); machine issues
+// reported from the floor (normal/urgent/down); large-machinery
+// maintenance with last-done / next-due flags and a tasked worker.
+// PUBLIC (any active token): shop_ops_view · inv_count · inv_request
+// · issue_report · maint_done. OFFICE: shop_office · inv_item_add/set
+// · inv_confirm · inv_order · machine_add/set · issue_set · maint_add/set.
+// v2.9 (2026-08-15): SHOP FLOOR TABLET (migration 0020) — a shared
+// tablet on the floor is a keyed STATION (workers.kind='station').
+// PUBLIC: shop_view (every worker's day on one board) · shop_done
+// (sign any duty on the worker's behalf — hours, step, labor all ride)
+// · shop_ask (a worker asks from the tablet, picking their name).
+// worker_add takes kind:"station" to mint a tablet link.
+// v2.8 (2026-08-15): CREW HUB + QUESTIONS RAIL (migration 0019) — the
+// worker asks the office from My Day (crew_ask, PUBLIC); answers ride
+// back on crew_view. OFFICE: crew_overview (the whole crew in one
+// call: roster, live duties, asks, questions, week labor, job names)
+// · question_answer / question_del. Feeds TR Crew Hub 1.0.
+// v2.7 (2026-08-15): SHOP OPS 4.0 S1 (migration 0018) — workers with
+// keyed phone links, PUSHED DUTIES, labor entries, photo requests into
+// the job-files Storage bucket. PUBLIC: crew_view (Now / Next / Asked
+// of me / My hours) · duty_done (one tap: duty done + hours logged +
+// step signed) · photo_put (camera shot -> Storage -> request closed).
+// OFFICE: workers / worker_add / worker_set / duty_push / duty_del /
+// photo_request; job_get now returns duties, labor, photos w/ links.
+// v2.6 (2026-08-15): enquiry accepts the web configurator's structured
+// config (stored on the event, readable summary + INTERNAL interim-model
+// estimate in customer notes — never shown to the customer) and honors
+// the enquiry page's site/details field names (previously dropped).
+// v2.5 (2026-08-15): POST-CONTRACT RAIL (migration 0017) — every job
+// carries a step rail (pre-production -> drawing-sign-off GATE ->
+// production -> SHIP GATE -> closeout), a PUBLIC field-verification
+// form (verify_token: laser legs all kept, smallest governs; jamb
+// flags; owner-cladding detail; special requests) and a PUBLIC
+// customer/contractor tracker (track_token: visible steps + what we
+// need from you, never prices). Steps auto-seed when a job is born.
+// NOTE: jobs carries STAGE (legacy 17-job book), not status — selects
+// alias it (status:stage) so every page keeps reading .status.
+// v2.4 (2026-08-15): cust_quotes returns breakout — the Agreement
+// prefills openings/lines/rush from an Estimator draft instead of retyping.
+// v2.3 (2026-08-15): quote accepts a breakout jsonb — the Estimator's
+// line-by-line pricing + per-job statistics (openings, doors, sqft,
+// class, automated, glazed, cladding scope). Migration 0016.
+// v2.2 (2026-08-15): analytics deals select adds title / person_name /
+// org_name so every product line can name the job it was billed to.
+// v2.1 (2026-08-15): analytics — raw pricing rows (deal product
+// lines + deal values/fab + job fab) for the historical price
+// analysis. Read-only, office key.
+// v2.0 (2026-08-15): PEOPLE ON THE ACCOUNT (migration 0015) —
+// contractor / architect / designer / owner linked to the customer,
+// each with preferred contact method; rank 1 = contact first.
+// cust_get returns them; contact_add / contact_set / contact_del.
+// v1.9 (2026-08-15): recent accepts a status filter (latest
+// prospects/quoted/closed at a glance); cust_delete removes a
+// MIS-ENTRY ONLY — refused if the customer has any quote or job
+// (real history is marked lost, never deleted).
+// v1.8 (2026-08-15): CUSTOMER DESK — cust_get (full record: quotes,
+// jobs, events, Pipedrive matches w/ emails+phones) and cust_update
+// (edit contact fields with confirmed read-back). The front end for
+// viewing and editing everything we know about a customer.
+// v1.7 (2026-08-15): E-SIGN (migration 0014) — agree_publish stores
+// the rendered agreement + mints a token link; agree_view / agree_sign
+// are PUBLIC token-auth: typed name + consent (ESIGN/UETA), SHA-256
+// doc hash, timestamp + IP recorded, then close_quote → JOB born.
+// The rush sign-off guard holds on both publish and sign.
+// v1.6 (2026-08-15): a rush guarantee needs a TR SIGNATURE — the
+// salesperson approves it by name (rush_approved_by, 0013); a rush
+// quote cannot close without one.
+// v1.5 (2026-08-15): RUSH MARKER (migration 0012) — agree_status
+// carries rush/rush_by/rush_weeks onto the quote; on accepted the
+// guaranteed date is copied to the JOB, where Shop Ops highlights
+// it through sign-off and fabrication.
+// v1.4 (2026-08-15): DOOR CONFIGURATIONS (migration 0011) — every
+// L/R combination as data, with per-config gaps + hardware.
+// Actions: configs, config_set. Feeds agreement, quoting, and
+// every future fab/hardware tool.
+// v1.3 (2026-08-15): MASTER CATALOG — door types, trim levels and
+// cladding as toggleable data (migration 0010). Actions: catalog,
+// cat_set, cat_add, trim_set, trim_add, offer_set. One-off custom
+// becomes a named commodity: door type × trim = a product.
+// v1.2 (2026-08-15): PUBLIC web enquiry (action:"enquiry", no office
+// key — honeypot + validation instead), cust_quotes (a customer's
+// quotes for the Agreement bridge), agree_status (sent/declined, and
+// "accepted" runs close_quote(): customer → closed, JOB born under
+// the quote number).
+// v1.1 (2026-08-15): price-structure actions — pricebooks, pricebook,
+// pb_clone, pb_update, pb_additem, pb_activate. A structure is never
+// edited once active: clone → adjust the draft → activate. History
+// is kept as data.
+// The front door of Module 1: point-of-contact entry.
+// Serves the TR Point of Contact page (and later the web enquiry
+// form) with REAL, readable responses — every write is confirmed
+// by the record coming back, never fire-and-forget.
+//
+// Actions (POST JSON, key-checked, CORS-open so the office page
+// can call it from anywhere):
+//   {action:"search", q}            → matching customers (dupe check)
+//   {action:"create", ...fields}    → mint C-number, insert customer
+//   {action:"quote",  customer_id}  → mint quote number, draft quote
+//   {action:"recent"}               → last 12 contacts entered
+//
+// Secrets required: INTAKE_KEY, SB_SECRET_KEY (SUPABASE_URL is injected)
+// ============================================================
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "content-type": "application/json",
+};
+
+function out(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: CORS });
+}
+
+/* The post-contract rail. Merged from the field-verification form's five
+   tasks and Shop Ops' two-phase gate model. Steps are DATA — rename, add,
+   or n/a them per job; this list only seeds new jobs. */
+const STEP_RAIL = [
+  { key: "deposit",   phase: "pre",   name: "Deposit received",                      actor: "customer" },
+  { key: "verify",    phase: "pre",   name: "Field verification",                    actor: "contractor" },
+  { key: "samples",   phase: "pre",   name: "Color & stain samples",                 actor: "tr" },
+  { key: "hardware",  phase: "pre",   name: "Custom hardware & upgrades confirmed",  actor: "customer" },
+  { key: "drawings",  phase: "pre",   name: "Shop drawings",                         actor: "tr" },
+  { key: "signoff",   phase: "gate",  name: "Drawing sign-off — production gate",    actor: "customer" },
+  { key: "fab",       phase: "prod",  name: "Fabrication",                           actor: "tr" },
+  { key: "walkaround", phase: "prod", name: "Walkaround video — shop sign-off before paint", actor: "tr", hide: true },
+  { key: "finish",    phase: "prod",  name: "Finishing",                             actor: "tr" },
+  { key: "qc",        phase: "ship",  name: "QC & pre-ship checklist — ship gate",   actor: "tr" },
+  { key: "delivery",  phase: "close", name: "Delivery scheduled",                    actor: "customer" },
+  { key: "delivered", phase: "close", name: "Delivered",                             actor: "tr" },
+  { key: "install_media", phase: "close", name: "Install photos & video",             actor: "tr", hide: true },
+  { key: "balance",   phase: "close", name: "Balance collected",                     actor: "customer" },
+  { key: "closed",    phase: "close", name: "Closed",                                actor: "tr", hide: true },
+];
+function mintTok() {
+  return [...crypto.getRandomValues(new Uint8Array(24))]
+    .map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+// deno-lint-ignore no-explicit-any
+async function seedJob(sb: any, jobId: string) {
+  const { count } = await sb.from("job_steps").select("id", { count: "exact", head: true }).eq("job_id", jobId);
+  if (!count) {
+    await sb.from("job_steps").insert(STEP_RAIL.map((st, i) => ({
+      job_id: jobId, sort: (i + 1) * 10, phase: st.phase, key: st.key, name: st.name,
+      actor: st.actor, visible_customer: !st.hide,
+    })));
+  }
+  const { data: j } = await sb.from("jobs").select("verify_token, track_token").eq("id", jobId).single();
+  const patch: Record<string, unknown> = {};
+  if (!j?.verify_token) patch.verify_token = mintTok();
+  if (!j?.track_token) patch.track_token = mintTok();
+  if (Object.keys(patch).length) await sb.from("jobs").update(patch).eq("id", jobId);
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+  try {
+    const KEY = Deno.env.get("INTAKE_KEY");
+    const SB_KEY = Deno.env.get("SB_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!KEY || !SB_KEY) return out({ ok: false, error: "MISSING SECRET: INTAKE_KEY or SB_SECRET_KEY" }, 500);
+
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, SB_KEY);
+    const b = await req.json().catch(() => ({}));
+
+    // ---------- PUBLIC: web enquiry (the Bifolded.com front door) ----------
+    // No office key — this is the one action the public may call. Honeypot:
+    // bots fill every field; a human never sees "website". Fake success so
+    // bots move on; nothing is written.
+    if (b.action === "enquiry") {
+      if (String(b.website ?? "").trim() !== "") return out({ ok: true, label: "received" });
+      const name = String(b.name ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+      const email = String(b.email ?? "").trim().slice(0, 160);
+      const phone = String(b.phone ?? "").trim().slice(0, 40);
+      if (name.length < 2) return out({ ok: false, error: "Please give us a name." }, 400);
+      if (!email && !phone) return out({ ok: false, error: "An email or a phone number — so we can reach you back." }, 400);
+
+      const { data: dupes } = await sb.from("customers")
+        .select("id, customer_no").ilike("name", name).limit(1);
+      const repeat = (dupes?.length ?? 0) > 0;
+
+      const { data: cno, error: mintErr } = await sb.rpc("mint_no", { p_kind: "customer" });
+      if (mintErr) return out({ ok: false, error: "Something went wrong on our side — please call us." }, 500);
+
+      const cfg = (typeof b.config === "object" && b.config) || null;
+      // internal estimate from the interim practice model (M&T base) —
+      // office eyes only, never returned to the caller
+      let est: number | null = null;
+      if (cfg && Number(cfg.w) > 0 && Number(cfg.h) > 0) {
+        const sq = Number(cfg.w) * Number(cfg.h);
+        const glazed = /glass/i.test(String(cfg.infill ?? ""));
+        est = Math.round(8806 + 70.86 * sq + (glazed ? 2932 : 0));
+      }
+      const notes = [
+        b.interest ? "Interested in: " + String(b.interest).slice(0, 200) : "",
+        b.size ? "Rough opening: " + String(b.size).slice(0, 120) : "",
+        (b.message ?? b.details) ? "In their words: " + String(b.message ?? b.details).slice(0, 2000) : "",
+        cfg ? "Web configurator: " + cfg.w + "\u00d7" + cfg.h + " ft, " + cfg.panels + " panels, frame " +
+          String(cfg.frame ?? "?") + ", infill " + String(cfg.infill ?? "?") + ", automation " + String(cfg.automation ?? "?") : "",
+        est != null ? "Internal est \u2248 $" + est.toLocaleString("en-US") + " (interim M&T model \u2014 office only, not quoted)" : "",
+        repeat ? "(possible repeat — a customer with this exact name already exists)" : "",
+      ].filter(Boolean).join("\n");
+
+      const { data: created, error } = await sb.from("customers").insert({
+        customer_no: cno, name, display_name: name, status: "prospect",
+        account_type: "unknown", email: email || null, phone: phone || null,
+        site_address: String(b.city ?? b.site ?? "").trim().slice(0, 160) || null,
+        source: "web-enquiry", notes: notes || null,
+      }).select("id, customer_no, name").single();
+      if (error) return out({ ok: false, error: "Something went wrong on our side — please call us." }, 500);
+
+      await sb.from("events").insert({
+        actor: "web", kind: "enquiry",
+        body: { what: "web enquiry", customer_no: created.customer_no, customer_id: created.id, name: created.name, interest: b.interest ?? null, config: cfg, internal_est: est },
+      });
+      return out({ ok: true, label: "C-" + created.customer_no, name: created.name });
+    }
+
+    // ---------- PUBLIC: e-sign — the token IS the auth ----------
+    if (b.action === "agree_view") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: q, error } = await sb.from("quotes")
+        .select("id, quote_no, status, value, agree_doc, signed_name, signed_at, customer_id")
+        .eq("sign_token", tok).single();
+      if (error || !q?.agree_doc) return out({ ok: false, error: "This link is not valid — call us and we will send a fresh one." }, 404);
+      const { data: c } = await sb.from("customers").select("name, customer_no").eq("id", q.customer_id).single();
+      return out({ ok: true, quote_no: q.quote_no, status: q.status, signed: !!q.signed_at,
+        signed_name: q.signed_name, signed_at: q.signed_at, doc: q.agree_doc, customer: c });
+    }
+
+    if (b.action === "agree_sign") {
+      const tok = String(b.token ?? "").trim();
+      const name = String(b.name ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      if (name.length < 2) return out({ ok: false, error: "Please sign with your full name." }, 400);
+      if (b.consent !== true) return out({ ok: false, error: "Please tick the consent box — it is what makes your typed name a signature." }, 400);
+      const { data: q, error: qe } = await sb.from("quotes")
+        .select("id, quote_no, status, agree_doc, signed_at").eq("sign_token", tok).single();
+      if (qe || !q?.agree_doc) return out({ ok: false, error: "This link is not valid — call us." }, 404);
+      if (q.signed_at || q.status === "accepted") return out({ ok: false, error: "This agreement is already signed — welcome to the wait." }, 400);
+      const d = (q.agree_doc as any)?.data ?? {};
+      if (d.rush && !String(d.rushSignTR ?? "").trim()) {
+        return out({ ok: false, error: "This agreement carries a rush guarantee without a TR sign-off — call us before signing." }, 400);
+      }
+      const enc = new TextEncoder().encode(JSON.stringify(q.agree_doc));
+      const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", enc))]
+        .map((x) => x.toString(16).padStart(2, "0")).join("");
+      const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
+      const { error: ue } = await sb.from("quotes").update({
+        signed_name: name, signed_at: new Date().toISOString(), signed_ip: ip || null, doc_hash: hash,
+      }).eq("id", q.id);
+      if (ue) return out({ ok: false, error: "Something went wrong on our side — call us." }, 500);
+      const { data: jobId, error: ce } = await sb.rpc("close_quote", { p_quote_id: q.id });
+      if (ce) return out({ ok: false, error: ce.message }, 500);
+      if (d.rush) await sb.from("jobs").update({
+        rush: true, rush_by: d.rushBy || null, rush_approved_by: d.rushSignTR || null }).eq("id", jobId);
+      await seedJob(sb, jobId);
+      await sb.from("events").insert({ actor: "customer", kind: "esign",
+        body: { what: "agreement e-signed", quote_no: q.quote_no, signed_name: name, doc_hash: hash } });
+      return out({ ok: true, signed: true, job_no: q.quote_no, name });
+    }
+
+    // ---------- PUBLIC: field verification (verify_token link) ----------
+    if (b.action === "verify_view") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: j, error: je } = await sb.from("jobs")
+        .select("id, job_no, status:stage, customer_id").eq("verify_token", tok).single();
+      if (je || !j) return out({ ok: false, error: "This link is not valid — call us and we will send a fresh one." }, 404);
+      const [{ data: c }, { data: people }, { data: vs }, { data: ms }] = await Promise.all([
+        sb.from("customers").select("name, site_address").eq("id", j.customer_id).single(),
+        sb.from("customer_contacts").select("name, role").eq("customer_id", j.customer_id).eq("active", true).order("rank"),
+        sb.from("verifications").select("opening, by_name, at").eq("job_id", j.id).order("at", { ascending: false }),
+        sb.from("measurements").select("opening, axis, governing, at").eq("job_id", j.id),
+      ]);
+      return out({ ok: true, job_no: j.job_no, customer: c?.name ?? "", site: c?.site_address ?? "",
+        people: people ?? [], returned: vs ?? [], measured: ms ?? [] });
+    }
+
+    if (b.action === "verify_submit") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: j, error: je } = await sb.from("jobs").select("id, job_no").eq("verify_token", tok).single();
+      if (je || !j) return out({ ok: false, error: "This link is not valid — call us." }, 404);
+      const opening = String(b.opening ?? "Opening 1").trim().slice(0, 60) || "Opening 1";
+      const byName = String(b.by_name ?? "").trim().slice(0, 80);
+      const byRole = ["rep", "contractor", "homeowner", "architect", "other"].includes(b.by_role) ? b.by_role : "other";
+      if (byName.length < 2) return out({ ok: false, error: "Completed by — we need a name." }, 400);
+      const legs = (vv: unknown) => Array.isArray(vv)
+        ? vv.map(Number).filter((x) => Number.isFinite(x) && x > 1 && x < 400).slice(0, 6) : [];
+      const wLegs = legs(b.wLegs), hLegs = legs(b.hLegs);
+      if (wLegs.length < 1 || hLegs.length < 1) {
+        return out({ ok: false, error: "At least one width and one height reading, in inches." }, 400);
+      }
+      // every leg is KEPT (the old rail dropped them); the smallest governs —
+      // a door has to pass the tightest point of the opening, not the average.
+      const rows = [
+        { job_id: j.id, opening, axis: "w", kind: "laser", legs: wLegs, governing: Math.min(...wLegs), by_name: byName, by_role: byRole, verified: b.laser_verified === true },
+        { job_id: j.id, opening, axis: "h", kind: "laser", legs: hLegs, governing: Math.min(...hLegs), by_name: byName, by_role: byRole, verified: b.laser_verified === true },
+      ];
+      const { error: me } = await sb.from("measurements").insert(rows);
+      if (me) return out({ ok: false, error: me.message }, 500);
+      const { error: ve } = await sb.from("verifications").insert({
+        job_id: j.id, opening,
+        flags: (typeof b.flags === "object" && b.flags) || {},
+        cladding: (typeof b.cladding === "object" && b.cladding) || {},
+        special: String(b.special ?? "").trim().slice(0, 2000) || null,
+        by_name: byName, by_role: byRole,
+        payload: { wLegs, hLegs, laser_verified: b.laser_verified === true },
+      });
+      if (ve) return out({ ok: false, error: ve.message }, 500);
+      await sb.from("job_steps").update({ status: "done", done_by: byName, done_at: new Date().toISOString() })
+        .eq("job_id", j.id).eq("key", "verify").neq("status", "done");
+      // a cladding "yes" is WORK for the hardware/upgrades step — surface it
+      const clad = (typeof b.cladding === "object" && b.cladding) || {};
+      if ((clad as Record<string, unknown>).yn === "yes") {
+        await sb.from("job_steps").update({ note: "Owner-clad: " + JSON.stringify((clad as Record<string, unknown>).fields ?? {}) })
+          .eq("job_id", j.id).eq("key", "hardware");
+      }
+      await sb.from("events").insert({ actor: byName, kind: "verify",
+        body: { what: "field verification returned", job_no: j.job_no, opening,
+          w: Math.min(...wLegs), h: Math.min(...hLegs), role: byRole } });
+      return out({ ok: true, job_no: j.job_no, opening, w: Math.min(...wLegs), h: Math.min(...hLegs) });
+    }
+
+    // ---------- PUBLIC: live job tracker (track_token link) ----------
+    if (b.action === "track") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: j, error: je } = await sb.from("jobs")
+        .select("id, job_no, status:stage, rush, rush_by, created_at, customer_id").eq("track_token", tok).single();
+      if (je || !j) return out({ ok: false, error: "This link is not valid — call us and we will send a fresh one." }, 404);
+      const [{ data: c }, { data: steps }] = await Promise.all([
+        sb.from("customers").select("name").eq("id", j.customer_id).single(),
+        sb.from("job_steps").select("key, name, phase, actor, status, done_at, note")
+          .eq("job_id", j.id).eq("visible_customer", true).order("sort"),
+      ]);
+      // what we still need from THEIR side — tasks, not nags
+      const needs = (steps ?? []).filter((st: { actor: string; status: string }) => st.actor !== "tr" && st.status !== "done" && st.status !== "na");
+      return out({ ok: true, job_no: j.job_no, status: j.status, customer: c?.name ?? "",
+        rush_by: j.rush ? j.rush_by : null, steps: steps ?? [], needs });
+    }
+
+    // ---------- PUBLIC: the worker's day (crew token link) ----------
+    if (b.action === "crew_view") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: w, error: we } = await sb.from("workers")
+        .select("id, name, active").eq("token", tok).single();
+      if (we || !w || !w.active) return out({ ok: false, error: "This link is not valid — ask the office for a fresh one." }, 404);
+      const wk = new Date(Date.now() - 7 * 86400000).toISOString();
+      const [{ data: duties }, { data: asks }, { data: labor }, { data: qs }] = await Promise.all([
+        sb.from("duties").select("id, job_id, step_key, title, status, note, sort, created_at")
+          .eq("worker", w.name).neq("status", "done").order("sort").order("created_at"),
+        sb.from("photo_requests").select("id, job_id, what, created_at")
+          .eq("worker", w.name).eq("status", "open").order("created_at"),
+        sb.from("labor_entries").select("hours, at").eq("worker", w.name).gte("at", wk),
+        sb.from("crew_questions")
+          .select("id, job_id, question, status, answer, answered_by, created_at, answered_at")
+          .eq("worker", w.name).or(`status.eq.open,answered_at.gte.${wk}`)
+          .order("created_at", { ascending: false }).limit(20),
+      ]);
+      const jids = [...new Set([...(duties ?? []), ...(asks ?? []), ...(qs ?? [])].map((x: { job_id: string | null }) => x.job_id).filter(Boolean))];
+      const jn: Record<string, string> = {};
+      if (jids.length) {
+        const { data: js } = await sb.from("jobs").select("id, job_no").in("id", jids);
+        for (const j of js ?? []) jn[(j as { id: string }).id] = (j as { job_no: string }).job_no;
+      }
+      const dress = (x: { job_id: string | null } & Record<string, unknown>) => ({ ...x, job_no: x.job_id ? (jn[x.job_id] ?? "") : "" });
+      return out({ ok: true, name: w.name,
+        now: (duties ?? []).filter((d: { status: string }) => d.status === "now").map(dress),
+        next: (duties ?? []).filter((d: { status: string }) => d.status === "next").map(dress),
+        asks: (asks ?? []).map(dress),
+        questions: (qs ?? []).map(dress),
+        week_hours: (labor ?? []).reduce((t: number, l: { hours: number }) => t + Number(l.hours || 0), 0) });
+    }
+
+    if (b.action === "duty_done") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: w } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!w) return out({ ok: false, error: "This link is not valid." }, 404);
+      const { data: d, error: de } = await sb.from("duties")
+        .select("id, job_id, step_key, title, worker, status").eq("id", String(b.duty_id ?? "")).single();
+      if (de || !d || d.worker !== w.name) return out({ ok: false, error: "That duty is not on your list." }, 400);
+      if (d.status === "done") return out({ ok: false, error: "Already signed off." }, 400);
+      const hours = Number(b.hours);
+      const patch: Record<string, unknown> = { status: "done", done_at: new Date().toISOString() };
+      if (hours > 0 && hours < 24) patch.hours = hours;
+      const { error: ue } = await sb.from("duties").update(patch).eq("id", d.id);
+      if (ue) return out({ ok: false, error: ue.message }, 500);
+      if (hours > 0 && hours < 24 && d.job_id) {
+        await sb.from("labor_entries").insert({ job_id: d.job_id, duty_id: d.id,
+          step_key: d.step_key, worker: w.name, hours, note: d.title });
+      }
+      if (d.job_id && d.step_key) {
+        await sb.from("job_steps").update({ status: "done", done_by: w.name, done_at: new Date().toISOString() })
+          .eq("job_id", d.job_id).eq("key", d.step_key).neq("status", "done");
+      }
+      await sb.from("events").insert({ actor: w.name, kind: "duty",
+        body: { what: "duty signed off", title: d.title, job_id: d.job_id, hours: hours > 0 ? hours : null } });
+      return out({ ok: true, done: d.title });
+    }
+
+    if (b.action === "photo_put") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: w } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!w) return out({ ok: false, error: "This link is not valid." }, 404);
+      const { data: pr } = await sb.from("photo_requests")
+        .select("id, job_id, worker, what, status").eq("id", String(b.request_id ?? "")).single();
+      if (!pr || pr.worker !== w.name) return out({ ok: false, error: "That request is not on your list." }, 400);
+      const dataUrl = String(b.image ?? "");
+      const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+      if (!m) return out({ ok: false, error: "Send the photo as a JPEG or PNG." }, 400);
+      if (m[2].length > 6_000_000) return out({ ok: false, error: "That photo is too large — try again, it will compress." }, 400);
+      const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+      const path = (pr.job_id ?? "no-job") + "/" + pr.id + (m[1] === "image/png" ? ".png" : ".jpg");
+      const { error: se } = await sb.storage.from("job-files").upload(path, bytes, { contentType: m[1], upsert: true });
+      if (se) return out({ ok: false, error: se.message }, 500);
+      await sb.from("photo_requests").update({ status: "done", file_path: path, done_at: new Date().toISOString() }).eq("id", pr.id);
+      await sb.from("events").insert({ actor: w.name, kind: "photo",
+        body: { what: "photo returned", request: pr.what, job_id: pr.job_id, path } });
+      return out({ ok: true, done: pr.what });
+    }
+
+    // ---------- PUBLIC: the shop floor tablet (station token) ----------
+    if (b.action === "shop_view") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: st } = await sb.from("workers").select("id, name, kind").eq("token", tok).eq("active", true).single();
+      if (!st || st.kind !== "station") return out({ ok: false, error: "This link is not valid — ask the office for a fresh one." }, 404);
+      const today = new Date(Date.now() - 12 * 3600000).toISOString();
+      const [{ data: crew }, { data: duties }, { data: asks }, { data: qs }] = await Promise.all([
+        sb.from("workers").select("name").eq("active", true).eq("kind", "crew").order("name"),
+        sb.from("duties")
+          .select("id, job_id, step_key, title, worker, status, note, sort, created_at, done_at, hours")
+          .or(`status.neq.done,done_at.gte.${today}`).order("sort").order("created_at"),
+        sb.from("photo_requests").select("id, job_id, worker, what, created_at").eq("status", "open"),
+        sb.from("crew_questions")
+          .select("id, job_id, worker, question, status, answer, answered_by, created_at")
+          .or(`status.eq.open,answered_at.gte.${new Date(Date.now() - 2 * 86400000).toISOString()}`)
+          .order("created_at", { ascending: false }).limit(40),
+      ]);
+      const jids = [...new Set([...(duties ?? []), ...(asks ?? []), ...(qs ?? [])]
+        .map((x: { job_id?: string | null }) => x.job_id).filter(Boolean))] as string[];
+      const jobNames: Record<string, string> = {};
+      if (jids.length) {
+        const { data: js } = await sb.from("jobs").select("id, job_no").in("id", jids);
+        for (const j of js ?? []) jobNames[(j as { id: string }).id] = (j as { job_no: string }).job_no;
+      }
+      return out({ ok: true, station: st.name, crew: (crew ?? []).map((w: { name: string }) => w.name),
+        duties: duties ?? [], asks: asks ?? [], questions: qs ?? [], job_names: jobNames });
+    }
+
+    if (b.action === "shop_done") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: st } = await sb.from("workers").select("name, kind").eq("token", tok).eq("active", true).single();
+      if (!st || st.kind !== "station") return out({ ok: false, error: "This link is not valid." }, 404);
+      const { data: d, error: de } = await sb.from("duties")
+        .select("id, job_id, step_key, title, worker, status").eq("id", String(b.duty_id ?? "")).single();
+      if (de || !d) return out({ ok: false, error: "That duty is gone — refresh the board." }, 400);
+      if (d.status === "done") return out({ ok: false, error: "Already signed off." }, 400);
+      const hours = Number(b.hours);
+      const patch: Record<string, unknown> = { status: "done", done_at: new Date().toISOString() };
+      if (hours > 0 && hours < 24) patch.hours = hours;
+      const { error: ue } = await sb.from("duties").update(patch).eq("id", d.id);
+      if (ue) return out({ ok: false, error: ue.message }, 500);
+      if (hours > 0 && hours < 24 && d.job_id) {
+        await sb.from("labor_entries").insert({ job_id: d.job_id, duty_id: d.id,
+          step_key: d.step_key, worker: d.worker, hours, note: d.title });
+      }
+      if (d.job_id && d.step_key) {
+        await sb.from("job_steps").update({ status: "done", done_by: d.worker, done_at: new Date().toISOString() })
+          .eq("job_id", d.job_id).eq("key", d.step_key).neq("status", "done");
+      }
+      await sb.from("events").insert({ actor: d.worker, kind: "duty",
+        body: { what: "duty signed off (shop tablet)", title: d.title, job_id: d.job_id, station: st.name, hours: hours > 0 ? hours : null } });
+      return out({ ok: true, done: d.title, worker: d.worker });
+    }
+
+    if (b.action === "shop_ask") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: st } = await sb.from("workers").select("name, kind").eq("token", tok).eq("active", true).single();
+      if (!st || st.kind !== "station") return out({ ok: false, error: "This link is not valid." }, 404);
+      const who = String(b.worker ?? "").trim();
+      const { data: w } = await sb.from("workers").select("name").eq("name", who).eq("active", true).eq("kind", "crew").single();
+      if (!w) return out({ ok: false, error: "Pick your name first." }, 400);
+      const question = String(b.question ?? "").trim().slice(0, 1000);
+      if (question.length < 3) return out({ ok: false, error: "Type the question first." }, 400);
+      let jobId: string | null = null;
+      if (b.job_id) {
+        const { data: j } = await sb.from("jobs").select("id").eq("id", String(b.job_id)).single();
+        jobId = j?.id ?? null;
+      }
+      const { data, error } = await sb.from("crew_questions").insert({
+        job_id: jobId, worker: w.name, question,
+      }).select("id, question").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: w.name, kind: "crew",
+        body: { what: "question for the office (shop tablet)", question: question.slice(0, 200), job_id: jobId } });
+      return out({ ok: true, asked: data.question, id: data.id });
+    }
+
+    // ---------- PUBLIC: shop ops — inventory, machines, maintenance ----------
+    if (["shop_ops_view", "inv_count", "inv_request", "issue_report", "maint_done",
+         "grp_add", "grp_set", "item_add", "inv_condition", "inv_sharpened", "inv_photo",
+         "media_jobs", "media_upload_url", "media_record"].includes(b.action)) {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: me } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!me) return out({ ok: false, error: "This link is not valid." }, 404);
+      const by = String(b.by ?? "").trim().slice(0, 60) || me.name;
+
+      if (b.action === "shop_ops_view") {
+        const d14 = new Date(Date.now() - 14 * 86400000).toISOString();
+        const [{ data: groups }, { data: items }, { data: msgs }, { data: machines }, { data: maint }, { data: issues }] = await Promise.all([
+          sb.from("inv_groups").select("*").eq("active", true).order("sort").order("name"),
+          sb.from("inventory_items").select("*").eq("active", true).order("name"),
+          sb.from("inv_msgs").select("*").or(`status.neq.done,done_at.gte.${d14}`)
+            .order("created_at", { ascending: false }).limit(80),
+          sb.from("machines").select("*").eq("active", true).order("name"),
+          sb.from("maintenance_items").select("*").order("next_due", { ascending: true, nullsFirst: false }),
+          sb.from("machine_issues").select("*")
+            .or(`status.neq.fixed,fixed_at.gte.${new Date(Date.now() - 7 * 86400000).toISOString()}`)
+            .order("created_at", { ascending: false }).limit(60),
+        ]);
+        return out({ ok: true, groups: groups ?? [], items: items ?? [], msgs: msgs ?? [],
+          machines: machines ?? [], maintenance: maint ?? [], issues: issues ?? [] });
+      }
+
+      if (b.action === "inv_count") {
+        const qty = Number(b.qty);
+        if (!Number.isFinite(qty) || qty < 0) return out({ ok: false, error: "A count of what is actually on the shelf." }, 400);
+        const { data: item, error: ie } = await sb.from("inventory_items")
+          .update({ qty, updated_at: new Date().toISOString(), updated_by: by })
+          .eq("id", String(b.item_id ?? "")).select("*").single();
+        if (ie) return out({ ok: false, error: ie.message }, 500);
+        await sb.from("inv_msgs").insert({ item_id: item.id, item_name: item.name, kind: "count", qty,
+          from_side: "floor", by_name: by, status: "done", done_at: new Date().toISOString() });
+        await sb.from("events").insert({ actor: by, kind: "inventory",
+          body: { what: "count updated", item: item.name, qty } });
+        return out({ ok: true, item });
+      }
+
+      if (b.action === "inv_request") {
+        let item: { id: string; name: string } | null = null;
+        if (b.item_id) {
+          const { data } = await sb.from("inventory_items").select("id, name").eq("id", String(b.item_id)).single();
+          item = data;
+        }
+        const nm = item?.name ?? String(b.name ?? "").trim().slice(0, 120);
+        if (!nm) return out({ ok: false, error: "What do you need?" }, 400);
+        const { data, error } = await sb.from("inv_msgs").insert({
+          item_id: item?.id ?? null, item_name: nm, kind: "request",
+          qty: Number(b.qty) > 0 ? Number(b.qty) : null,
+          note: String(b.note ?? "").trim().slice(0, 500) || null,
+          from_side: "floor", by_name: by, urgent: b.urgent === true,
+        }).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        await sb.from("events").insert({ actor: by, kind: "inventory",
+          body: { what: "stock requested", item: nm, qty: data.qty } });
+        return out({ ok: true, msg: data });
+      }
+
+      if (b.action === "issue_report") {
+        let mach: { id: string; name: string } | null = null;
+        if (b.machine_id) {
+          const { data } = await sb.from("machines").select("id, name").eq("id", String(b.machine_id)).single();
+          mach = data;
+        }
+        const mname = mach?.name ?? String(b.machine ?? "").trim().slice(0, 120);
+        const what = String(b.what ?? "").trim().slice(0, 500);
+        if (what.length < 3) return out({ ok: false, error: "What is wrong with it?" }, 400);
+        const severity = ["normal", "urgent", "down"].includes(b.severity) ? b.severity : "normal";
+        const { data, error } = await sb.from("machine_issues").insert({
+          machine_id: mach?.id ?? null, machine: mname || null, what, severity, by_name: by,
+        }).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        await sb.from("events").insert({ actor: by, kind: "machine",
+          body: { what: "issue reported", machine: mname, issue: what.slice(0, 120), severity } });
+        return out({ ok: true, issue: data });
+      }
+
+      if (b.action === "maint_done") {
+        const { data: m, error: me2 } = await sb.from("maintenance_items").select("*").eq("id", String(b.id ?? "")).single();
+        if (me2 || !m) return out({ ok: false, error: "That service line is gone — refresh." }, 400);
+        const today = new Date().toISOString().slice(0, 10);
+        let nextDue: string | null = String(b.next_due ?? "").trim() || null;
+        if (!nextDue && m.interval_days) {
+          nextDue = new Date(Date.now() + m.interval_days * 86400000).toISOString().slice(0, 10);
+        }
+        const { data, error } = await sb.from("maintenance_items").update({
+          last_done: today,
+          performed: String(b.performed ?? "").trim().slice(0, 500) || m.performed,
+          next_due: nextDue, updated_at: new Date().toISOString(), updated_by: by,
+        }).eq("id", m.id).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        await sb.from("events").insert({ actor: by, kind: "machine",
+          body: { what: "service performed", service: m.service, machine_id: m.machine_id, next_due: nextDue } });
+        return out({ ok: true, maintenance: data });
+      }
+
+      if (b.action === "grp_add") {
+        const name = String(b.name ?? "").trim().slice(0, 80);
+        if (name.length < 2) return out({ ok: false, error: "a group name is required" }, 400);
+        let parent: string | null = null;
+        if (b.parent_id) {
+          const { data: pg } = await sb.from("inv_groups").select("id, parent_id").eq("id", String(b.parent_id)).single();
+          if (!pg) return out({ ok: false, error: "parent group not found" }, 400);
+          if (pg.parent_id) return out({ ok: false, error: "two levels only — groups and sub-groups" }, 400);
+          parent = pg.id;
+        }
+        const color = /^#[0-9a-fA-F]{6}$/.test(String(b.color ?? "")) ? String(b.color) : "#3d2a56";
+        const { data, error } = await sb.from("inv_groups").insert({ name, parent_id: parent, color }).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        await sb.from("events").insert({ actor: by, kind: "inventory", body: { what: "group added", group: name, parent } });
+        return out({ ok: true, group: data });
+      }
+
+      if (b.action === "grp_set") {
+        const patch: Record<string, unknown> = {};
+        if (b.name !== undefined) patch.name = String(b.name).trim().slice(0, 80);
+        if (b.color !== undefined && /^#[0-9a-fA-F]{6}$/.test(String(b.color))) patch.color = String(b.color);
+        if (b.sort !== undefined) patch.sort = Number(b.sort) || 100;
+        if (b.active !== undefined) patch.active = !!b.active;
+        if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+        const { data, error } = await sb.from("inv_groups").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        return out({ ok: true, group: data });
+      }
+
+      if (b.action === "item_add") {
+        const name = String(b.name ?? "").trim().slice(0, 160);
+        if (name.length < 2) return out({ ok: false, error: "an item name is required" }, 400);
+        const { data, error } = await sb.from("inventory_items").insert({
+          name, unit: String(b.unit ?? "ea").trim() || "ea",
+          qty: Number(b.qty) >= 0 ? Number(b.qty) : 0,
+          min_qty: (b.min_qty != null && b.min_qty !== "") ? Number(b.min_qty) : null,
+          group_id: String(b.group_id ?? "") || null,
+          inv_code: String(b.inv_code ?? "").trim().slice(0, 40) || null,
+          sharpen_interval_days: Number(b.sharpen_interval_days) > 0 ? Number(b.sharpen_interval_days) : null,
+          updated_by: by,
+        }).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        await sb.from("events").insert({ actor: by, kind: "inventory", body: { what: "item added", item: name } });
+        return out({ ok: true, item: data });
+      }
+
+      if (b.action === "inv_condition") {
+        const cond = ["good", "sharpen_due", "chipped", "worn", "out"].includes(b.condition) ? b.condition : null;
+        if (!cond) return out({ ok: false, error: "condition must be good | sharpen_due | chipped | worn | out" }, 400);
+        const { data: item, error: ie } = await sb.from("inventory_items").update({
+          condition: cond, condition_note: String(b.note ?? "").trim().slice(0, 300) || null,
+          updated_at: new Date().toISOString(), updated_by: by,
+        }).eq("id", String(b.item_id ?? "")).select("*").single();
+        if (ie) return out({ ok: false, error: ie.message }, 500);
+        const urgent = cond === "chipped" || cond === "out";
+        await sb.from("inv_msgs").insert({ item_id: item.id, item_name: item.name, kind: "condition",
+          note: cond + (b.note ? " — " + String(b.note).slice(0, 200) : ""), from_side: "floor", by_name: by, urgent });
+        await sb.from("events").insert({ actor: by, kind: "inventory",
+          body: { what: "condition flagged", item: item.name, condition: cond } });
+        return out({ ok: true, item });
+      }
+
+      if (b.action === "inv_sharpened") {
+        const { data: it } = await sb.from("inventory_items").select("*").eq("id", String(b.item_id ?? "")).single();
+        if (!it) return out({ ok: false, error: "item not found" }, 404);
+        const today = new Date().toISOString().slice(0, 10);
+        const due = it.sharpen_interval_days
+          ? new Date(Date.now() + it.sharpen_interval_days * 86400000).toISOString().slice(0, 10) : null;
+        const { data: item, error } = await sb.from("inventory_items").update({
+          last_sharpened: today, sharpen_due: due, condition: "good", condition_note: null,
+          updated_at: new Date().toISOString(), updated_by: by,
+        }).eq("id", it.id).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        await sb.from("events").insert({ actor: by, kind: "inventory",
+          body: { what: "sharpened", item: it.name, next_due: due } });
+        return out({ ok: true, item });
+      }
+
+      if (b.action === "inv_photo") {
+        const { data: it } = await sb.from("inventory_items").select("id, name").eq("id", String(b.item_id ?? "")).single();
+        if (!it) return out({ ok: false, error: "item not found" }, 404);
+        const dataUrl = String(b.image ?? "");
+        const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+        if (!m) return out({ ok: false, error: "Send the photo as a JPEG or PNG." }, 400);
+        if (m[2].length > 6_000_000) return out({ ok: false, error: "That photo is too large — try again, it will compress." }, 400);
+        const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+        const path = "inventory/" + it.id + "/" + crypto.randomUUID() + (m[1] === "image/png" ? ".png" : ".jpg");
+        const { error: se } = await sb.storage.from("job-files").upload(path, bytes, { contentType: m[1], upsert: true });
+        if (se) return out({ ok: false, error: se.message }, 500);
+        await sb.from("inv_msgs").insert({ item_id: it.id, item_name: it.name, kind: "photo",
+          note: String(b.note ?? "").trim().slice(0, 300) || null, from_side: "floor", by_name: by, file_path: path });
+        await sb.from("events").insert({ actor: by, kind: "inventory", body: { what: "photo sent", item: it.name, path } });
+        return out({ ok: true, path });
+      }
+    }
+
+    // ---------- PUBLIC: job media — walkaround + install captures ----------
+      if (b.action === "media_jobs") {
+        const { data: jobs } = await sb.from("jobs").select("id, job_no, stage")
+          .order("created_at", { ascending: false }).limit(60);
+        const ids = (jobs ?? []).map((j: { id: string }) => j.id);
+        const [{ data: steps }, { data: med }] = await Promise.all([
+          ids.length ? sb.from("job_steps").select("job_id, key, status").in("job_id", ids)
+            .in("key", ["walkaround", "install_media"]) : Promise.resolve({ data: [] }),
+          ids.length ? sb.from("job_media").select("job_id, purpose").in("job_id", ids) : Promise.resolve({ data: [] }),
+        ]);
+        const rows = (jobs ?? []).map((j: { id: string; job_no: string; stage: string }) => {
+          const st = (steps ?? []).filter((x: { job_id: string }) => x.job_id === j.id);
+          const md = (med ?? []).filter((x: { job_id: string }) => x.job_id === j.id);
+          return { id: j.id, job_no: j.job_no, stage: j.stage,
+            walkaround_done: st.some((x: { key: string; status: string }) => x.key === "walkaround" && x.status === "done"),
+            install_done: st.some((x: { key: string; status: string }) => x.key === "install_media" && x.status === "done"),
+            n_walkaround: md.filter((x: { purpose: string }) => x.purpose === "walkaround").length,
+            n_install: md.filter((x: { purpose: string }) => x.purpose === "install").length };
+        });
+        return out({ ok: true, rows });
+      }
+
+      if (b.action === "media_upload_url") {
+        const { data: j } = await sb.from("jobs").select("id, job_no").eq("id", String(b.job_id ?? "")).single();
+        if (!j) return out({ ok: false, error: "job not found" }, 404);
+        const ext = String(b.ext ?? "").toLowerCase().replace(".", "");
+        if (!["jpg", "jpeg", "png", "webp", "heic", "mp4", "mov", "webm"].includes(ext)) {
+          return out({ ok: false, error: "jpg/png/webp/heic photos or mp4/mov/webm video" }, 400);
+        }
+        const path = "media/" + j.id + "/" + crypto.randomUUID() + "." + ext;
+        const { data, error } = await sb.storage.from("job-files").createSignedUploadUrl(path);
+        if (error) return out({ ok: false, error: error.message }, 500);
+        return out({ ok: true, path, url: data.signedUrl, job_no: j.job_no });
+      }
+
+      if (b.action === "media_record") {
+        const { data: j } = await sb.from("jobs").select("id, job_no").eq("id", String(b.job_id ?? "")).single();
+        if (!j) return out({ ok: false, error: "job not found" }, 404);
+        const { data: me2 } = await sb.from("workers").select("name").eq("token", String(b.token ?? "")).eq("active", true).single();
+        const by = String(b.by ?? "").trim().slice(0, 60) || me2?.name || "crew";
+        const purpose = ["walkaround", "install", "other"].includes(b.purpose) ? b.purpose : "other";
+        const kind = ["photo", "video"].includes(b.kind) ? b.kind : "photo";
+        const path = String(b.path ?? "");
+        if (!path.startsWith("media/")) return out({ ok: false, error: "bad path" }, 400);
+        const { data, error } = await sb.from("job_media").insert({
+          job_id: j.id, kind, purpose, path,
+          note: String(b.note ?? "").trim().slice(0, 300) || null, by_name: by,
+        }).select("*").single();
+        if (error) return out({ ok: false, error: error.message }, 500);
+        const stepKey = purpose === "walkaround" ? "walkaround" : purpose === "install" ? "install_media" : null;
+        if (stepKey) {
+          await sb.from("job_steps").update({ status: "done", done_by: by, done_at: new Date().toISOString() })
+            .eq("job_id", j.id).eq("key", stepKey).neq("status", "done");
+        }
+        await sb.from("events").insert({ actor: by, kind: "media",
+          body: { what: purpose + " " + kind + " captured", job_no: j.job_no, path } });
+        return out({ ok: true, media: data });
+      }
+
+    // ---------- PUBLIC: crew laser measurement (any active worker token) ----------
+    // The bifolded measure app, absorbed: legs -> measurements table, same
+    // rows the Concept Desk chip, laser_adopt and the publish gate read.
+    // Every leg KEPT, smallest governs. Replaces measure.bifolded.com.
+    if (b.action === "measure_jobs") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: me } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!me) return out({ ok: false, error: "This link is not valid." }, 404);
+      const { data: jobs } = await sb.from("jobs").select("id, job_no, created_at")
+        .order("created_at", { ascending: false }).limit(60);
+      const ids = (jobs ?? []).map((j: { id: string }) => j.id);
+      const { data: ms } = ids.length
+        ? await sb.from("measurements").select("job_id, opening, axis, governing").eq("kind", "laser").in("job_id", ids)
+        : { data: [] };
+      const have: Record<string, Record<string, { w?: number; h?: number }>> = {};
+      for (const m of ms ?? []) {
+        // deno-lint-ignore no-explicit-any
+        const mx = m as any;
+        const j = have[mx.job_id] = have[mx.job_id] ?? {};
+        const o = j[mx.opening] = j[mx.opening] ?? {};
+        if (o[mx.axis as "w" | "h"] === undefined) o[mx.axis as "w" | "h"] = Number(mx.governing);
+      }
+      return out({ ok: true, me: me.name, jobs: (jobs ?? []).map((j: { id: string; job_no: string }) => ({
+        id: j.id, job_no: j.job_no, openings: have[j.id] ?? {} })) });
+    }
+
+    if (b.action === "measure_submit") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: me } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!me) return out({ ok: false, error: "This link is not valid." }, 404);
+      const { data: j } = await sb.from("jobs").select("id, job_no").eq("id", String(b.job_id ?? "")).single();
+      if (!j) return out({ ok: false, error: "pick the job" }, 400);
+      const opening = String(b.opening ?? "Opening 1").trim().slice(0, 60) || "Opening 1";
+      const legs = (vv: unknown) => Array.isArray(vv)
+        ? vv.map(Number).filter((x) => Number.isFinite(x) && x > 1 && x < 400).slice(0, 6) : [];
+      const wLegs = legs(b.wLegs), hLegs = legs(b.hLegs);
+      if (wLegs.length < 2 || hLegs.length < 2) {
+        return out({ ok: false, error: "At least two width and two height legs — the spread is the point." }, 400);
+      }
+      const by = String(b.by ?? "").trim().slice(0, 80) || me.name;
+      const rows = [
+        { job_id: j.id, opening, axis: "w", kind: "laser", legs: wLegs, governing: Math.min(...wLegs), by_name: by, by_role: "rep", verified: true },
+        { job_id: j.id, opening, axis: "h", kind: "laser", legs: hLegs, governing: Math.min(...hLegs), by_name: by, by_role: "rep", verified: true },
+      ];
+      const { error } = await sb.from("measurements").insert(rows);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("job_steps").update({ status: "done", done_by: by, done_at: new Date().toISOString() })
+        .eq("job_id", j.id).eq("key", "verify").neq("status", "done");
+      const spread = (l: number[]) => l.length > 1 ? Math.max(...l) - Math.min(...l) : 0;
+      await sb.from("events").insert({ actor: by, kind: "verify",
+        body: { what: "laser measured", job_no: j.job_no, opening,
+          max: Math.min(...wLegs) + "x" + Math.min(...hLegs),
+          out_of_square: spread(wLegs) > 0.375 || spread(hLegs) > 0.375 } });
+      return out({ ok: true, max_w: Math.min(...wLegs), max_h: Math.min(...hLegs),
+        spread_w: spread(wLegs), spread_h: spread(hLegs), job_no: j.job_no, opening, by });
+    }
+
+    // ---------- PUBLIC: concept viewing, pins, signing (view token) ----------
+    if (b.action === "concept_view") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: c } = await sb.from("concepts").select("*").eq("view_token", tok).single();
+      if (!c) return out({ ok: false, error: "This link is not valid — call us for a fresh one." }, 404);
+      if (c.status === "sent") {
+        await sb.from("concepts").update({ status: "viewed", viewed_at: new Date().toISOString() }).eq("id", c.id);
+        c.status = "viewed"; c.viewed_at = new Date().toISOString();
+        await sb.from("events").insert({ actor: "customer", kind: "concept",
+          body: { what: "drawing viewed", title: c.title, stage: c.stage, rev: c.rev } });
+      }
+      const { data: pins } = await sb.from("concept_pins").select("*").eq("concept_id", c.id).order("created_at");
+      let laser = null;
+      if (c.job_id) {
+        const { data: ms } = await sb.from("measurements").select("axis, governing, by_name")
+          .eq("job_id", c.job_id).eq("kind", "laser").order("at", { ascending: false });
+        // deno-lint-ignore no-explicit-any
+        const w = (ms as any[] ?? []).find((m) => m.axis === "w"), h = (ms as any[] ?? []).find((m) => m.axis === "h");
+        if (w && h) laser = { max_w: Number(w.governing), max_h: Number(h.governing), by_name: w.by_name };
+      }
+      return out({ ok: true, concept: c, pins: pins ?? [], laser });
+    }
+
+    if (b.action === "concept_pin") {
+      const tok = String(b.token ?? "").trim();
+      const { data: c } = await sb.from("concepts").select("id, title, status").eq("view_token", tok).single();
+      if (tok.length < 20 || !c) return out({ ok: false, error: "This link is not valid." }, 404);
+      const note = String(b.note ?? "").trim().slice(0, 500);
+      const x = Number(b.x), y = Number(b.y);
+      if (note.length < 2 || !Number.isFinite(x) || !Number.isFinite(y)) {
+        return out({ ok: false, error: "Tap the drawing and tell us what to change." }, 400);
+      }
+      const { data, error } = await sb.from("concept_pins").insert({
+        concept_id: c.id, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)),
+        note, by_name: String(b.by ?? "").trim().slice(0, 80) || null,
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: data.by_name ?? "customer", kind: "concept",
+        body: { what: "revision pin", title: c.title, note: note.slice(0, 120) } });
+      return out({ ok: true, pin: data });
+    }
+
+    if (b.action === "concept_sign") {
+      const tok = String(b.token ?? "").trim();
+      const name = String(b.name ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      if (name.length < 2) return out({ ok: false, error: "Please sign with your full name." }, 400);
+      if (b.consent !== true) return out({ ok: false, error: "Please tick the consent box — it makes your typed name a signature." }, 400);
+      const { data: c } = await sb.from("concepts").select("*").eq("view_token", tok).single();
+      if (!c) return out({ ok: false, error: "This link is not valid." }, 404);
+      if (c.signed_at) return out({ ok: false, error: "Already signed." }, 400);
+      const { count: openPins } = await sb.from("concept_pins").select("id", { count: "exact", head: true })
+        .eq("concept_id", c.id).eq("status", "open");
+      if ((openPins ?? 0) > 0) return out({ ok: false, error: "There are open revision pins — we resolve those first, then you sign the clean rev." }, 400);
+      const enc = new TextEncoder().encode(JSON.stringify({ spec: c.spec, rev: c.rev, stage: c.stage }));
+      const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", enc))]
+        .map((x) => x.toString(16).padStart(2, "0")).join("");
+      const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
+      const { error } = await sb.from("concepts").update({
+        status: "signed", signed_name: name, signed_at: new Date().toISOString(),
+        signed_ip: ip || null, doc_hash: hash,
+      }).eq("id", c.id);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: name, kind: "concept",
+        body: { what: c.stage + " signed", title: c.title, rev: c.rev, doc_hash: hash } });
+      return out({ ok: true, signed: true, stage: c.stage, name });
+    }
+
+    // ---------- PDF rail: PNG pages -> PDF -> job-files/docs + registry ----------
+    // deno-lint-ignore no-explicit-any
+    async function buildPdfFromPages(pages: any[]): Promise<Uint8Array> {
+      const { PDFDocument } = await import("https://esm.sh/pdf-lib@1.17.1");
+      const doc = await PDFDocument.create();
+      for (const p of pages) {
+        const m = /^data:image\/png;base64,(.+)$/.exec(String(p));
+        if (!m) throw new Error("pages must be PNG data URLs");
+        const bytes = Uint8Array.from(atob(m[1]), (c) => c.charCodeAt(0));
+        const img = await doc.embedPng(bytes);
+        const pg = doc.addPage([612, 792]);
+        const mgn = 24, aw = 612 - 2 * mgn, ah = 792 - 2 * mgn;
+        const k = Math.min(aw / img.width, ah / img.height);
+        const w = img.width * k, h = img.height * k;
+        pg.drawImage(img, { x: (612 - w) / 2, y: 792 - mgn - h, width: w, height: h });
+      }
+      return await doc.save();
+    }
+    // deno-lint-ignore no-explicit-any
+    async function fileDoc(o: any): Promise<any> {
+      if (!Array.isArray(o.pages) || !o.pages.length || o.pages.length > 12) return { error: "1-12 PNG pages required" };
+      let tot = 0; for (const p of o.pages) tot += String(p).length;
+      if (tot > 24_000_000) return { error: "pages too large" };
+      let bytes: Uint8Array;
+      try { bytes = await buildPdfFromPages(o.pages); } catch (e) { return { error: "pdf: " + (e as Error).message }; }
+      const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes as unknown as ArrayBuffer))].map((x) => x.toString(16).padStart(2, "0")).join("");
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const path = "docs/" + String(o.kind ?? "doc") + "/" + String(o.ref ?? "misc") + "/" + String(o.kind ?? "doc") + "-" + stamp + ".pdf";
+      const { error: se } = await sb.storage.from("job-files").upload(path, bytes, { contentType: "application/pdf", upsert: true });
+      if (se) return { error: se.message };
+      const { data, error } = await sb.from("doc_files").insert({
+        kind: String(o.kind ?? "doc"), title: String(o.title ?? "").slice(0, 200) || null,
+        quote_id: o.quote_id ? String(o.quote_id) : null, concept_id: o.concept_id ? String(o.concept_id) : null,
+        job_id: o.job_id ? String(o.job_id) : null,
+        path, sha256: hash, pages: o.pages.length, made_by: String(o.by ?? "system"),
+      }).select("*").single();
+      if (error) return { error: error.message };
+      await sb.from("events").insert({ actor: String(o.by ?? "system"), kind: "doc",
+        body: { what: String(o.kind) + " PDF filed", path, pages: o.pages.length } });
+      return { doc: data };
+    }
+
+    // PUBLIC: the portal files the signed doc THE MOMENT it is signed
+    if (b.action === "doc_capture") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      let o: Record<string, unknown> | null = null;
+      if (b.doc === "concept") {
+        const { data: c } = await sb.from("concepts").select("id, title, stage, rev, job_id, signed_at").eq("view_token", tok).single();
+        if (!c || !c.signed_at) return out({ ok: false, error: "sign first" }, 400);
+        o = { kind: c.stage === "signoff" ? "signoff" : "concept", ref: c.id, concept_id: c.id, job_id: c.job_id,
+          title: String(c.title) + " rev " + c.rev + " — signed", by: "portal" };
+      } else {
+        const { data: q } = await sb.from("quotes").select("id, signed_at").eq("sign_token", tok).single();
+        if (!q || !q.signed_at) return out({ ok: false, error: "sign first" }, 400);
+        o = { kind: "agreement", ref: String(q.id), quote_id: q.id, title: "Signed agreement", by: "portal" };
+      }
+      const r = await fileDoc({ ...o, pages: b.pages });
+      if (r.error) return out({ ok: false, error: r.error }, 400);
+      return out({ ok: true, filed: true });
+    }
+
+    // ---------- ORDERING ENGINE — kit math ported verbatim from Shop Ops 3.49 ----------
+    // Centor E3 base hardware per pivoted-jamb group of k doors (verified vs
+    // Centor "E3 Product Line" Common Panel Layouts pp.16-17; k=6 extrapolated).
+    const E3_BASE: Record<number, Record<string, number>> = {
+      1: { ics: 0, end: 0, hs: 0, hhs: 0, db: 0, pass: 1 },
+      2: { ics: 0, end: 1, hs: 1, hhs: 0, db: 2, pass: 0 },
+      3: { ics: 1, end: 0, hs: 0, hhs: 1, db: 2, pass: 1 },
+      4: { ics: 1, end: 1, hs: 0, hhs: 2, db: 4, pass: 0 },
+      5: { ics: 2, end: 0, hs: 1, hhs: 1, db: 4, pass: 1 },
+      6: { ics: 2, end: 1, hs: 1, hhs: 2, db: 6, pass: 0, est: 1 },
+      7: { ics: 3, end: 0, hs: 2, hhs: 1, db: 6, pass: 1 },
+      8: { ics: 3, end: 1, hs: 2, hhs: 2, db: 8, pass: 0 },
+    };
+    const E3_TALL = 88; // over 7'-4" (2250mm): wall pivot set + 4th hinge
+    // deno-lint-ignore no-explicit-any
+    function e3Config(dl: number, dr: number): any {
+      const o = { code: (dl ? dl + "L" : "") + (dr ? dr + "R" : ""), ps: 0, wps: 0, ics: 0, lcs: 0, rcs: 0, hs: 0, hhs: 0, db: 0, pass: 0, est: false };
+      for (const [k, side] of [[dl, "L"], [dr, "R"]] as [number, string][]) {
+        if (!k) continue;
+        const b2 = E3_BASE[k];
+        if (!b2) { o.est = true; continue; }
+        o.ps += 1; o.wps += 1; o.ics += b2.ics; o.hs += b2.hs; o.hhs += b2.hhs; o.db += b2.db; o.pass += b2.pass;
+        if (b2.end) { if (side === "L") o.rcs += 1; else o.lcs += 1; }
+        if (b2.est) o.est = true;
+      }
+      if (o.pass > 1) { o.db += 2 * (o.pass - 1); o.pass = 1; }
+      return o;
+    }
+    // deno-lint-ignore no-explicit-any
+    function kitLines(sys: string, n: number, c: any): { name: string; code?: string; qty: number; unit?: string; note?: string }[] {
+      const L: { name: string; code?: string; qty: number; unit?: string; note?: string }[] = [];
+      const tall = Number(c.leafH) > (sys === "e3" ? E3_TALL : 96);
+      // WOODWORK (the paper 4-PANEL BI-FOLD PARTS LIST, modernized)
+      L.push({ name: "Custom doors", qty: n });
+      if (!c.sunk) { L.push({ name: "Threshold (1\" Mangaris, shop-made)", qty: 1 }); L.push({ name: "Threshold scribe pieces", qty: 2 }); }
+      L.push({ name: "Left jamb", qty: 1 }, { name: "Right jamb", qty: 1 }, { name: "Weather boards", qty: 2 },
+        { name: "Top track (wood)", qty: 1 }, { name: "Exterior apron", qty: 1 }, { name: "Interior apron", qty: 1 },
+        { name: "Interior leg casings", qty: 2 }, { name: "Interior head casing", qty: 1 },
+        { name: "Exterior scribe piece", qty: 1 }, { name: "Exterior leg scribes", qty: 2 });
+      if (sys === "e3") {
+        const g = e3Config(Number(c.dl ?? Math.ceil(n / 2)), Number(c.dr ?? n - Math.ceil(n / 2)));
+        L.push({ name: "E3 layout " + g.code + (g.est ? " — NOT in Centor printed tables, confirm" : ""), qty: 1, note: "per Centor Common Panel Layouts" });
+        L.push({ name: "Centor E3 head track, machined — cut to opening", code: "E3TAM", qty: 1 });
+        L.push({ name: "Centor E3 bottom track — channel retainer + concealed poly", code: "E22FCR+E22FCP", qty: 1 });
+        L.push({ name: "Pivot set, concealed top+bottom", code: "E3CPSS", qty: g.ps });
+        if (tall) L.push({ name: "Wall pivot set — jamb middle pivot (doors over 7'-4\")", code: "E3WPSS", qty: g.wps });
+        L.push({ name: "Intermediate carrier set (incl. joint hinges + bottom guide)", code: "E3CICSS", qty: g.ics });
+        if (g.lcs) L.push({ name: "Left carrier set", code: "E3CLCSS", qty: g.lcs });
+        if (g.rcs) L.push({ name: "Right carrier set", code: "E3CRCSS", qty: g.rcs });
+        if (g.hs) L.push({ name: "Hinge set w/ handle, flat outswing", code: "E3HSS", qty: g.hs });
+        if (g.hhs) L.push({ name: "Half offset hinge set w/ handle", code: "E3HHSS", qty: g.hhs });
+        if (tall) L.push({ name: "4th hinge — every joint over 7'-4\"", code: "E3HNHS", qty: g.ics + g.hs + g.hhs });
+        if (g.db) L.push({ name: "Centor DY drop bolt 200mm non-keyed", code: "DBSY200NRQ", qty: g.db });
+        if (g.pass) L.push({ name: "Passage set / lock by other — service door", qty: g.pass });
+      } else {
+        // M8 / Johnson 200FD I-Track package (Johnson 125 lb/panel phasing out; M8 = Cavity Sliders)
+        L.push({ name: "Top I-track (pre-installed)", qty: 1 }, { name: "Bottom channel (pre-installed)", qty: 1 },
+          { name: "Top pivots w/ nipple", qty: 2 }, { name: "Wheels w/ nipple", qty: 2 },
+          { name: "Bottom bearings", qty: 2 }, { name: "Bottom pivots", qty: 2 },
+          { name: "U-channel bottom guide — cut to width", qty: 1 });
+        const leads = (Number(c.dl) > 0 ? 1 : 0) + (Number(c.dr) > 0 ? 1 : 0) || 2;
+        L.push({ name: "Bottom roller w/ mortised plate — lead leaves", qty: leads });
+        L.push({ name: "Baldwin 4x4 hinges — " + (tall ? "4" : "3") + "/joint" + (tall ? " (tall door)" : ""), qty: Math.max(n - 1, 0) * (tall ? 4 : 3) });
+        L.push({ name: "Swivel hook", qty: 1 }, { name: "Jamb screws", qty: 1 }, { name: "Bag of 4-3/4\" GRKs", qty: 1 }, { name: "Touch up", qty: 1 });
+      }
+      // SEALS — real TR components (08-09 verified)
+      const W = Number(c.w_in) || 0, H = Number(c.h_in) || 0;
+      const brushFt = W && H ? Math.ceil((2 * H + W + n * (W / n)) / 12) : 0;
+      const qlonFt = H ? Math.ceil(((n - 1) * H) / 12) : 0;
+      L.push({ name: "Kerf-in pile brush 1/2\" — jambs + header + door bottoms", code: "DSP 10850 BL", qty: brushFt, unit: "ft", note: brushFt ? "" : "give W x H to compute footage" });
+      L.push({ name: "Q-Lon door-to-door seal (1 per joint, full height)", code: "Schlegel EC417", qty: qlonFt, unit: "ft", note: qlonFt ? "" : "give H to compute footage" });
+      return L;
+    }
+
+    if (b.action === "job_needs") {
+      const sys = b.system === "e3" ? "e3" : "m8";
+      const n = Math.max(1, Math.min(8, Number(b.doors) || 4));
+      const lines = kitLines(sys, n, b);
+      const [{ data: items }, { data: pos }] = await Promise.all([
+        sb.from("inventory_items").select("id, name, inv_code, qty"),
+        sb.from("po_lines").select("item_name, code, qty, received_qty, po_id, purchase_orders!inner(status)"),
+      ]);
+      // deno-lint-ignore no-explicit-any
+      const openPo = (pos ?? []).filter((p: any) => !["received", "draft"].includes(p.purchase_orders?.status));
+      // deno-lint-ignore no-explicit-any
+      const norm = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const outLines = lines.map((ln) => {
+        // deno-lint-ignore no-explicit-any
+        const inv = (items ?? []).find((i: any) => (ln.code && i.inv_code && norm(i.inv_code) === norm(ln.code)) ||
+          (norm(i.name).includes(norm(ln.name).slice(0, 14)) && norm(ln.name).length > 5));
+        // deno-lint-ignore no-explicit-any
+        const onOrder = openPo.filter((p: any) => (ln.code && norm(p.code) === norm(ln.code)) || norm(p.item_name) === norm(ln.name))
+          // deno-lint-ignore no-explicit-any
+          .reduce((a: number, p: any) => a + Number(p.qty) - Number(p.received_qty), 0);
+        const onHand = inv ? Number(inv.qty) : null;
+        const short = onHand === null ? null : Math.max(0, ln.qty - onHand - onOrder);
+        return { ...ln, inventory_item_id: inv?.id ?? null, on_hand: onHand, on_order: onOrder, short };
+      });
+      return out({ ok: true, system: sys, doors: n, lines: outLines });
+    }
+
+    if (b.action === "po_create") {
+      if (!Array.isArray(b.lines) || !b.lines.length) return out({ ok: false, error: "lines required" }, 400);
+      const { count } = await sb.from("purchase_orders").select("id", { count: "exact", head: true });
+      const po_no = "PO-" + new Date().getFullYear() + "-" + String((count ?? 0) + 1).padStart(3, "0");
+      const { data: po, error } = await sb.from("purchase_orders").insert({
+        po_no, vendor: String(b.vendor ?? "").slice(0, 120) || null, note: String(b.note ?? "").slice(0, 500) || null,
+        job_id: b.job_id ? String(b.job_id) : null, status: "ordered", ordered_at: new Date().toISOString(),
+        created_by: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      // deno-lint-ignore no-explicit-any
+      const rows = (b.lines as any[]).slice(0, 60).map((l) => ({
+        po_id: po.id, item_name: String(l.name ?? l.item_name ?? "").slice(0, 200),
+        code: String(l.code ?? "").slice(0, 60) || null, unit: String(l.unit ?? "ea"),
+        qty: Number(l.qty) > 0 ? Number(l.qty) : 1,
+        inventory_item_id: l.inventory_item_id || null, job_id: b.job_id ? String(b.job_id) : null,
+      })).filter((l) => l.item_name.length > 1);
+      const { error: le } = await sb.from("po_lines").insert(rows);
+      if (le) return out({ ok: false, error: le.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "order",
+        body: { what: "PO placed", po_no, vendor: po.vendor, lines: rows.length } });
+      return out({ ok: true, po, lines: rows.length });
+    }
+
+    if (b.action === "po_list") {
+      const [{ data: pos }, { data: lines }] = await Promise.all([
+        sb.from("purchase_orders").select("*").order("created_at", { ascending: false }).limit(60),
+        sb.from("po_lines").select("*"),
+      ]);
+      return out({ ok: true, pos: pos ?? [], lines: lines ?? [] });
+    }
+
+    if (b.action === "po_receive") {
+      const { data: po } = await sb.from("purchase_orders").select("*").eq("id", String(b.po_id ?? "")).single();
+      if (!po) return out({ ok: false, error: "not found" }, 404);
+      const { data: lines } = await sb.from("po_lines").select("*").eq("po_id", po.id);
+      // deno-lint-ignore no-explicit-any
+      const rec = Array.isArray(b.receipts) ? b.receipts as any[] : [];
+      for (const r2 of rec) {
+        // deno-lint-ignore no-explicit-any
+        const ln = (lines ?? []).find((l: any) => l.id === String(r2.line_id));
+        if (!ln) continue;
+        const add = Math.max(0, Math.min(Number(r2.qty) || 0, Number(ln.qty) - Number(ln.received_qty)));
+        if (!add) continue;
+        await sb.from("po_lines").update({ received_qty: Number(ln.received_qty) + add }).eq("id", ln.id);
+        if (ln.inventory_item_id) {
+          const { data: it } = await sb.from("inventory_items").select("qty").eq("id", ln.inventory_item_id).single();
+          if (it) await sb.from("inventory_items").update({ qty: Number(it.qty) + add }).eq("id", ln.inventory_item_id);
+        }
+      }
+      const { data: after } = await sb.from("po_lines").select("qty, received_qty").eq("po_id", po.id);
+      // deno-lint-ignore no-explicit-any
+      const full = (after ?? []).every((l: any) => Number(l.received_qty) >= Number(l.qty));
+      // deno-lint-ignore no-explicit-any
+      const some = (after ?? []).some((l: any) => Number(l.received_qty) > 0);
+      const status = full ? "received" : some ? "partial" : po.status;
+      await sb.from("purchase_orders").update({ status, received_at: full ? new Date().toISOString() : null }).eq("id", po.id);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "order",
+        body: { what: "PO receipt", po_no: po.po_no, status } });
+      return out({ ok: true, status });
+    }
+
+    // ---------- TRAVELERS (public: crew token checks steps off) ----------
+    if (b.action === "trav_view") {
+      const tok = String(b.token ?? "").trim();
+      const { data: w } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!w) return out({ ok: false, error: "This link is not valid." }, 404);
+      const { data: travs } = await sb.from("travelers").select("*").eq("status", "open").order("created_at");
+      const ids = (travs ?? []).map((t) => t.id);
+      const { data: steps } = ids.length ? await sb.from("traveler_steps").select("*").in("traveler_id", ids).order("sort") : { data: [] };
+      return out({ ok: true, worker: w.name, travelers: travs ?? [], steps: steps ?? [] });
+    }
+
+    if (b.action === "trav_step") {
+      const tok = String(b.token ?? "").trim();
+      const { data: w } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!w) return out({ ok: false, error: "This link is not valid." }, 404);
+      const { data: st } = await sb.from("traveler_steps").select("*").eq("id", String(b.id ?? "")).single();
+      if (!st) return out({ ok: false, error: "not found" }, 404);
+      const done = b.done !== false;
+      await sb.from("traveler_steps").update({
+        status: done ? "done" : "todo", done_by: done ? w.name : null, done_at: done ? new Date().toISOString() : null,
+        note: String(b.note ?? "").slice(0, 300) || st.note,
+      }).eq("id", st.id);
+      const { data: rest } = await sb.from("traveler_steps").select("status").eq("traveler_id", st.traveler_id);
+      const allDone = (rest ?? []).every((s) => ["done", "na"].includes(s.status));
+      if (allDone) await sb.from("travelers").update({ status: "done", done_at: new Date().toISOString() }).eq("id", st.traveler_id);
+      return out({ ok: true, done, traveler_done: allDone });
+    }
+
+    // ---------- PUBLIC: a question back to the office (crew token) ----------
+    if (b.action === "crew_ask") {
+      const tok = String(b.token ?? "").trim();
+      if (tok.length < 20) return out({ ok: false, error: "bad link" }, 400);
+      const { data: w } = await sb.from("workers").select("name").eq("token", tok).eq("active", true).single();
+      if (!w) return out({ ok: false, error: "This link is not valid." }, 404);
+      const question = String(b.question ?? "").trim().slice(0, 1000);
+      if (question.length < 3) return out({ ok: false, error: "Type the question first." }, 400);
+      let jobId: string | null = null;
+      if (b.job_id) {
+        const { data: j } = await sb.from("jobs").select("id").eq("id", String(b.job_id)).single();
+        jobId = j?.id ?? null;
+      }
+      let dutyId: string | null = null;
+      if (b.duty_id) {
+        const { data: d } = await sb.from("duties").select("id, job_id").eq("id", String(b.duty_id)).eq("worker", w.name).single();
+        if (d) { dutyId = d.id; if (!jobId) jobId = d.job_id; }
+      }
+      const { data, error } = await sb.from("crew_questions").insert({
+        job_id: jobId, duty_id: dutyId, worker: w.name, question,
+      }).select("id, question, created_at").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: w.name, kind: "crew",
+        body: { what: "question for the office", question: question.slice(0, 200), job_id: jobId } });
+      return out({ ok: true, asked: data.question, id: data.id });
+    }
+
+    if (b.key !== KEY) return out({ ok: false, error: "bad key" }, 403);
+
+    // ---------- search (live dupe check / lookup) ----------
+    if (b.action === "search") {
+      const q = String(b.q ?? "").trim();
+      if (q.length < 2) return out({ ok: true, rows: [] });
+      const { data, error } = await sb.from("customers")
+        .select("id, customer_no, name, display_name, status, account_type")
+        .or(`name.ilike.%${q.replaceAll(",", " ")}%,display_name.ilike.%${q.replaceAll(",", " ")}%`)
+        .order("name").limit(12);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, rows: data });
+    }
+
+    // ---------- recent (what the office entered lately; optional status filter) ----------
+    if (b.action === "recent") {
+      let sel = sb.from("customers")
+        .select("id, customer_no, name, status, source, created_at")
+        .not("customer_no", "is", null);
+      if (b.status && ["prospect", "quoted", "closed", "lost", "service"].includes(b.status)) {
+        sel = sel.eq("status", b.status);
+      }
+      const { data, error } = await sel.order("created_at", { ascending: false })
+        .limit(Math.min(Number(b.limit) || 12, 50));
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, rows: data });
+    }
+
+    // ---------- create (first contact → C-number minted) ----------
+    if (b.action === "create") {
+      const name = String(b.name ?? "").trim().replace(/\s+/g, " ");
+      if (name.length < 2) return out({ ok: false, error: "a name is required" }, 400);
+
+      // exact-name guard: same person twice should link, not duplicate
+      const { data: dupes } = await sb.from("customers")
+        .select("id, customer_no, name, status").ilike("name", name).limit(3);
+      if ((dupes?.length ?? 0) > 0 && !b.force) {
+        return out({ ok: false, duplicate: true, existing: dupes,
+          note: "A customer with this exact name exists — open them, or resend with force:true if it is truly a different person." });
+      }
+
+      const { data: cno, error: mintErr } = await sb.rpc("mint_no", { p_kind: "customer" });
+      if (mintErr) return out({ ok: false, error: "minting failed: " + mintErr.message }, 500);
+
+      const row = {
+        customer_no: cno,
+        name,
+        display_name: String(b.display_name ?? "").trim() || name,
+        status: "prospect",
+        account_type: ["individual", "contractor", "company"].includes(b.account_type) ? b.account_type : "unknown",
+        email: String(b.email ?? "").trim() || null,
+        phone: String(b.phone ?? "").trim() || null,
+        site_address: String(b.site_address ?? "").trim() || null,
+        source: String(b.source ?? "").trim() || "point-of-contact",
+        notes: String(b.notes ?? "").trim() || null,
+      };
+      const { data: created, error } = await sb.from("customers").insert(row)
+        .select("id, customer_no, name, status").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+
+      await sb.from("events").insert({
+        actor: String(b.by ?? "office"), kind: "contact",
+        body: { what: "first contact", customer_no: created.customer_no, name: created.name, source: row.source },
+      });
+      return out({ ok: true, customer: created, label: "C-" + created.customer_no });
+    }
+
+    // ---------- quote (draft quote minted against a customer) ----------
+    if (b.action === "quote") {
+      const cid = String(b.customer_id ?? "");
+      if (!cid) return out({ ok: false, error: "customer_id required" }, 400);
+      const { data: qno, error: mintErr } = await sb.rpc("mint_no", { p_kind: "quote" });
+      if (mintErr) return out({ ok: false, error: "minting failed: " + mintErr.message }, 500);
+
+      const { data: created, error } = await sb.from("quotes").insert({
+        quote_no: qno, rev: 0, customer_id: cid, status: "draft",
+        value: b.value != null && b.value !== "" ? Number(b.value) : null,
+        notes: String(b.notes ?? "").trim() || null,
+        breakout: (typeof b.breakout === "object" && b.breakout) || null,
+      }).select("id, quote_no, status").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+
+      await sb.from("customers").update({ status: "quoted" }).eq("id", cid).eq("status", "prospect");
+      await sb.from("events").insert({
+        actor: String(b.by ?? "office"), kind: "quote",
+        body: { what: "quote opened", quote_no: created.quote_no, customer_id: cid },
+      });
+      return out({ ok: true, quote: created });
+    }
+
+    // ---------- a customer's quotes (for the Agreement bridge) ----------
+    if (b.action === "cust_quotes") {
+      const cid = String(b.customer_id ?? "");
+      if (!cid) return out({ ok: false, error: "customer_id required" }, 400);
+      const { data: customer } = await sb.from("customers")
+        .select("id, customer_no, name, email, phone, site_address, status").eq("id", cid).single();
+      const { data, error } = await sb.from("quotes")
+        .select("id, quote_no, rev, status, value, notes, breakout, created_at")
+        .eq("customer_id", cid)
+        .order("quote_no", { ascending: false }).order("rev", { ascending: false });
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, customer, rows: data });
+    }
+
+    // ---------- agreement status (sent / declined / ACCEPTED = close) ----------
+    if (b.action === "agree_status") {
+      const qid = String(b.quote_id ?? "");
+      const status = String(b.status ?? "");
+      if (!qid || !["sent", "accepted", "declined"].includes(status)) {
+        return out({ ok: false, error: "quote_id and status (sent|accepted|declined) required" }, 400);
+      }
+      const { data: q, error: qe } = await sb.from("quotes")
+        .select("id, quote_no, status").eq("id", qid).single();
+      if (qe) return out({ ok: false, error: qe.message }, 500);
+      if (q.status === "accepted") return out({ ok: false, error: "Quote " + q.quote_no + " is already accepted — the job exists." }, 400);
+
+      if (b.value != null && b.value !== "") {
+        await sb.from("quotes").update({ value: Number(b.value) }).eq("id", qid);
+      }
+      // the rush marker rides the record, not the paper
+      const rushPatch: Record<string, unknown> = {};
+      if (b.rush !== undefined) rushPatch.rush = !!b.rush;
+      if (b.rush_by) rushPatch.rush_by = String(b.rush_by);
+      if (b.rush_weeks != null && b.rush_weeks !== "") rushPatch.rush_weeks = Number(b.rush_weeks);
+      if (b.rush_approved_by !== undefined) rushPatch.rush_approved_by = String(b.rush_approved_by).trim() || null;
+      // a guarantee is TR's promise — and only the people who run the shop
+      // and know the real timeline may make it (catalog group: rushApprover)
+      if (rushPatch.rush && !rushPatch.rush_approved_by) {
+        return out({ ok: false, error: "A rush guarantee needs a TR sign-off before it can be recorded." }, 400);
+      }
+      if (rushPatch.rush && rushPatch.rush_approved_by) {
+        const { data: appr } = await sb.from("catalog_options")
+          .select("name").eq("group_key", "rushApprover").eq("active", true);
+        const names = (appr ?? []).map((a: any) => String(a.name).toLowerCase());
+        if (names.length && !names.includes(String(rushPatch.rush_approved_by).toLowerCase())) {
+          return out({ ok: false, error: "Rush guarantees are approved by " +
+            (appr ?? []).map((a: any) => a.name).join(" or ") + " — they know the real timeline." }, 400);
+        }
+      }
+      if (Object.keys(rushPatch).length) await sb.from("quotes").update(rushPatch).eq("id", qid);
+      if (status === "accepted") {
+        const { data: jobId, error } = await sb.rpc("close_quote", { p_quote_id: qid });
+        if (error) return out({ ok: false, error: error.message }, 500);
+        if (rushPatch.rush || rushPatch.rush_by) {
+          await sb.from("jobs").update({
+            rush: !!rushPatch.rush, rush_by: (rushPatch.rush_by as string) ?? null,
+            rush_approved_by: (rushPatch.rush_approved_by as string) ?? null,
+          }).eq("id", jobId);
+        }
+        await seedJob(sb, jobId);
+        await sb.from("events").insert({
+          actor: String(b.by ?? "office"), kind: "agree",
+          body: { what: "agreement signed — quote closed", quote_no: q.quote_no,
+                  rush: !!rushPatch.rush, rush_by: rushPatch.rush_by ?? null },
+        });
+        return out({ ok: true, closed: true, job_id: jobId, job_no: q.quote_no });
+      }
+      const { error } = await sb.from("quotes").update({ status }).eq("id", qid);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({
+        actor: String(b.by ?? "office"), kind: "agree",
+        body: { what: "agreement " + status, quote_no: q.quote_no },
+      });
+      return out({ ok: true, status });
+    }
+
+    // ---------- price structures (versioned price book) ----------
+    if (b.action === "pricebooks") {
+      const { data, error } = await sb.from("price_books")
+        .select("id, version, label, status, based_on, note, created_by, created_at, activated_at")
+        .order("version", { ascending: false });
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, rows: data });
+    }
+
+    if (b.action === "pricebook") {
+      const { data: book, error: be } = await sb.from("price_books")
+        .select("*").eq("id", b.book_id).single();
+      if (be) return out({ ok: false, error: be.message }, 500);
+      const { data: items, error } = await sb.from("price_book_items")
+        .select("*").eq("book_id", b.book_id).order("sort");
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, book, items });
+    }
+
+    if (b.action === "pb_clone") {
+      const { data, error } = await sb.rpc("clone_price_book", {
+        p_from: b.book_id, p_label: String(b.label ?? "New structure"),
+        p_by: String(b.by ?? "office") });
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, new_book_id: data });
+    }
+
+    if (b.action === "pb_update") {
+      const { data: item, error: ie } = await sb.from("price_book_items")
+        .select("id, book_id").eq("id", b.item_id).single();
+      if (ie) return out({ ok: false, error: ie.message }, 500);
+      const { data: book } = await sb.from("price_books")
+        .select("status").eq("id", item.book_id).single();
+      if (book?.status !== "draft") {
+        return out({ ok: false, error: "This structure is " + (book?.status ?? "?") +
+          " — history is kept, not edited. Clone it into a new draft first." }, 400);
+      }
+      const patch: Record<string, unknown> = {};
+      for (const k of ["price", "supply_cost"]) {
+        if (b[k] !== undefined) patch[k] = (b[k] === "" || b[k] === null) ? null : Number(b[k]);
+      }
+      if (b.margin_note !== undefined) patch.margin_note = String(b.margin_note) || null;
+      if (b.unit !== undefined) patch.unit = String(b.unit);
+      if (b.active !== undefined) patch.active = !!b.active;
+      const { data, error } = await sb.from("price_book_items").update(patch)
+        .eq("id", b.item_id).select("id, product, price, supply_cost, active").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, item: data });
+    }
+
+    if (b.action === "pb_additem") {
+      const { data: book } = await sb.from("price_books")
+        .select("status").eq("id", b.book_id).single();
+      if (book?.status !== "draft") {
+        return out({ ok: false, error: "Add items to a draft structure only — clone the active one first." }, 400);
+      }
+      const { data, error } = await sb.from("price_book_items").insert({
+        book_id: b.book_id,
+        product: String(b.product ?? "").trim(),
+        unit: String(b.unit ?? "ea"),
+        price: (b.price != null && b.price !== "") ? Number(b.price) : null,
+        supply_cost: (b.supply_cost != null && b.supply_cost !== "") ? Number(b.supply_cost) : null,
+        margin_note: String(b.margin_note ?? "").trim() || null,
+        source: "manual", sort: 999,
+      }).select("id, product").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, item: data });
+    }
+
+    if (b.action === "pb_activate") {
+      const { data, error } = await sb.rpc("activate_price_book", {
+        p_id: b.book_id, p_by: String(b.by ?? "office") });
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, active_version: data });
+    }
+
+    // ---------- master catalog (door types × trims × cladding) ----------
+    if (b.action === "catalog") {
+      const [g, o, t, f] = await Promise.all([
+        sb.from("catalog_groups").select("*").order("sort"),
+        sb.from("catalog_options").select("*").order("sort"),
+        sb.from("catalog_trims").select("*").order("sort"),
+        sb.from("catalog_offers").select("*"),
+      ]);
+      const err = g.error ?? o.error ?? t.error ?? f.error;
+      if (err) return out({ ok: false, error: err.message }, 500);
+      return out({ ok: true, groups: g.data, options: o.data, trims: t.data, offers: f.data });
+    }
+
+    if (b.action === "cat_set") {
+      const patch: Record<string, unknown> = {};
+      if (b.name !== undefined) patch.name = String(b.name).trim();
+      if (b.blurb !== undefined) patch.blurb = String(b.blurb).trim();
+      if (b.active !== undefined) patch.active = !!b.active;
+      if (b.sort !== undefined) patch.sort = Number(b.sort) || 0;
+      if (b.data !== undefined && typeof b.data === "object") patch.data = b.data;
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("catalog_options").update(patch)
+        .eq("id", b.id).select("id, group_key, opt_id, name, active").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "catalog",
+        body: { what: "option updated", option: data.group_key + "/" + data.opt_id, patch } });
+      return out({ ok: true, option: data });
+    }
+
+    if (b.action === "cat_add") {
+      const name = String(b.name ?? "").trim();
+      const group = String(b.group_key ?? "").trim();
+      if (name.length < 2 || !group) return out({ ok: false, error: "group_key and a name are required" }, 400);
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "opt";
+      const { data, error } = await sb.from("catalog_options").insert({
+        group_key: group, opt_id: slug, name,
+        blurb: String(b.blurb ?? "").trim(),
+        data: (typeof b.data === "object" && b.data) || {},
+        source: "manual", sort: 500,
+      }).select("id, group_key, opt_id, name").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      // a new door type gets a full row in the offer matrix, all on
+      if (group === "style") {
+        const { data: trims } = await sb.from("catalog_trims").select("trim_id");
+        if (trims?.length) await sb.from("catalog_offers")
+          .upsert(trims.map((t: any) => ({ style_id: slug, trim_id: t.trim_id, offered: true })));
+      }
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "catalog",
+        body: { what: "option added", option: group + "/" + slug, name } });
+      return out({ ok: true, option: data });
+    }
+
+    if (b.action === "trim_set") {
+      const patch: Record<string, unknown> = {};
+      if (b.name !== undefined) patch.name = String(b.name).trim();
+      if (b.tagline !== undefined) patch.tagline = String(b.tagline).trim();
+      if (b.pct !== undefined) patch.pct = Number(b.pct) || 0;
+      if (b.active !== undefined) patch.active = !!b.active;
+      if (b.preset !== undefined && typeof b.preset === "object") patch.preset = b.preset;
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("catalog_trims").update(patch)
+        .eq("id", b.id).select("id, trim_id, name, pct, active").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "catalog",
+        body: { what: "trim updated", trim: data.trim_id, patch } });
+      return out({ ok: true, trim: data });
+    }
+
+    if (b.action === "trim_add") {
+      const name = String(b.name ?? "").trim();
+      if (name.length < 2) return out({ ok: false, error: "a name is required" }, 400);
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+      const { data, error } = await sb.from("catalog_trims").insert({
+        trim_id: slug, name, tagline: String(b.tagline ?? "").trim(),
+        pct: Number(b.pct) || 0, sort: 500,
+      }).select("id, trim_id, name").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      const { data: styles } = await sb.from("catalog_options")
+        .select("opt_id").eq("group_key", "style");
+      if (styles?.length) await sb.from("catalog_offers")
+        .upsert(styles.map((s: any) => ({ style_id: s.opt_id, trim_id: slug, offered: true })));
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "catalog",
+        body: { what: "trim added", trim: slug, name } });
+      return out({ ok: true, trim: data });
+    }
+
+    if (b.action === "offer_set") {
+      const style = String(b.style_id ?? ""), trim = String(b.trim_id ?? "");
+      if (!style || !trim) return out({ ok: false, error: "style_id and trim_id required" }, 400);
+      const { data, error } = await sb.from("catalog_offers")
+        .upsert({ style_id: style, trim_id: trim, offered: !!b.offered })
+        .select("style_id, trim_id, offered").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "catalog",
+        body: { what: "offer " + (data.offered ? "on" : "off"), product: style + " × " + trim } });
+      return out({ ok: true, offer: data });
+    }
+
+    // ---------- door configurations (every L/R combination) ----------
+    if (b.action === "configs") {
+      const { data, error } = await sb.from("door_configs").select("*").order("sort");
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, rows: data });
+    }
+
+    if (b.action === "config_set") {
+      const patch: Record<string, unknown> = {};
+      if (b.label !== undefined) patch.label = String(b.label).trim();
+      if (b.note !== undefined) patch.note = String(b.note).trim();
+      if (b.active !== undefined) patch.active = !!b.active;
+      if (b.gaps !== undefined && typeof b.gaps === "object") patch.gaps = b.gaps;
+      if (b.hardware !== undefined && typeof b.hardware === "object") patch.hardware = b.hardware;
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("door_configs").update(patch)
+        .eq("config_id", String(b.config_id ?? "")).select("config_id, label, active, gaps, hardware").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "catalog",
+        body: { what: "door config updated", config: data.config_id, patch } });
+      return out({ ok: true, config: data });
+    }
+
+    // ---------- publish the agreement for e-sign (office) ----------
+    if (b.action === "agree_publish") {
+      const qid = String(b.quote_id ?? "");
+      if (!qid || !b.doc || typeof b.doc !== "object") return out({ ok: false, error: "quote_id and doc required" }, 400);
+      const d = (b.doc as any).data ?? {};
+      if (d.rush) {
+        const nm = String(d.rushSignTR ?? "").trim();
+        if (!nm) return out({ ok: false, error: "A rush guarantee needs a TR sign-off before publishing." }, 400);
+        const { data: appr } = await sb.from("catalog_options")
+          .select("name").eq("group_key", "rushApprover").eq("active", true);
+        const names = (appr ?? []).map((a: any) => String(a.name).toLowerCase());
+        if (names.length && !names.includes(nm.toLowerCase())) {
+          return out({ ok: false, error: "Rush guarantees are approved by " +
+            (appr ?? []).map((a: any) => a.name).join(" or ") + "." }, 400);
+        }
+      }
+      const { data: q, error: qe } = await sb.from("quotes")
+        .select("id, quote_no, status, sign_token").eq("id", qid).single();
+      if (qe) return out({ ok: false, error: qe.message }, 500);
+      if (q.status === "accepted") return out({ ok: false, error: "Quote " + q.quote_no + " is already accepted — the job exists." }, 400);
+      const token = q.sign_token ?? [...crypto.getRandomValues(new Uint8Array(24))]
+        .map((x) => x.toString(16).padStart(2, "0")).join("");
+      const patch: Record<string, unknown> = { agree_doc: b.doc, sign_token: token, status: "sent" };
+      if (d.price) patch.value = Number(d.price) || null;
+      if (d.rush !== undefined) { patch.rush = !!d.rush; patch.rush_by = d.rushBy || null;
+        patch.rush_weeks = Number(d.rushWeeks) || null; patch.rush_approved_by = d.rushSignTR || null; }
+      const { error } = await sb.from("quotes").update(patch).eq("id", qid);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "agree",
+        body: { what: "agreement published for e-sign", quote_no: q.quote_no } });
+      return out({ ok: true, token, quote_no: q.quote_no });
+    }
+
+    // ---------- customer desk: full record ----------
+    if (b.action === "cust_get") {
+      const cid = String(b.customer_id ?? "");
+      if (!cid) return out({ ok: false, error: "customer_id required" }, 400);
+      const { data: customer, error: ce } = await sb.from("customers").select("*").eq("id", cid).single();
+      if (ce) return out({ ok: false, error: ce.message }, 500);
+      const [quotes, jobs, events] = await Promise.all([
+        sb.from("quotes").select("id, quote_no, rev, status, value, signed_name, signed_at, rush, rush_by, created_at")
+          .eq("customer_id", cid).order("created_at", { ascending: false }).limit(25),
+        sb.from("jobs").select("id, job_no, status:stage, fab_value, rush, rush_by, created_at")
+          .eq("customer_id", cid).order("created_at", { ascending: false }).limit(25),
+        sb.from("events").select("at, actor, kind, body").or(
+          `body->>customer_no.eq.${customer.customer_no ?? -1},body->>customer_id.eq.${cid}`)
+          .order("at", { ascending: false }).limit(15),
+      ]);
+      // Pipedrive matches by name — the scraped record beside ours
+      const nm = String(customer.name ?? "").replaceAll(",", " ").trim();
+      let pdPersons: unknown[] = [], pdDeals: unknown[] = [];
+      if (nm.length > 2) {
+        const [pp, pd] = await Promise.all([
+          sb.from("pd_persons").select("person_id, name, org_name, emails, phones, update_time")
+            .ilike("name", `%${nm}%`).limit(5),
+          sb.from("pd_deals").select("deal_id, title, value, status, stage_name, fab_value, won_at, person_name, org_name")
+            .or(`person_name.ilike.%${nm}%,org_name.ilike.%${nm}%,title.ilike.%${nm}%`)
+            .order("update_time", { ascending: false }).limit(10),
+        ]);
+        pdPersons = pp.data ?? []; pdDeals = pd.data ?? [];
+      }
+      const { data: contacts } = await sb.from("customer_contacts")
+        .select("*").eq("customer_id", cid).order("rank").order("created_at");
+      return out({ ok: true, customer, quotes: quotes.data ?? [], jobs: jobs.data ?? [],
+        events: events.data ?? [], pd_persons: pdPersons, pd_deals: pdDeals, contacts: contacts ?? [] });
+    }
+
+    if (b.action === "cust_update") {
+      const cid = String(b.customer_id ?? "");
+      if (!cid) return out({ ok: false, error: "customer_id required" }, 400);
+      const patch: Record<string, unknown> = {};
+      for (const k of ["name", "display_name", "email", "phone", "site_address", "notes"]) {
+        if (b[k] !== undefined) patch[k] = String(b[k]).trim() || null;
+      }
+      if (patch.name !== undefined && String(patch.name ?? "").length < 2) {
+        return out({ ok: false, error: "a name is required" }, 400);
+      }
+      if (b.account_type !== undefined) {
+        patch.account_type = ["individual", "contractor", "company", "unknown"].includes(b.account_type)
+          ? b.account_type : "unknown";
+      }
+      if (b.status !== undefined) {
+        if (!["prospect", "quoted", "closed", "lost", "service"].includes(b.status)) {
+          return out({ ok: false, error: "status must be prospect | quoted | closed | lost | service" }, 400);
+        }
+        patch.status = b.status;
+      }
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("customers").update(patch)
+        .eq("id", cid).select("id, customer_no, name, display_name, email, phone, site_address, status, account_type, notes").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "contact",
+        body: { what: "customer updated", customer_no: data.customer_no, customer_id: cid, fields: Object.keys(patch) } });
+      return out({ ok: true, customer: data });
+    }
+
+    // ---------- delete a MIS-ENTRY (never a customer with history) ----------
+    if (b.action === "cust_delete") {
+      const cid = String(b.customer_id ?? "");
+      if (!cid || b.confirm !== true) return out({ ok: false, error: "customer_id and confirm:true required" }, 400);
+      const { data: c, error: ce } = await sb.from("customers")
+        .select("id, customer_no, name").eq("id", cid).single();
+      if (ce) return out({ ok: false, error: ce.message }, 500);
+      const [{ count: qn }, { count: jn }] = await Promise.all([
+        sb.from("quotes").select("id", { count: "exact", head: true }).eq("customer_id", cid),
+        sb.from("jobs").select("id", { count: "exact", head: true }).eq("customer_id", cid),
+      ]);
+      if ((qn ?? 0) > 0 || (jn ?? 0) > 0) {
+        return out({ ok: false, error: "This customer has " + (qn ?? 0) + " quote(s) and " + (jn ?? 0) +
+          " job(s) — history is never deleted. Mark them LOST instead." }, 400);
+      }
+      const { error } = await sb.from("customers").delete().eq("id", cid);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "contact",
+        body: { what: "mis-entry deleted", customer_no: c.customer_no, name: c.name } });
+      return out({ ok: true, deleted: true, name: c.name });
+    }
+
+    // ---------- people on the account ----------
+    if (b.action === "contact_add") {
+      const cid = String(b.customer_id ?? "");
+      const name = String(b.name ?? "").trim();
+      if (!cid || name.length < 2) return out({ ok: false, error: "customer_id and a name are required" }, 400);
+      const { data, error } = await sb.from("customer_contacts").insert({
+        customer_id: cid,
+        role: ["owner", "contractor", "architect", "designer", "builder", "other"].includes(b.role) ? b.role : "other",
+        name,
+        email: String(b.email ?? "").trim() || null,
+        phone: String(b.phone ?? "").trim() || null,
+        preferred_method: ["call", "text", "email"].includes(b.preferred_method) ? b.preferred_method : null,
+        rank: Math.max(1, Math.min(Number(b.rank) || 9, 9)),
+        notes: String(b.notes ?? "").trim() || null,
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "contact",
+        body: { what: "account person added", customer_id: cid, role: data.role, name: data.name } });
+      return out({ ok: true, contact: data });
+    }
+
+    if (b.action === "contact_set") {
+      const id = String(b.id ?? "");
+      if (!id) return out({ ok: false, error: "id required" }, 400);
+      const patch: Record<string, unknown> = {};
+      for (const k of ["name", "email", "phone", "notes"]) {
+        if (b[k] !== undefined) patch[k] = String(b[k]).trim() || null;
+      }
+      if (b.role !== undefined) patch.role = ["owner", "contractor", "architect", "designer", "builder", "other"].includes(b.role) ? b.role : "other";
+      if (b.preferred_method !== undefined) patch.preferred_method = ["call", "text", "email"].includes(b.preferred_method) ? b.preferred_method : null;
+      if (b.rank !== undefined) patch.rank = Math.max(1, Math.min(Number(b.rank) || 9, 9));
+      if (b.active !== undefined) patch.active = !!b.active;
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("customer_contacts").update(patch).eq("id", id).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, contact: data });
+    }
+
+    if (b.action === "contact_del") {
+      const id = String(b.id ?? "");
+      if (!id || b.confirm !== true) return out({ ok: false, error: "id and confirm:true required" }, 400);
+      const { data: c } = await sb.from("customer_contacts").select("customer_id, name, role").eq("id", id).single();
+      const { error } = await sb.from("customer_contacts").delete().eq("id", id);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "contact",
+        body: { what: "account person removed", customer_id: c?.customer_id, role: c?.role, name: c?.name } });
+      return out({ ok: true, deleted: true });
+    }
+
+    // ---------- analytics: raw pricing rows (read-only) ----------
+    if (b.action === "analytics") {
+      const lineRows: unknown[] = [];
+      for (let from = 0; from < 4000; from += 1000) {
+        const { data, error } = await sb.from("pd_deal_products")
+          .select("deal_id, name, item_price, quantity, sum").range(from, from + 999);
+        if (error) return out({ ok: false, error: error.message }, 500);
+        lineRows.push(...(data ?? []));
+        if ((data ?? []).length < 1000) break;
+      }
+      const lines = { data: lineRows };
+      const deals: unknown[] = [];
+      for (let from = 0; from < 4000; from += 1000) {
+        const { data, error } = await sb.from("pd_deals")
+          .select("deal_id, title, person_name, org_name, value, status, fab_value, won_at, add_time")
+          .range(from, from + 999);
+        if (error) return out({ ok: false, error: error.message }, 500);
+        deals.push(...(data ?? []));
+        if ((data ?? []).length < 1000) break;
+      }
+      const jobs = await sb.from("jobs").select("job_no, status:stage, fab_value, created_at").limit(100);
+      return out({ ok: true, lines: lines.data ?? [], deals, jobs: jobs.data ?? [] });
+    }
+
+    // ---------- job desk: post-contract rail ----------
+    if (b.action === "jobs_list") {
+      const { data: jobs, error } = await sb.from("jobs")
+        .select("id, job_no, status:stage, fab_value, rush, rush_by, created_at, customer_id, verify_token, track_token")
+        .order("created_at", { ascending: false }).limit(60);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      const ids = (jobs ?? []).map((x: { id: string }) => x.id);
+      const cids = [...new Set((jobs ?? []).map((x: { customer_id: string }) => x.customer_id).filter(Boolean))];
+      const [{ data: steps }, { data: custs }] = await Promise.all([
+        ids.length ? sb.from("job_steps").select("job_id, status").in("job_id", ids) : Promise.resolve({ data: [] }),
+        cids.length ? sb.from("customers").select("id, name").in("id", cids) : Promise.resolve({ data: [] }),
+      ]);
+      const cn: Record<string, string> = {};
+      for (const c of custs ?? []) cn[(c as { id: string }).id] = (c as { name: string }).name;
+      const agg: Record<string, { done: number; total: number }> = {};
+      for (const st of steps ?? []) {
+        const stx = st as { job_id: string; status: string };
+        const a = agg[stx.job_id] = agg[stx.job_id] ?? { done: 0, total: 0 };
+        if (stx.status !== "na") { a.total++; if (stx.status === "done") a.done++; }
+      }
+      // deno-lint-ignore no-explicit-any
+      return out({ ok: true, rows: (jobs ?? []).map((x: any) => ({
+        id: x.id, job_no: x.job_no, status: x.status, fab_value: x.fab_value, rush: x.rush,
+        rush_by: x.rush_by, created_at: x.created_at, customer: cn[x.customer_id] ?? "",
+        steps: agg[x.id] ?? { done: 0, total: 0 }, seeded: !!agg[x.id],
+      })) });
+    }
+
+    if (b.action === "job_get") {
+      const jid = String(b.job_id ?? "");
+      if (!jid) return out({ ok: false, error: "job_id required" }, 400);
+      const { data: j, error: je } = await sb.from("jobs").select("*").eq("id", jid).single();
+      if (je) return out({ ok: false, error: je.message }, 500);
+      const [{ data: c }, { data: people }, { data: steps }, { data: ms }, { data: vs }, { data: duties }, { data: labor }, { data: photos }] = await Promise.all([
+        sb.from("customers").select("id, customer_no, name, email, phone, site_address").eq("id", j.customer_id).single(),
+        sb.from("customer_contacts").select("*").eq("customer_id", j.customer_id).order("rank"),
+        sb.from("job_steps").select("*").eq("job_id", jid).order("sort"),
+        sb.from("measurements").select("*").eq("job_id", jid).order("at", { ascending: false }),
+        sb.from("verifications").select("*").eq("job_id", jid).order("at", { ascending: false }),
+        sb.from("duties").select("*").eq("job_id", jid).order("status").order("sort"),
+        sb.from("labor_entries").select("*").eq("job_id", jid).order("at", { ascending: false }),
+        sb.from("photo_requests").select("*").eq("job_id", jid).order("created_at", { ascending: false }),
+      ]);
+      const { data: media } = await sb.from("job_media").select("*").eq("job_id", jid).order("created_at", { ascending: false });
+      return out({ ok: true, job: j, customer: c, people: people ?? [],
+        steps: steps ?? [], measurements: ms ?? [], verifications: vs ?? [],
+        duties: duties ?? [], labor: labor ?? [], photos: photos ?? [], media: media ?? [] });
+    }
+
+    if (b.action === "steps_seed") {
+      const jid = String(b.job_id ?? "");
+      if (!jid) return out({ ok: false, error: "job_id required" }, 400);
+      await seedJob(sb, jid);
+      const { data: j } = await sb.from("jobs").select("job_no, verify_token, track_token").eq("id", jid).single();
+      const { data: steps } = await sb.from("job_steps").select("*").eq("job_id", jid).order("sort");
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "job",
+        body: { what: "step rail seeded", job_no: j?.job_no } });
+      return out({ ok: true, steps: steps ?? [], verify_token: j?.verify_token, track_token: j?.track_token });
+    }
+
+    if (b.action === "step_set") {
+      const id = String(b.id ?? "");
+      if (!id) return out({ ok: false, error: "id required" }, 400);
+      const patch: Record<string, unknown> = {};
+      if (b.status !== undefined) {
+        if (!["todo", "doing", "done", "na"].includes(b.status)) return out({ ok: false, error: "status must be todo | doing | done | na" }, 400);
+        patch.status = b.status;
+        if (b.status === "done") { patch.done_by = String(b.by ?? "office"); patch.done_at = new Date().toISOString(); }
+        else { patch.done_by = null; patch.done_at = null; }
+      }
+      if (b.assigned_to !== undefined) patch.assigned_to = String(b.assigned_to).trim() || null;
+      if (b.note !== undefined) patch.note = String(b.note).trim() || null;
+      if (b.visible_customer !== undefined) patch.visible_customer = !!b.visible_customer;
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("job_steps").update(patch).eq("id", id).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, step: data });
+    }
+
+    if (b.action === "measure_add") {
+      const jid = String(b.job_id ?? "");
+      const legs = Array.isArray(b.legs) ? b.legs.map(Number).filter((x: number) => Number.isFinite(x) && x > 1 && x < 400).slice(0, 6) : [];
+      if (!jid || !legs.length || !["w", "h"].includes(b.axis)) {
+        return out({ ok: false, error: "job_id, axis (w|h) and at least one reading required" }, 400);
+      }
+      const { data, error } = await sb.from("measurements").insert({
+        job_id: jid, opening: String(b.opening ?? "Opening 1").trim().slice(0, 60) || "Opening 1",
+        axis: b.axis, kind: ["laser", "tape"].includes(b.kind) ? b.kind : "laser",
+        legs, governing: Math.min(...legs),
+        by_name: String(b.by ?? "office"), by_role: "rep", verified: b.verified === true,
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, measurement: data });
+    }
+
+    // ---------- crew: workers, duties, photo requests ----------
+    if (b.action === "workers") {
+      const { data, error } = await sb.from("workers").select("*").order("name");
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, rows: data });
+    }
+
+    if (b.action === "worker_add") {
+      const name = String(b.name ?? "").trim().slice(0, 60);
+      if (name.length < 2) return out({ ok: false, error: "a name is required" }, 400);
+      const kind = b.kind === "station" ? "station" : "crew";
+      const { data, error } = await sb.from("workers").insert({ name, token: mintTok(), kind }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "crew", body: { what: kind + " added", name } });
+      return out({ ok: true, worker: data });
+    }
+
+    if (b.action === "worker_set") {
+      const id = String(b.id ?? "");
+      if (!id) return out({ ok: false, error: "id required" }, 400);
+      const patch: Record<string, unknown> = {};
+      if (b.active !== undefined) patch.active = !!b.active;
+      if (b.rotate === true) patch.token = mintTok();
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("workers").update(patch).eq("id", id).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, worker: data });
+    }
+
+    if (b.action === "duty_push") {
+      const title = String(b.title ?? "").trim().slice(0, 200);
+      const worker = String(b.worker ?? "").trim();
+      if (title.length < 2 || !worker) return out({ ok: false, error: "title and worker required" }, 400);
+      const { data, error } = await sb.from("duties").insert({
+        job_id: String(b.job_id ?? "") || null,
+        step_key: String(b.step_key ?? "").trim() || null,
+        title, worker,
+        status: b.status === "next" ? "next" : "now",
+        sort: Number(b.sort) || 100,
+        note: String(b.note ?? "").trim() || null,
+        pushed_by: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "duty",
+        body: { what: "duty pushed", title, worker, job_id: data.job_id } });
+      return out({ ok: true, duty: data });
+    }
+
+    if (b.action === "duty_del") {
+      const id = String(b.id ?? "");
+      if (!id) return out({ ok: false, error: "id required" }, 400);
+      const { error } = await sb.from("duties").delete().eq("id", id);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    if (b.action === "photo_request") {
+      const worker = String(b.worker ?? "").trim();
+      const what = String(b.what ?? "").trim().slice(0, 200);
+      if (!worker || what.length < 2) return out({ ok: false, error: "worker and what required" }, 400);
+      const { data, error } = await sb.from("photo_requests").insert({
+        job_id: String(b.job_id ?? "") || null, worker, what,
+        requested_by: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "photo",
+        body: { what: "photo requested", ask: what, worker, job_id: data.job_id } });
+      return out({ ok: true, request: data });
+    }
+
+    if (b.action === "photo_link") {
+      const path = String(b.path ?? "");
+      if (!path) return out({ ok: false, error: "path required" }, 400);
+      const { data, error } = await sb.storage.from("job-files").createSignedUrl(path, 3600);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, url: data.signedUrl });
+    }
+
+    // ---------- crew hub: the whole crew in one call ----------
+    if (b.action === "crew_overview") {
+      const wk = new Date(Date.now() - 7 * 86400000).toISOString();
+      const [{ data: workers }, { data: duties }, { data: asks }, { data: qs }, { data: labor }] = await Promise.all([
+        sb.from("workers").select("*").order("name"),
+        sb.from("duties")
+          .select("id, job_id, step_key, title, worker, status, note, sort, created_at, done_at, hours")
+          .or(`status.neq.done,done_at.gte.${wk}`).order("sort").order("created_at"),
+        sb.from("photo_requests")
+          .select("id, job_id, worker, what, status, file_path, created_at, done_at")
+          .or(`status.eq.open,done_at.gte.${wk}`).order("created_at", { ascending: false }),
+        sb.from("crew_questions").select("*")
+          .or(`status.eq.open,answered_at.gte.${wk}`).order("created_at", { ascending: false }),
+        sb.from("labor_entries").select("worker, job_id, step_key, hours, note, at")
+          .gte("at", wk).order("at", { ascending: false }),
+      ]);
+      const jids = [...new Set([...(duties ?? []), ...(asks ?? []), ...(qs ?? []), ...(labor ?? [])]
+        .map((x: { job_id?: string | null }) => x.job_id).filter(Boolean))] as string[];
+      const jobNames: Record<string, string> = {};
+      if (jids.length) {
+        const { data: js } = await sb.from("jobs").select("id, job_no").in("id", jids);
+        for (const j of js ?? []) jobNames[(j as { id: string }).id] = (j as { job_no: string }).job_no;
+      }
+      return out({ ok: true, workers: workers ?? [], duties: duties ?? [], asks: asks ?? [],
+        questions: qs ?? [], labor: labor ?? [], job_names: jobNames });
+    }
+
+    if (b.action === "question_answer") {
+      const id = String(b.id ?? "");
+      const answer = String(b.answer ?? "").trim().slice(0, 2000);
+      if (!id || answer.length < 1) return out({ ok: false, error: "id and an answer required" }, 400);
+      const { data, error } = await sb.from("crew_questions").update({
+        status: "answered", answer, answered_by: String(b.by ?? "office"),
+        answered_at: new Date().toISOString(),
+      }).eq("id", id).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "crew",
+        body: { what: "question answered", worker: data.worker, question: String(data.question).slice(0, 120) } });
+      return out({ ok: true, question: data });
+    }
+
+    if (b.action === "question_del") {
+      const id = String(b.id ?? "");
+      if (!id) return out({ ok: false, error: "id required" }, 400);
+      const { error } = await sb.from("crew_questions").delete().eq("id", id);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    // ---------- shop ops office: inventory, machines, maintenance ----------
+    if (b.action === "shop_office") {
+      const d30 = new Date(Date.now() - 30 * 86400000).toISOString();
+      const [{ data: groups }, { data: items }, { data: msgs }, { data: machines }, { data: maint }, { data: issues }] = await Promise.all([
+        sb.from("inv_groups").select("*").order("sort").order("name"),
+        sb.from("inventory_items").select("*").order("name"),
+        sb.from("inv_msgs").select("*").or(`status.neq.done,done_at.gte.${d30}`)
+          .order("created_at", { ascending: false }).limit(150),
+        sb.from("machines").select("*").order("name"),
+        sb.from("maintenance_items").select("*").order("next_due", { ascending: true, nullsFirst: false }),
+        sb.from("machine_issues").select("*")
+          .or(`status.neq.fixed,fixed_at.gte.${d30}`).order("created_at", { ascending: false }).limit(100),
+      ]);
+      return out({ ok: true, groups: groups ?? [], items: items ?? [], msgs: msgs ?? [], machines: machines ?? [],
+        maintenance: maint ?? [], issues: issues ?? [] });
+    }
+
+    if (b.action === "group_del") {
+      if (b.confirm !== true) return out({ ok: false, error: "confirm:true required — sub-groups go with it, items keep living ungrouped" }, 400);
+      const { error } = await sb.from("inv_groups").delete().eq("id", String(b.id ?? ""));
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    if (b.action === "inv_item_add") {
+      const name = String(b.name ?? "").trim().slice(0, 120);
+      if (name.length < 2) return out({ ok: false, error: "a name is required" }, 400);
+      const { data, error } = await sb.from("inventory_items").insert({
+        name, unit: String(b.unit ?? "ea").trim() || "ea",
+        qty: Number(b.qty) >= 0 ? Number(b.qty) : 0,
+        min_qty: (b.min_qty != null && b.min_qty !== "") ? Number(b.min_qty) : null,
+        group_id: String(b.group_id ?? "") || null,
+        inv_code: String(b.inv_code ?? "").trim().slice(0, 40) || null,
+        sharpen_interval_days: Number(b.sharpen_interval_days) > 0 ? Number(b.sharpen_interval_days) : null,
+        note: String(b.note ?? "").trim() || null, updated_by: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, item: data });
+    }
+
+    if (b.action === "inv_item_set") {
+      const patch: Record<string, unknown> = { updated_at: new Date().toISOString(), updated_by: String(b.by ?? "office") };
+      if (b.name !== undefined) patch.name = String(b.name).trim();
+      if (b.unit !== undefined) patch.unit = String(b.unit).trim() || "ea";
+      if (b.qty !== undefined) patch.qty = Number(b.qty) >= 0 ? Number(b.qty) : 0;
+      if (b.min_qty !== undefined) patch.min_qty = (b.min_qty === "" || b.min_qty === null) ? null : Number(b.min_qty);
+      if (b.note !== undefined) patch.note = String(b.note).trim() || null;
+      if (b.active !== undefined) patch.active = !!b.active;
+      if (b.group_id !== undefined) patch.group_id = String(b.group_id) || null;
+      if (b.inv_code !== undefined) patch.inv_code = String(b.inv_code).trim().slice(0, 40) || null;
+      if (b.condition !== undefined && ["good", "sharpen_due", "chipped", "worn", "out"].includes(b.condition)) patch.condition = b.condition;
+      if (b.sharpen_interval_days !== undefined) patch.sharpen_interval_days = Number(b.sharpen_interval_days) > 0 ? Number(b.sharpen_interval_days) : null;
+      for (const k of ["last_sharpened", "sharpen_due"]) if (b[k] !== undefined) patch[k] = String(b[k]).trim() || null;
+      const { data, error } = await sb.from("inventory_items").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, item: data });
+    }
+
+    if (b.action === "inv_confirm") {
+      const status = ["open", "confirmed", "done"].includes(b.status) ? b.status : null;
+      if (!status) return out({ ok: false, error: "status must be open | confirmed | done" }, 400);
+      const patch: Record<string, unknown> = { status, confirmed_by: String(b.by ?? "office") };
+      patch.done_at = status === "done" ? new Date().toISOString() : null;
+      const { data, error } = await sb.from("inv_msgs").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "inventory",
+        body: { what: "request " + status, item: data.item_name, qty: data.qty } });
+      return out({ ok: true, msg: data });
+    }
+
+    if (b.action === "inv_order") {
+      let item: { id: string; name: string } | null = null;
+      if (b.item_id) {
+        const { data } = await sb.from("inventory_items").select("id, name").eq("id", String(b.item_id)).single();
+        item = data;
+      }
+      const nm = item?.name ?? String(b.name ?? "").trim().slice(0, 120);
+      if (!nm) return out({ ok: false, error: "Order what?" }, 400);
+      const { data, error } = await sb.from("inv_msgs").insert({
+        item_id: item?.id ?? null, item_name: nm, kind: "order",
+        qty: Number(b.qty) > 0 ? Number(b.qty) : null,
+        note: String(b.note ?? "").trim().slice(0, 500) || null,
+        from_side: "office", by_name: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "inventory",
+        body: { what: "order placed", item: nm, qty: data.qty } });
+      return out({ ok: true, msg: data });
+    }
+
+    if (b.action === "machine_add") {
+      const name = String(b.name ?? "").trim().slice(0, 120);
+      if (name.length < 2) return out({ ok: false, error: "a name is required" }, 400);
+      const { data, error } = await sb.from("machines").insert({ name, note: String(b.note ?? "").trim() || null })
+        .select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, machine: data });
+    }
+
+    if (b.action === "machine_set") {
+      const patch: Record<string, unknown> = {};
+      if (b.name !== undefined) patch.name = String(b.name).trim();
+      if (b.note !== undefined) patch.note = String(b.note).trim() || null;
+      if (b.active !== undefined) patch.active = !!b.active;
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("machines").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, machine: data });
+    }
+
+    if (b.action === "issue_set") {
+      const status = ["open", "ack", "fixed"].includes(b.status) ? b.status : null;
+      if (!status) return out({ ok: false, error: "status must be open | ack | fixed" }, 400);
+      const patch: Record<string, unknown> = { status };
+      if (b.note !== undefined) patch.note = String(b.note).trim() || null;
+      if (status === "fixed") { patch.fixed_at = new Date().toISOString(); patch.fixed_by = String(b.by ?? "office"); }
+      else { patch.fixed_at = null; patch.fixed_by = null; }
+      const { data, error } = await sb.from("machine_issues").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "machine",
+        body: { what: "issue " + status, machine: data.machine, issue: String(data.what).slice(0, 120) } });
+      return out({ ok: true, issue: data });
+    }
+
+    if (b.action === "maint_add") {
+      const mid = String(b.machine_id ?? "");
+      const service = String(b.service ?? "").trim().slice(0, 200);
+      if (!mid || service.length < 2) return out({ ok: false, error: "machine_id and a service name are required" }, 400);
+      const { data, error } = await sb.from("maintenance_items").upsert({
+        machine_id: mid, service,
+        last_done: String(b.last_done ?? "").trim() || null,
+        performed: String(b.performed ?? "").trim() || null,
+        interval_days: Number(b.interval_days) > 0 ? Number(b.interval_days) : null,
+        next_due: String(b.next_due ?? "").trim() || null,
+        tasked_to: String(b.tasked_to ?? "").trim() || null,
+        note: String(b.note ?? "").trim() || null,
+        updated_by: String(b.by ?? "office"),
+      }, { onConflict: "machine_id,service" }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, maintenance: data });
+    }
+
+    if (b.action === "maint_set") {
+      const patch: Record<string, unknown> = { updated_at: new Date().toISOString(), updated_by: String(b.by ?? "office") };
+      for (const k of ["service", "performed", "tasked_to", "note"]) {
+        if (b[k] !== undefined) patch[k] = String(b[k]).trim() || null;
+      }
+      for (const k of ["last_done", "next_due"]) {
+        if (b[k] !== undefined) patch[k] = String(b[k]).trim() || null;
+      }
+      if (b.interval_days !== undefined) patch.interval_days = Number(b.interval_days) > 0 ? Number(b.interval_days) : null;
+      const { data, error } = await sb.from("maintenance_items").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, maintenance: data });
+    }
+
+    if (b.action === "maint_del") {
+      const { error } = await sb.from("maintenance_items").delete().eq("id", String(b.id ?? ""));
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    if (b.action === "office_media_url") {
+      const { data: j } = await sb.from("jobs").select("id, job_no").eq("id", String(b.job_id ?? "")).single();
+      if (!j) return out({ ok: false, error: "job not found" }, 404);
+      const ext = String(b.ext ?? "").toLowerCase().replace(".", "");
+      if (!["jpg", "jpeg", "png", "webp", "heic", "mp4", "mov", "webm"].includes(ext)) {
+        return out({ ok: false, error: "jpg/png/webp/heic photos or mp4/mov/webm video" }, 400);
+      }
+      const path = "media/" + j.id + "/" + crypto.randomUUID() + "." + ext;
+      const { data, error } = await sb.storage.from("job-files").createSignedUploadUrl(path);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, path, url: data.signedUrl });
+    }
+
+    if (b.action === "office_media_record") {
+      const { data: j } = await sb.from("jobs").select("id, job_no").eq("id", String(b.job_id ?? "")).single();
+      if (!j) return out({ ok: false, error: "job not found" }, 404);
+      const purpose = ["walkaround", "install", "other"].includes(b.purpose) ? b.purpose : "other";
+      const kind = ["photo", "video"].includes(b.kind) ? b.kind : "photo";
+      const path = String(b.path ?? "");
+      if (!path.startsWith("media/")) return out({ ok: false, error: "bad path" }, 400);
+      const { data, error } = await sb.from("job_media").insert({
+        job_id: j.id, kind, purpose, path,
+        note: String(b.note ?? "").trim().slice(0, 300) || null, by_name: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      const stepKey = purpose === "walkaround" ? "walkaround" : purpose === "install" ? "install_media" : null;
+      if (stepKey) {
+        await sb.from("job_steps").update({ status: "done", done_by: String(b.by ?? "office"), done_at: new Date().toISOString() })
+          .eq("job_id", j.id).eq("key", stepKey).neq("status", "done");
+      }
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "media",
+        body: { what: purpose + " " + kind + " captured", job_no: j.job_no, path } });
+      return out({ ok: true, media: data });
+    }
+
+    if (b.action === "media_del") {
+      const { data: m } = await sb.from("job_media").select("id, path").eq("id", String(b.id ?? "")).single();
+      if (!m) return out({ ok: false, error: "not found" }, 404);
+      await sb.storage.from("job-files").remove([m.path]);
+      const { error } = await sb.from("job_media").delete().eq("id", m.id);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    // ---------- laser absorption: the calcs sheet is now server math ----------
+    // deno-lint-ignore no-explicit-any
+    async function laserFor(jobId: string): Promise<any> {
+      if (!jobId) return null;
+      const { data: ms } = await sb.from("measurements").select("axis, legs, governing, by_name, at")
+        .eq("job_id", jobId).eq("kind", "laser").order("at", { ascending: false });
+      if (!ms?.length) return null;
+      // deno-lint-ignore no-explicit-any
+      const w = (ms as any[]).find((m) => m.axis === "w"), h = (ms as any[]).find((m) => m.axis === "h");
+      if (!w || !h) return null;
+      const spread = (legs: number[]) => legs.length > 1 ? Math.max(...legs) - Math.min(...legs) : 0;
+      return { max_w: Number(w.governing), max_h: Number(h.governing),
+        w_legs: w.legs, h_legs: h.legs,
+        spread_w: spread(w.legs ?? []), spread_h: spread(h.legs ?? []),
+        out_of_square: spread(w.legs ?? []) > 0.375 || spread(h.legs ?? []) > 0.375,
+        by_name: w.by_name, at: w.at };
+    }
+    // deno-lint-ignore no-explicit-any
+    function laserBuild(lz: any, spec: any) {
+      if (spec?.mount === "backset") {
+        // REAR FLUSH: unit oversizes the opening — trim conceals header/jambs
+        const ov = (spec?.overlap && typeof spec.overlap === "object") ? spec.overlap : {};
+        const oside = Number(ov.side) > 0 ? Number(ov.side) : 2;
+        const ohead = Number(ov.head) > 0 ? Number(ov.head) : 2;
+        return { mount: "backset", build_w: Math.round((lz.max_w + 2 * oside) * 32) / 32,
+          build_h: Math.round((lz.max_h + ohead) * 32) / 32, side: oside, head: ohead };
+      }
+      const g = (spec?.gaps && typeof spec.gaps === "object") ? spec.gaps : {};
+      const side = Number(g.side) > 0 ? Number(g.side) : 0.5;
+      const head = Number(g.head) > 0 ? Number(g.head) : 0.5;
+      return { mount: "inset", build_w: Math.round((lz.max_w - 2 * side) * 32) / 32, build_h: Math.round((lz.max_h - head) * 32) / 32, side, head };
+    }
+
+    // ---------- M8/M10 track: Squizz's Weight Calc 1.6, concept-stage ----------
+    // Cavity Sliders carriages M6 200 / M8 500 / M10 1100 lb (verified 08-2026);
+    // carriage load = share x leaf (Drive Force Calc statics). Every constant is
+    // tunable in catalog_options track_cfg/default — his numbers, not guesses.
+    const TRACK_DEF = { m6: 200, m8: 500, m10: 1100, margin: 0.8, share: 0.5, hw_lb: 18,
+      fam_psf: { tb: 4.0, carriage: 5.0, rs_paint: 5.0, rs_okoume: 4.5, rs_soft: 5.0, rs_hard: 6.5, glass: 5.5 },
+      clad_psf: 3.8 };
+    // deno-lint-ignore no-explicit-any
+    async function trackCfg(): Promise<any> {
+      const { data } = await sb.from("catalog_options").select("data")
+        .eq("group_key", "track_cfg").eq("opt_id", "default").maybeSingle();
+      // deno-lint-ignore no-explicit-any
+      const d = ((data as any)?.data && typeof (data as any).data === "object") ? (data as any).data : {};
+      return { ...TRACK_DEF, ...d, fam_psf: { ...TRACK_DEF.fam_psf, ...(d.fam_psf ?? {}) } };
+    }
+    // deno-lint-ignore no-explicit-any
+    function trackFor(spec: any, cfg: any) {
+      const doors = Math.max(1, Number(spec?.doors) || 1);
+      const w = Number(spec?.width_in) || 0, h = Number(spec?.height_in) || 0;
+      if (!w || !h) return null;
+      const area = (w / doors) * h / 144;
+      const fam = String(spec?.family ?? "");
+      const F = cfg.fam_psf;
+      const base = fam.startsWith("carriage") ? F.carriage
+        : fam === "paintgrade" ? F.rs_paint : fam === "okoume" ? F.rs_okoume
+        : fam === "softwood" ? F.rs_soft : fam === "hardwood" ? F.rs_hard
+        : (fam === "glasspanel" || fam === "fullview") ? F.glass : F.tb;
+      let clad = 0;
+      const cw = Number((spec?.clad ?? {}).weight);
+      if (cw > 0) clad = cw > 20 ? cw / area : cw; // a big number was lb per leaf
+      else if (spec?.cladding === "tr" || spec?.cladding === "owner" || fam.startsWith("tbclad")) clad = Number(cfg.clad_psf) || 0;
+      const leaf = Math.round((area * (base + clad) + Number(cfg.hw_lb)) * 10) / 10;
+      const load = Math.round(leaf * Number(cfg.share) * 10) / 10;
+      const mg = Number(cfg.margin) > 0 && Number(cfg.margin) <= 1 ? Number(cfg.margin) : 0.8;
+      const auto = load <= Number(cfg.m8) * mg ? "m8" : load <= Number(cfg.m10) * mg ? "m10" : "over";
+      const forced = spec?.track === "m8" || spec?.track === "m10";
+      const track = forced ? spec.track : (auto === "over" ? "m10" : auto);
+      const cap = track === "m8" ? Number(cfg.m8) : Number(cfg.m10);
+      const ok = load <= cap * mg + 0.001;
+      const clad_allow = Math.floor(cap * mg / Number(cfg.share) - (area * base + Number(cfg.hw_lb)));
+      return { leaf_lb: leaf, carriage_lb: load, auto, track, forced, cap, margin: mg, ok,
+        over_m10: auto === "over", clad_allow_lb: Math.max(0, clad_allow),
+        area_sqft: Math.round(area * 10) / 10, base_psf: base, clad_psf: clad };
+    }
+
+    if (b.action === "laser_adopt") {
+      const { data: c } = await sb.from("concepts").select("*").eq("id", String(b.id ?? "")).single();
+      if (!c) return out({ ok: false, error: "not found" }, 404);
+      if (!c.job_id) return out({ ok: false, error: "Link the concept to a job first — the lasers live on the job." }, 400);
+      const lz = await laserFor(c.job_id);
+      if (!lz) return out({ ok: false, error: "No laser verification on that job yet." }, 400);
+      const bd = laserBuild(lz, c.spec);
+      const spec = { ...(c.spec ?? {}), width_in: bd.build_w, height_in: bd.build_h };
+      delete spec.laser_override; // adopting the verified size clears any override
+      const { data, error } = await sb.from("concepts").update({
+        spec, updated_at: new Date().toISOString(), updated_by: String(b.by ?? "office"),
+      }).eq("id", c.id).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "concept",
+        body: { what: "verified size adopted", title: c.title, build: bd.build_w + "x" + bd.build_h, max: lz.max_w + "x" + lz.max_h } });
+      return out({ ok: true, concept: data, laser: lz, build: bd });
+    }
+
+    // ---------- reminders rail (office): tunable auto-rules + custom ----------
+    if (b.action === "rem_rules") {
+      const { data } = await sb.from("reminder_rules").select("*").order("sort");
+      return out({ ok: true, rows: data ?? [] });
+    }
+
+    if (b.action === "rem_rule_set") {
+      const patch: Record<string, unknown> = { updated_at: new Date().toISOString(), updated_by: String(b.by ?? "office") };
+      if (b.enabled !== undefined) patch.enabled = b.enabled === true;
+      if (b.threshold_hours !== undefined) {
+        const t = Number(b.threshold_hours);
+        if (!Number.isFinite(t) || t < 1 || t > 8760) return out({ ok: false, error: "threshold must be 1–8760 hours" }, 400);
+        patch.threshold_hours = Math.round(t);
+      }
+      const { data, error } = await sb.from("reminder_rules").update(patch).eq("key", String(b.rule ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, rule: data });
+    }
+
+    if (b.action === "rem_add") {
+      const title = String(b.title ?? "").trim().slice(0, 200);
+      if (title.length < 2) return out({ ok: false, error: "what is the reminder?" }, 400);
+      const due = new Date(String(b.due_at ?? ""));
+      if (isNaN(due.getTime())) return out({ ok: false, error: "pick a date and time" }, 400);
+      const { data, error } = await sb.from("reminders").insert({
+        kind: "custom", title, note: String(b.note ?? "").trim().slice(0, 500) || null,
+        due_at: due.toISOString(),
+        repeat: ["none", "daily", "weekly", "monthly"].includes(b.repeat) ? b.repeat : "none",
+        job_id: String(b.job_id ?? "") || null, concept_id: String(b.concept_id ?? "") || null,
+        created_by: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, reminder: data });
+    }
+
+    if (b.action === "rem_set") {
+      const { data: cur } = await sb.from("reminders").select("*").eq("id", String(b.id ?? "")).single();
+      if (!cur) return out({ ok: false, error: "not found" }, 404);
+      const patch: Record<string, unknown> = {};
+      if (b.title !== undefined) { const t = String(b.title).trim().slice(0, 200); if (t.length < 2) return out({ ok: false, error: "title too short" }, 400); patch.title = t; }
+      if (b.note !== undefined) patch.note = String(b.note).trim().slice(0, 500) || null;
+      if (b.due_at !== undefined) { const d = new Date(String(b.due_at)); if (isNaN(d.getTime())) return out({ ok: false, error: "bad date" }, 400); patch.due_at = d.toISOString(); }
+      if (b.repeat !== undefined) patch.repeat = ["none", "daily", "weekly", "monthly"].includes(b.repeat) ? b.repeat : "none";
+      if (b.enabled !== undefined) patch.enabled = b.enabled === true;
+      if (b.done === true) {
+        const rep = (patch.repeat as string) ?? cur.repeat;
+        if (rep && rep !== "none" && cur.due_at) {
+          // repeating: roll forward from the CURRENT due date, never mark done
+          const d = new Date(cur.due_at);
+          if (rep === "daily") d.setDate(d.getDate() + 1);
+          if (rep === "weekly") d.setDate(d.getDate() + 7);
+          if (rep === "monthly") d.setMonth(d.getMonth() + 1);
+          while (d.getTime() <= Date.now()) { // catch up if it sat overdue
+            if (rep === "daily") d.setDate(d.getDate() + 1);
+            else if (rep === "weekly") d.setDate(d.getDate() + 7);
+            else d.setMonth(d.getMonth() + 1);
+          }
+          patch.due_at = d.toISOString();
+        } else { patch.done = true; patch.done_at = new Date().toISOString(); }
+      }
+      if (b.done === false) { patch.done = false; patch.done_at = null; }
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("reminders").update(patch).eq("id", cur.id).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, reminder: data });
+    }
+
+    if (b.action === "rem_del") {
+      const { error } = await sb.from("reminders").delete().eq("id", String(b.id ?? ""));
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    if (b.action === "rem_mute") {
+      const ref = String(b.ref ?? "").trim().slice(0, 120);
+      if (!ref.includes(":")) return out({ ok: false, error: "bad ref" }, 400);
+      const { error } = await sb.from("reminders").upsert({ kind: "mute", ref, created_by: String(b.by ?? "office") }, { onConflict: "ref" });
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, muted: ref });
+    }
+
+    if (b.action === "reminders") {
+      const now = Date.now();
+      const [{ data: rules }, { data: rows }] = await Promise.all([
+        sb.from("reminder_rules").select("*").order("sort"),
+        sb.from("reminders").select("*"),
+      ]);
+      const on: Record<string, number> = {};
+      for (const r of rules ?? []) { const rx = r as { key: string; enabled: boolean; threshold_hours: number }; if (rx.enabled) on[rx.key] = rx.threshold_hours; }
+      const muted = new Set((rows ?? []).filter((r: { kind: string }) => r.kind === "mute").map((r: { ref: string | null }) => r.ref));
+      // deno-lint-ignore no-explicit-any
+      const items: any[] = (rows ?? []).filter((r: any) => r.kind === "custom" && !r.done)
+        .map((r: any) => ({ src: "custom", id: r.id, title: r.title, note: r.note, due_at: r.due_at,
+          repeat: r.repeat, enabled: r.enabled, job_id: r.job_id, concept_id: r.concept_id }));
+      const hrs = (ms: number) => ms / 36e5;
+      if (on.concept_unopened || on.signoff_unsigned) {
+        const { data: cs } = await sb.from("concepts").select("id, title, stage, rev, status, sent_at, viewed_at, signed_at");
+        for (const c of cs ?? []) {
+          // deno-lint-ignore no-explicit-any
+          const cx = c as any;
+          if (on.concept_unopened && cx.status === "sent" && cx.sent_at && hrs(now - Date.parse(cx.sent_at)) >= on.concept_unopened && !muted.has("concept_unopened:" + cx.id)) {
+            items.push({ src: "rule", rule: "concept_unopened", ref: "concept_unopened:" + cx.id, concept_id: cx.id,
+              title: "\u201C" + cx.title + "\u201D rev " + cx.rev + " sent and never opened \u2014 nudge them",
+              due_at: new Date(Date.parse(cx.sent_at) + on.concept_unopened * 36e5).toISOString() });
+          }
+          if (on.signoff_unsigned && cx.stage === "signoff" && cx.status === "viewed" && !cx.signed_at && cx.viewed_at && hrs(now - Date.parse(cx.viewed_at)) >= on.signoff_unsigned && !muted.has("signoff_unsigned:" + cx.id)) {
+            items.push({ src: "rule", rule: "signoff_unsigned", ref: "signoff_unsigned:" + cx.id, concept_id: cx.id,
+              title: "Sign-off \u201C" + cx.title + "\u201D opened but NOT signed \u2014 production is waiting",
+              due_at: new Date(Date.parse(cx.viewed_at) + on.signoff_unsigned * 36e5).toISOString() });
+          }
+        }
+      }
+      if (on.flag_unanswered || on.flag_stuck) {
+        const { data: fs } = await sb.from("office_flags").select("id, question, from_name, to_name, status, created_at").neq("status", "resolved");
+        for (const f of fs ?? []) {
+          // deno-lint-ignore no-explicit-any
+          const fx = f as any;
+          const age = hrs(now - Date.parse(fx.created_at));
+          if (on.flag_unanswered && fx.status === "sent" && age >= on.flag_unanswered && !muted.has("flag_unanswered:" + fx.id)) {
+            items.push({ src: "rule", rule: "flag_unanswered", ref: "flag_unanswered:" + fx.id,
+              title: "Flag to " + fx.to_name + " not acknowledged: \u201C" + String(fx.question).slice(0, 80) + "\u201D",
+              due_at: new Date(Date.parse(fx.created_at) + on.flag_unanswered * 36e5).toISOString() });
+          }
+          if (on.flag_stuck && (fx.status === "received" || fx.status === "working") && age >= on.flag_stuck && !muted.has("flag_stuck:" + fx.id)) {
+            items.push({ src: "rule", rule: "flag_stuck", ref: "flag_stuck:" + fx.id,
+              title: "Flag to " + fx.to_name + " still " + fx.status + ": \u201C" + String(fx.question).slice(0, 80) + "\u201D",
+              due_at: new Date(Date.parse(fx.created_at) + on.flag_stuck * 36e5).toISOString() });
+          }
+        }
+      }
+      if (on.maint_due) {
+        const [{ data: mi }, { data: ms }] = await Promise.all([
+          sb.from("maintenance_items").select("id, machine_id, service, next_due, tasked_to").not("next_due", "is", null),
+          sb.from("machines").select("id, name"),
+        ]);
+        const mn: Record<string, string> = {};
+        for (const m of ms ?? []) mn[(m as { id: string }).id] = (m as { name: string }).name;
+        for (const it of mi ?? []) {
+          // deno-lint-ignore no-explicit-any
+          const ix = it as any;
+          const due = Date.parse(ix.next_due + "T17:00:00");
+          if (isNaN(due)) continue;
+          if (due - now <= on.maint_due * 36e5 && !muted.has("maint_due:" + ix.id)) {
+            items.push({ src: "rule", rule: "maint_due", ref: "maint_due:" + ix.id,
+              title: (mn[ix.machine_id] ?? "Machine") + " \u2014 " + ix.service + " due " + ix.next_due + (ix.tasked_to ? " (" + ix.tasked_to + ")" : ""),
+              due_at: new Date(due).toISOString() });
+          }
+        }
+      }
+      if (on.signoff_no_laser) {
+        const { data: cs2 } = await sb.from("concepts").select("id, title, job_id, stage, status, signed_at, updated_at")
+          .eq("stage", "signoff").is("signed_at", null).not("job_id", "is", null);
+        for (const c of cs2 ?? []) {
+          // deno-lint-ignore no-explicit-any
+          const cx = c as any;
+          if (hrs(now - Date.parse(cx.updated_at)) < on.signoff_no_laser) continue;
+          if (muted.has("signoff_no_laser:" + cx.id)) continue;
+          const { count } = await sb.from("measurements").select("id", { count: "exact", head: true })
+            .eq("job_id", cx.job_id).eq("kind", "laser");
+          if ((count ?? 0) === 0) {
+            items.push({ src: "rule", rule: "signoff_no_laser", ref: "signoff_no_laser:" + cx.id, concept_id: cx.id,
+              title: "Sign-off \u201C" + cx.title + "\u201D has NO laser verification on its job \u2014 measure or certify",
+              due_at: new Date(Date.parse(cx.updated_at) + on.signoff_no_laser * 36e5).toISOString() });
+          }
+        }
+      }
+      if (on.install_media) {
+        const { data: st } = await sb.from("job_steps").select("job_id, key, status, done_at").in("key", ["delivered", "install_media"]);
+        const byJob: Record<string, Record<string, { status: string; done_at: string | null }>> = {};
+        for (const s of st ?? []) { const sx = s as { job_id: string; key: string; status: string; done_at: string | null };
+          (byJob[sx.job_id] = byJob[sx.job_id] ?? {})[sx.key] = { status: sx.status, done_at: sx.done_at }; }
+        const owed = Object.entries(byJob).filter(([, v]) => v.delivered?.status === "done" && v.install_media && v.install_media.status !== "done"
+          && v.delivered.done_at && hrs(now - Date.parse(v.delivered.done_at)) >= on.install_media);
+        if (owed.length) {
+          const { data: js } = await sb.from("jobs").select("id, job_no").in("id", owed.map(([k]) => k));
+          const jn: Record<string, string> = {};
+          for (const j of js ?? []) jn[(j as { id: string }).id] = (j as { job_no: string }).job_no;
+          for (const [jid, v] of owed) {
+            if (muted.has("install_media:" + jid)) continue;
+            items.push({ src: "rule", rule: "install_media", ref: "install_media:" + jid, job_id: jid,
+              title: (jn[jid] ?? "Job") + " delivered \u2014 install photos/video still owed (\u201Cthe doors sell themselves\u201D)",
+              due_at: new Date(Date.parse(v.delivered!.done_at!) + on.install_media * 36e5).toISOString() });
+          }
+        }
+      }
+      items.sort((a, b2) => Date.parse(a.due_at ?? 0) - Date.parse(b2.due_at ?? 0));
+      const overdue = items.filter((i) => i.enabled !== false && i.due_at && Date.parse(i.due_at) <= now).length;
+      return out({ ok: true, items, overdue });
+    }
+
+    // ---------- concept rail (office) ----------
+    if (b.action === "concepts") {
+      const { data: rows } = await sb.from("concepts").select("*").order("updated_at", { ascending: false }).limit(100);
+      const ids = (rows ?? []).map((c: { id: string }) => c.id);
+      const { data: pins } = ids.length
+        ? await sb.from("concept_pins").select("concept_id, status").in("concept_id", ids)
+        : { data: [] };
+      const agg: Record<string, { open: number; total: number }> = {};
+      for (const p of pins ?? []) {
+        const px = p as { concept_id: string; status: string };
+        const a = agg[px.concept_id] = agg[px.concept_id] ?? { open: 0, total: 0 };
+        a.total++; if (px.status === "open") a.open++;
+      }
+      return out({ ok: true, rows: (rows ?? []).map((c: { id: string }) => ({ ...c, pins: agg[c.id] ?? { open: 0, total: 0 } })) });
+    }
+
+    if (b.action === "concept_get") {
+      const { data: c } = await sb.from("concepts").select("*").eq("id", String(b.id ?? "")).single();
+      if (!c) return out({ ok: false, error: "not found" }, 404);
+      const { data: pins } = await sb.from("concept_pins").select("*").eq("concept_id", c.id).order("created_at");
+      const lz = c.job_id ? await laserFor(c.job_id) : null;
+      return out({ ok: true, concept: c, pins: pins ?? [], laser: lz, build: lz ? laserBuild(lz, c.spec) : null });
+    }
+
+    if (b.action === "concept_save") {
+      const spec = (typeof b.spec === "object" && b.spec) || {};
+      const stage = ["concept", "signoff"].includes(b.stage) ? b.stage : "concept";
+      // THE GATE: owner cladding needs real spec before a sign-off exists
+      if (stage === "signoff" && spec.cladding === "owner") {
+        const cl = (spec.clad ?? {}) as Record<string, unknown>;
+        if (!cl.material || !cl.oal || !cl.weight || cl.spec_file !== true) {
+          return out({ ok: false, error: "Owner cladding gate: material, OAL, weight AND their detail file are required before a sign-off is drafted. No more Detail Request drawings." }, 400);
+        }
+      }
+      // TRACK: his Weight Calc runs on every save — the sheet and the desk
+      // read this server snapshot, never their own math
+      const tcfg = await trackCfg();
+      const tc = trackFor(spec, tcfg);
+      if (tc) spec.track_calc = tc; else delete spec.track_calc;
+      const row: Record<string, unknown> = {
+        title: String(b.title ?? "").trim().slice(0, 160),
+        stage, brand: ["tr", "fgd", "bifolded"].includes(b.brand) ? b.brand : "tr",
+        spec, updated_at: new Date().toISOString(), updated_by: String(b.by ?? "office"),
+      };
+      if (!row.title || (row.title as string).length < 2) return out({ ok: false, error: "a title is required" }, 400);
+      if (b.quote_id !== undefined) row.quote_id = String(b.quote_id) || null;
+      if (b.job_id !== undefined) row.job_id = String(b.job_id) || null;
+      let data, error;
+      if (b.id) {
+        const { data: cur } = await sb.from("concepts").select("rev, status").eq("id", String(b.id)).single();
+        if (!cur) return out({ ok: false, error: "not found" }, 404);
+        if (b.bump === true) { row.rev = (cur.rev ?? 0) + 1; row.status = "draft"; row.signed_name = null; row.signed_at = null; row.doc_hash = null; row.viewed_at = null; row.sent_at = null; }
+        ({ data, error } = await sb.from("concepts").update(row).eq("id", String(b.id)).select("*").single());
+      } else {
+        ({ data, error } = await sb.from("concepts").insert(row).select("*").single());
+      }
+      if (error) return out({ ok: false, error: error.message }, 500);
+      if (tc && tc.over_m10 && (!b.id || b.bump === true)) {
+        // beyond ANY Cavity track — never refuse the build (rule #8), but the
+        // hardware answer is Ryan's call before this can sign
+        await sb.from("office_flags").insert({ from_name: String(b.by ?? "office"), to_name: "Ryan",
+          question: "OVER M10: \"" + row.title + "\" est " + tc.carriage_lb + " lb carriage load vs 1100 lb M10 cap - hardware solution needed.",
+          // deno-lint-ignore no-explicit-any
+          concept_id: (data as any)?.id ?? null });
+        await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "concept",
+          body: { what: "OVER M10 flag", title: row.title, carriage_lb: tc.carriage_lb } });
+      }
+      return out({ ok: true, concept: data });
+    }
+
+    if (b.action === "concept_publish") {
+      const { data: c } = await sb.from("concepts").select("*").eq("id", String(b.id ?? "")).single();
+      if (!c) return out({ ok: false, error: "not found" }, 404);
+      if (c.signed_at) return out({ ok: false, error: "Rev " + c.rev + " is signed — bump the rev to send changes." }, 400);
+      // LASER GATE (overridable — McKinney/Lachman): a sign-off bigger than the
+      // verified opening needs an explicit, loud reason on the record.
+      if (c.stage === "signoff" && c.job_id) {
+        const lz = await laserFor(c.job_id);
+        // deno-lint-ignore no-explicit-any
+        const sp = (c.spec ?? {}) as any;
+        if (lz && sp.mount === "backset") {
+          // backset flips the gate: the unit MUST oversize the opening or the
+          // trim reveal fails at minimum lasers
+          const rmin = Number(sp.reveal_min) > 0 ? Number(sp.reveal_min) : 0.25;
+          if (Number(sp.width_in) < lz.max_w + 2 * rmin - 0.001 || Number(sp.height_in) < lz.max_h + rmin - 0.001) {
+            return out({ ok: false, error: "Backset flush must OVERSIZE the opening — at least " + rmin + " in reveal per side at minimum lasers (opening max " + lz.max_w + " × " + lz.max_h + "). Adopt the backset build, or increase the size." }, 400);
+          }
+        } else if (lz && (Number(sp.width_in) > lz.max_w + 0.01 || Number(sp.height_in) > lz.max_h + 0.01)) {
+          const ovr = sp.laser_override ?? {};
+          const okOvr = ["site_change", "customer_certified"].includes(ovr.kind) && String(ovr.reason ?? "").trim().length >= 10;
+          if (!okOvr) {
+            return out({ ok: false, error: "Over the verified lasers (max " + lz.max_w + " × " + lz.max_h + "). Adopt the verified size, or record the override — site being modified, or customer certifies the number (with the reason)." }, 400);
+          }
+        }
+      }
+      const token = c.view_token ?? [...crypto.getRandomValues(new Uint8Array(24))]
+        .map((x: number) => x.toString(16).padStart(2, "0")).join("");
+      const { error } = await sb.from("concepts").update({
+        view_token: token, status: "sent", sent_at: new Date().toISOString(), viewed_at: null,
+      }).eq("id", c.id);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "concept",
+        body: { what: c.stage + " published", title: c.title, rev: c.rev } });
+      return out({ ok: true, token });
+    }
+
+    if (b.action === "concept_del") {
+      if (b.confirm !== true) return out({ ok: false, error: "confirm:true required" }, 400);
+      const { data: c } = await sb.from("concepts").select("status, title").eq("id", String(b.id ?? "")).single();
+      if (!c) return out({ ok: false, error: "not found" }, 404);
+      if (c.status !== "draft") return out({ ok: false, error: "Only drafts delete — sent history is kept." }, 400);
+      const { error } = await sb.from("concepts").delete().eq("id", String(b.id));
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    if (b.action === "pin_set") {
+      const patch: Record<string, unknown> = {};
+      if (b.status === "resolved") { patch.status = "resolved"; patch.resolved_by = String(b.by ?? "office");
+        patch.resolved_at = new Date().toISOString(); patch.resolved_note = String(b.resolved_note ?? "").trim() || null; }
+      else if (b.status === "open") { patch.status = "open"; patch.resolved_at = null; patch.resolved_by = null; }
+      if (!Object.keys(patch).length) return out({ ok: false, error: "nothing to change" }, 400);
+      const { data, error } = await sb.from("concept_pins").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, pin: data });
+    }
+
+    // ---------- PDF rail (office): make / list / link / send ----------
+    if (b.action === "pdf_make") {
+      const r = await fileDoc({ kind: String(b.kind ?? "doc"), ref: String(b.ref ?? "misc"),
+        quote_id: b.quote_id ?? null, concept_id: b.concept_id ?? null, job_id: b.job_id ?? null,
+        title: b.title, pages: b.pages, by: String(b.by ?? "office") });
+      if (r.error) return out({ ok: false, error: r.error }, 400);
+      const { data: su } = await sb.storage.from("job-files").createSignedUrl(r.doc.path, 604800);
+      return out({ ok: true, doc: r.doc, url: su?.signedUrl ?? null });
+    }
+
+    if (b.action === "docs_list") {
+      let q = sb.from("doc_files").select("*").order("created_at", { ascending: false }).limit(100);
+      if (b.job_id) q = q.eq("job_id", String(b.job_id));
+      if (b.concept_id) q = q.eq("concept_id", String(b.concept_id));
+      if (b.quote_id) q = q.eq("quote_id", String(b.quote_id));
+      const { data, error } = await q;
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, rows: data ?? [] });
+    }
+
+    if (b.action === "doc_url") {
+      const { data: d } = await sb.from("doc_files").select("path").eq("id", String(b.id ?? "")).single();
+      if (!d) return out({ ok: false, error: "not found" }, 404);
+      const { data: su, error } = await sb.storage.from("job-files").createSignedUrl(d.path, 604800);
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, url: su.signedUrl });
+    }
+
+    if (b.action === "doc_send") {
+      // sends AS the real person — their TR email (Squizz: "they send everything
+      // thru their TR emails"). Needs RESEND_API_KEY + the domain verified;
+      // until then it hands back the 7-day link to paste anywhere.
+      const { data: d } = await sb.from("doc_files").select("*").eq("id", String(b.id ?? "")).single();
+      if (!d) return out({ ok: false, error: "not found" }, 404);
+      const to = String(b.to ?? "").trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return out({ ok: false, error: "a valid to email is required" }, 400);
+      const { data: su } = await sb.storage.from("job-files").createSignedUrl(d.path, 604800);
+      const link = su?.signedUrl ?? "";
+      const rk = Deno.env.get("RESEND_API_KEY");
+      const fromName = String(b.from_name ?? "Tungsten Royce").slice(0, 80);
+      const fromEmail = String(b.from_email ?? "").trim();
+      if (!rk || !fromEmail) {
+        return out({ ok: true, sent: false, link,
+          note: !rk ? "Email not configured yet (RESEND_API_KEY missing) — copy the link." : "That sender has no email saved — copy the link, or set their email." });
+      }
+      const subject = String(b.subject ?? (d.title || "Your document from Tungsten Royce")).slice(0, 150);
+      const msg = String(b.message ?? "").slice(0, 2000);
+      const esc9 = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      const html = "<p>" + esc9(msg).replace(/\n/g, "<br>") + "</p><p><a href=\"" + link + "\">Download " + esc9(d.title || "your document") + " (PDF)</a><br><span style=\"color:#777;font-size:12px\">Link valid 7 days.</span></p>";
+      const resp = await fetch("https://api.resend.com/emails", { method: "POST",
+        headers: { "content-type": "application/json", Authorization: "Bearer " + rk },
+        body: JSON.stringify({ from: fromName + " <" + fromEmail + ">", to: [to], reply_to: fromEmail, subject, html }) });
+      // deno-lint-ignore no-explicit-any
+      const rj: any = await resp.json().catch(() => ({}));
+      if (!resp.ok) return out({ ok: false, error: "send failed: " + (rj?.message ?? resp.status), link }, 502);
+      await sb.from("doc_files").update({ sent_to: to, sent_at: new Date().toISOString(), sent_by: String(b.by ?? "office") }).eq("id", d.id);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "doc", body: { what: "doc emailed", to, title: d.title } });
+      return out({ ok: true, sent: true, id: rj?.id ?? null, link });
+    }
+
+    // ---------- TRAVELERS (office): spawn from fab_steps templates ----------
+    if (b.action === "trav_spawn") {
+      const tmpl = String(b.template ?? "").trim();
+      const { data: opt } = await sb.from("catalog_options").select("name, data").eq("group_key", "fab_steps").eq("opt_id", tmpl).single();
+      if (!opt) return out({ ok: false, error: "unknown template — pick one from Fab Steps" }, 400);
+      // deno-lint-ignore no-explicit-any
+      const steps: string[] = ((opt.data as any)?.steps ?? []).filter((s: unknown) => typeof s === "string");
+      if (!steps.length) return out({ ok: false, error: "that template has no steps" }, 400);
+      let jobNo: string | null = null;
+      if (b.job_id) { const { data: j } = await sb.from("jobs").select("job_no").eq("id", String(b.job_id)).single(); jobNo = j?.job_no ?? null; }
+      const { data: tv, error } = await sb.from("travelers").insert({
+        job_id: b.job_id ? String(b.job_id) : null, job_no: jobNo, template: tmpl,
+        name: String(b.name ?? "").trim().slice(0, 160) || (opt.name + (jobNo ? " — " + jobNo : "")),
+        worker: String(b.worker ?? "").trim() || null, created_by: String(b.by ?? "office"),
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("traveler_steps").insert(steps.map((s, i) => ({ traveler_id: tv.id, sort: i * 10, text: s.slice(0, 400) })));
+      if (tv.worker) await sb.from("duties").insert({ job_id: tv.job_id, title: "[TRAVELER] " + tv.name, worker: tv.worker, status: "now", sort: 90, pushed_by: String(b.by ?? "office") });
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "traveler",
+        body: { what: "traveler spawned", name: tv.name, steps: steps.length, worker: tv.worker } });
+      return out({ ok: true, traveler: tv, steps: steps.length });
+    }
+
+    if (b.action === "travs_list") {
+      let q = sb.from("travelers").select("*").order("created_at", { ascending: false }).limit(80);
+      if (b.job_id) q = q.eq("job_id", String(b.job_id));
+      if (b.open === true) q = q.eq("status", "open");
+      const { data: travs, error } = await q;
+      if (error) return out({ ok: false, error: error.message }, 500);
+      const ids = (travs ?? []).map((t) => t.id);
+      const { data: steps } = ids.length ? await sb.from("traveler_steps").select("*").in("traveler_id", ids).order("sort") : { data: [] };
+      return out({ ok: true, travelers: travs ?? [], steps: steps ?? [] });
+    }
+
+    if (b.action === "trav_step_set") {
+      const st = ["todo", "done", "na"].includes(b.status) ? b.status : "done";
+      const { data, error } = await sb.from("traveler_steps").update({
+        status: st, done_by: st === "todo" ? null : String(b.by ?? "office"),
+        done_at: st === "todo" ? null : new Date().toISOString(),
+        note: b.note !== undefined ? String(b.note).slice(0, 300) : undefined,
+      }).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      const { data: rest } = await sb.from("traveler_steps").select("status").eq("traveler_id", data.traveler_id);
+      const allDone = (rest ?? []).every((s) => ["done", "na"].includes(s.status));
+      await sb.from("travelers").update({ status: allDone ? "done" : "open", done_at: allDone ? new Date().toISOString() : null }).eq("id", data.traveler_id);
+      return out({ ok: true, step: data, traveler_done: allDone });
+    }
+
+    if (b.action === "trav_del") {
+      if (b.confirm !== true) return out({ ok: false, error: "confirm:true required" }, 400);
+      const { error } = await sb.from("travelers").delete().eq("id", String(b.id ?? ""));
+      if (error) return out({ ok: false, error: error.message }, 500);
+      return out({ ok: true, deleted: true });
+    }
+
+    // ---------- the flag rail (office ⇄ office; sales later) ----------
+    if (b.action === "flag_add") {
+      const from = String(b.by ?? "").trim().slice(0, 60);
+      const to = String(b.to_name ?? "").trim().slice(0, 60);
+      const q = String(b.question ?? "").trim().slice(0, 1000);
+      if (from.length < 2 || to.length < 2 || q.length < 3) {
+        return out({ ok: false, error: "who it is from, who it is for, and the question" }, 400);
+      }
+      const { data, error } = await sb.from("office_flags").insert({
+        from_name: from, to_name: to, question: q,
+        job_id: String(b.job_id ?? "") || null,
+        concept_id: String(b.concept_id ?? "") || null,
+        file_link: String(b.file_link ?? "").trim().slice(0, 400) || null,
+      }).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: from, kind: "flag",
+        body: { what: "flag raised", to, question: q.slice(0, 120) } });
+      return out({ ok: true, flag: data });
+    }
+
+    if (b.action === "flag_set") {
+      const status = ["received", "working", "resolved"].includes(b.status) ? b.status : null;
+      if (!status) return out({ ok: false, error: "status must be received | working | resolved" }, 400);
+      const patch: Record<string, unknown> = { status };
+      const now = new Date().toISOString();
+      if (status === "received") patch.received_at = now;
+      if (status === "working") patch.working_at = now;
+      if (status === "resolved") {
+        const rn = String(b.resolution ?? "").trim().slice(0, 1000);
+        if (rn.length < 3) return out({ ok: false, error: "A resolution note is required — what was actually done." }, 400);
+        patch.resolved_at = now; patch.resolution = rn;
+      }
+      const { data, error } = await sb.from("office_flags").update(patch).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "flag",
+        body: { what: "flag " + status, question: String(data.question).slice(0, 120), resolution: data.resolution } });
+      return out({ ok: true, flag: data });
+    }
+
+    if (b.action === "flag_verdict") {
+      const verdict = ["done_all", "partial", "not_done"].includes(b.verdict) ? b.verdict : null;
+      if (!verdict) return out({ ok: false, error: "verdict must be done_all | partial | not_done" }, 400);
+      const { data, error } = await sb.from("office_flags").update({ verdict }).eq("id", String(b.id ?? "")).select("*").single();
+      if (error) return out({ ok: false, error: error.message }, 500);
+      await sb.from("events").insert({ actor: String(b.by ?? "office"), kind: "flag",
+        body: { what: "verdict " + verdict, question: String(data.question).slice(0, 120) } });
+      return out({ ok: true, flag: data });
+    }
+
+    if (b.action === "flags_list") {
+      const { data: rows } = await sb.from("office_flags").select("*")
+        .gte("created_at", new Date(Date.now() - 90 * 86400000).toISOString())
+        .order("created_at", { ascending: false }).limit(200);
+      const jids = [...new Set((rows ?? []).map((f: { job_id: string | null }) => f.job_id).filter(Boolean))] as string[];
+      const jobNames: Record<string, string> = {};
+      if (jids.length) {
+        const { data: js } = await sb.from("jobs").select("id, job_no").in("id", jids);
+        for (const j of js ?? []) jobNames[(j as { id: string }).id] = (j as { job_no: string }).job_no;
+      }
+      return out({ ok: true, rows: rows ?? [], job_names: jobNames });
+    }
+
+    return out({ ok: false, error: "unknown action" }, 400);
+  } catch (e) {
+    return out({ ok: false, error: String(e?.message ?? e) }, 500);
+  }
+});
