@@ -9,7 +9,9 @@
   Customer/contractor drawing view by link token (?t=). Opening the
   link stamps the receipt (viewed_at). Tap-to-pin revision requests
   land straight on the office Concept Desk. Sign-offs e-sign with a
-  typed name — blocked while any pin is open. tr-intake v3.3.
+  typed name — blocked while any pin is open. Laser status rides the
+  sheet (verified / over-laser override banner) and a certified size
+  changes the e-sign consent to a certification. tr-intake v3.5.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -82,7 +84,7 @@
     <h2>Approve &amp; sign</h2>
     <p class="note">Signing releases these exact dimensions, fold layout, and finishes to fabrication. Changes after signing are re-quoted.</p>
     <label class="consent"><input type="checkbox" id="s_consent" style="width:20px;height:20px">
-      I have reviewed this drawing. I agree my typed name below is my electronic signature.</label>
+      <span id="consenttext">I have reviewed this drawing. I agree my typed name below is my electronic signature.</span></label>
     <div class="row">
       <input id="s_name" style="flex:1;min-width:200px" placeholder="Type your full name">
       <button class="gold" onclick="doSign()">Sign this drawing</button>
@@ -382,6 +384,26 @@
       }
       y += 14;
     }
+    // laser status — verified size line, or the OVERRIDE banner (Squizz 08-16:
+    // McKinney header move / Lachman pour-to-suit — build over lasers must be
+    // POSSIBLE and LOUD, never silent)
+    const lz = meta.laser, ov = spec.laser_override;
+    const overL = lz && lz.max_w && lz.max_h && (W > lz.max_w + 0.01 || H > lz.max_h + 0.01);
+    if (ov && ov.kind && (overL || !lz)) {
+      y += 14;
+      const bh = 96;
+      s.push('<rect x="' + RX + '" y="' + (y - 12) + '" width="' + RW + '" height="' + bh + '" fill="#fdf0e7" stroke="#a01212" stroke-width="1.8"/>');
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 8) + '" font-size="14" font-weight="bold" fill="#a01212">⚠ ' + (lz ? "BUILT OVER VERIFIED LASERS" : "NO LASER VERIFICATION ON FILE") + "</text>");
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 27) + '" font-size="12.5" fill="' + sk.ink + '">' + (lz ? "Opening measured max " + fmtIn(lz.max_w) + " × " + fmtIn(lz.max_h) + " — this builds " + fmtIn(W) + " × " + fmtIn(H) + "." : "Building to the requested " + fmtIn(W) + " × " + fmtIn(H) + " without site lasers.") + "</text>");
+      s.push('<text x="' + (RX + 12) + '" y="' + (y + 46) + '" font-size="12.5" font-weight="bold" fill="' + sk.ink + '">' + (ov.kind === "customer_certified" ? "CUSTOMER CERTIFIES THIS SIZE — we build to the door:" : "Site is being modified to suit:") + "</text>");
+      const rw = String(ov.reason || "").match(/.{1,54}(\s|$)/g) || [];
+      for (let j = 0; j < rw.length && j < 2; j++) s.push('<text x="' + (RX + 12) + '" y="' + (y + 63 + j * 16) + '" font-size="12" fill="' + sk.ink + '">' + X(rw[j].trim()) + "</text>");
+      y += bh + 8;
+    } else if (lz && lz.max_w && lz.max_h && !overL) {
+      y += 10;
+      s.push('<text x="' + RX + '" y="' + y + '" font-size="12.5" fill="#1d6b38">✓ Within verified lasers — opening max ' + fmtIn(lz.max_w) + " × " + fmtIn(lz.max_h) + (lz.by_name ? " (" + X(lz.by_name) + ")" : "") + "</text>");
+      y += 6;
+    }
     // sign block
     const sy = SH - (stage === "signoff" ? 150 : 92);
     if (stage === "signoff") {
@@ -391,8 +413,13 @@
         s.push('<text x="' + RX + '" y="' + (sy + 46) + '" font-size="12.5" fill="' + sk.ink + '" opacity="0.75">Signed electronically ' + X(meta.signed_at || "") + "</text>");
       } else {
         s.push('<text x="' + RX + '" y="' + (sy + 20) + '" font-size="13" fill="' + sk.ink + '">X  — sign to release for production</text>');
-        s.push('<text x="' + RX + '" y="' + (sy + 40) + '" font-size="12" fill="' + sk.ink + '" opacity="0.7">I approve these dimensions, fold layout, and finishes.</text>');
-        s.push('<text x="' + RX + '" y="' + (sy + 58) + '" font-size="12" fill="' + sk.ink + '" opacity="0.7">Built to these numbers — changes after signing re-quote.</text>');
+        if (spec.laser_override && spec.laser_override.kind === "customer_certified") {
+          s.push('<text x="' + RX + '" y="' + (sy + 40) + '" font-size="12" font-weight="bold" fill="#a01212">By signing I CERTIFY the opening/site will accept ' + fmtIn(W) + " × " + fmtIn(H) + ".</text>");
+          s.push('<text x="' + RX + '" y="' + (sy + 58) + '" font-size="12" fill="' + sk.ink + '" opacity="0.7">The door is built to this number — site fit is my responsibility.</text>');
+        } else {
+          s.push('<text x="' + RX + '" y="' + (sy + 40) + '" font-size="12" fill="' + sk.ink + '" opacity="0.7">I approve these dimensions, fold layout, and finishes.</text>');
+          s.push('<text x="' + RX + '" y="' + (sy + 58) + '" font-size="12" fill="' + sk.ink + '" opacity="0.7">Built to these numbers — changes after signing re-quote.</text>');
+        }
       }
     }
     s.push('<text x="' + RX + '" y="' + (SH - 58) + '" font-size="11.5" fill="' + sk.ink + '" opacity="0.6">All work done in house · field-verify before fabrication.</text>');
@@ -420,12 +447,12 @@ const $=(id)=>document.getElementById(id);
 const BRANDS={tr:{h:"TUNGSTEN ROYCE",sub:"Custom Wood Products · Santa Ana, California",acc:"#8b2e2e",foot:"Tungsten Royce — all work done in house."},
   fgd:{h:"FOLDING GARAGE DOORS",sub:"Modern Bifold Doors · Est. 2010",acc:"#3c4650",foot:"Folding Garage Doors · Santa Ana, California"},
   bifolded:{h:"BIFOLDED",sub:"The Wall That Moves",acc:"#3d2a56",foot:"BiFolded · Design + Build"}};
-let C=null,PINS=[],pinning=false,pending=null;
+let C=null,PINS=[],LZ=null,pinning=false,pending=null;
 
 async function load(){
   const r=await call({action:"concept_view"});
   if(!r.ok){$("hsub").textContent="";$("ctitle").textContent="";$("msg").textContent=r.error;return;}
-  C=r.concept;PINS=r.pins;
+  C=r.concept;PINS=r.pins;LZ=r.laser||null;
   const b=BRANDS[C.brand]||BRANDS.tr;
   document.documentElement.style.setProperty("--acc",b.acc);
   $("hbrand").textContent=b.h;$("hsub").textContent=b.sub;
@@ -438,7 +465,7 @@ function render(){
   wrap.innerHTML=renderSheet(C.spec||{},C.brand,{title:C.title,rev:C.rev,stage:C.stage,
     date:(C.sent_at||C.updated_at||"").slice(0,10),status:C.status,
     signed_name:C.signed_name,signed_at:C.signed_at?new Date(C.signed_at).toLocaleDateString():null,
-    logo_tr:C.brand==="tr"?TRLOGO:null});
+    logo_tr:C.brand==="tr"?TRLOGO:null,laser:LZ});
   let i=0;
   for(const p of PINS){i++;
     const m=document.createElement("div");m.className="marker"+(p.status==="resolved"?" res":"");
@@ -453,6 +480,10 @@ function render(){
   } else if(C.stage==="signoff"){
     const open=PINS.filter(p=>p.status==="open").length;
     $("signcard").style.display="block";
+    const ov=C.spec&&C.spec.laser_override;
+    $("consenttext").innerHTML=(ov&&ov.kind==="customer_certified")
+      ?'<b style="color:var(--warn)">I CERTIFY the opening/site will accept this door size.</b> The door is built to this number and site fit is my responsibility. I agree my typed name below is my electronic signature.'
+      :'I have reviewed this drawing. I agree my typed name below is my electronic signature.';
     $("signedbanner").innerHTML=open?'<div class="banner warn">'+open+' change request'+(open>1?"s":"")+' still open — we resolve those first, then you sign the clean rev.</div>':"";
   } else {$("signcard").style.display="none";}
   wrap.onclick=(e)=>{
