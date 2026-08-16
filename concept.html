@@ -559,6 +559,25 @@ async function doSign(){
   if(!r.ok){$("msg").textContent=r.error;return;}
   const rv=await call({action:"concept_view"});if(rv.ok){C=rv.concept;PINS=rv.pins;render();}
   $("msg").textContent="";
+  fileSignedPdf(); // fire-and-forget — the office can regenerate if this device fails
+}
+// the signed sheet becomes a PDF the moment it is signed (v3.8 doc_capture)
+async function fileSignedPdf(){
+  try{
+    const svgEl=document.querySelector("#sheetwrap svg")||document.querySelector("svg");
+    if(!svgEl)return;
+    const xml=new XMLSerializer().serializeToString(svgEl);
+    const vb=(svgEl.getAttribute("viewBox")||"0 0 900 1200").split(/\s+/);
+    const W=+vb[2]||900,H=+vb[3]||1200,K=Math.min(2.5,2600/Math.max(W,H));
+    const img=new Image();
+    img.onload=async()=>{
+      const cv=document.createElement("canvas");cv.width=Math.round(W*K);cv.height=Math.round(H*K);
+      const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);
+      cx.drawImage(img,0,0,cv.width,cv.height);
+      await call({action:"doc_capture",doc:"concept",pages:[cv.toDataURL("image/png")]});
+    };
+    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);
+  }catch(_e){/* office regenerates */}
 }
 if(!TOKEN){$("hsub").textContent="";$("msg").textContent="This link is missing its code — use the exact link we sent you.";}
 else load();

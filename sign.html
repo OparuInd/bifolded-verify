@@ -270,6 +270,31 @@ async function doSign(){
   document.getElementById("signBar").style.display="none";
   state("Thank you, "+j.name+".","Signed. Your job number is <b style='color:var(--ink)'>"+j.job_no+"</b> — it is born the moment you signed. We will be in touch about your deposit and the drawing. Welcome to the wait.");
   window.scrollTo(0,0);
+  fileSignedPdf(); // fire-and-forget — v3.8 doc_capture files the signed PDF
+}
+// rasterize the agreement THIS page rendered into US-Letter page images and
+// file it as a PDF the moment it is signed (office can regenerate if it fails)
+async function fileSignedPdf(){
+  try{
+    if(!window.html2canvas){
+      await new Promise((res,rej)=>{const s=document.createElement("script");
+        s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    }
+    const doc=document.getElementById("doc");
+    const prev=doc.style.display;doc.style.display="block";
+    const cv=await html2canvas(doc,{scale:1.6,backgroundColor:"#ffffff",useCORS:true});
+    doc.style.display=prev;
+    // slice into US-Letter aspect pages (8.5x11)
+    const pw=cv.width, ph=Math.round(pw*11/8.5), pages=[];
+    for(let y=0;y<cv.height&&pages.length<12;y+=ph){
+      const c2=document.createElement("canvas");c2.width=pw;c2.height=Math.min(ph,cv.height-y);
+      const cx=c2.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,c2.width,c2.height);
+      cx.drawImage(cv,0,y,pw,c2.height,0,0,pw,c2.height);
+      pages.push(c2.toDataURL("image/png"));
+    }
+    if(pages.length)await call({action:"doc_capture",doc:"sign",token:TOKEN,pages});
+  }catch(_e){/* office regenerates */}
 }
 load();
 </script>
