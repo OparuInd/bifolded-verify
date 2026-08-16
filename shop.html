@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 3.2 (2026-08-15)  ·  PUBLIC (station token)
+  TR FINAL SOLUTION — Shop Floor 3.3 (2026-08-16)  ·  PUBLIC (station token)
   3.1 adds the MEDIA tab: pick a job, shoot the WALKAROUND video before
   paint (the shop's sign-off + documentation) or the INSTALL photos and
   video ("the doors sell themselves when people see them move").
@@ -207,6 +207,14 @@ function tab(t){ TAB=t;
   for(const x of ["board","inv","mach","med","trav"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; }
   if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else if(t==="trav")loadTrav(); else loadShop();
 }
+function travKitBlock(t,kits){
+  const mine=(kits||[]).filter(k=>t.job_id&&k.job_id===t.job_id);
+  if(!mine.length)return "";
+  return mine.map(k=>'<details style="margin:6px 0;background:#faf8f4;border:1px solid #e8e2d6;border-radius:10px;padding:6px 10px">'+
+    '<summary style="font-size:14px;font-weight:600;cursor:pointer">'+(k.kind==="seal"?"🧊 Seal package":"🔩 Hardware kit")+' — '+esc(k.name)+' <span class="note">rev '+k.rev+'</span></summary>'+
+    (k.lines||[]).map(l=>'<div style="font-size:13px;padding:2px 0 2px 6px">'+esc(l.name)+(l.code?' <span class="note">'+esc(l.code)+'</span>':'')+' — <b>'+l.qty+(l.unit&&l.unit!=="ea"?" "+l.unit:"")+'</b></div>').join("")+
+    (k.note?'<div class="note" style="padding:3px 6px">'+esc(k.note)+'</div>':'')+'</details>').join("");
+}
 async function loadTrav(){
   const r=await pub({action:"trav_view"});
   if(!r.ok){ $("travwrap").innerHTML='<p class="note">'+esc(r.error||"failed")+'</p>'; return; }
@@ -215,6 +223,7 @@ async function loadTrav(){
     const ss=steps.filter(s=>s.traveler_id===t.id);
     const done=ss.filter(s=>["done","na"].includes(s.status)).length;
     return '<div class="card" style="margin:10px 0"><b style="font-size:17px">'+esc(t.name)+'</b> <span class="note">'+done+'/'+ss.length+(t.worker?' · '+esc(t.worker):'')+'</span>'+
+    travKitBlock(t,r.kits)+
     ss.map(s=>'<div style="display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #eee">'+
       '<button style="min-width:52px;min-height:44px;font-size:22px;border-radius:10px;border:1.5px solid #ccc;background:'+(s.status==="done"?"#e7f3ec":"#fff")+'" onclick="travStep(\''+s.id+'\','+(s.status==="done"?"false":"true")+')">'+(s.status==="done"?"✅":"◻")+'</button>'+
       '<span style="flex:1;font-size:15px'+(s.status==="done"?';opacity:.5':'')+'">'+esc(s.text)+'</span>'+
