@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 3.4 (2026-08-16)  ·  PUBLIC (station token)
+  TR FINAL SOLUTION — Shop Floor 3.5 (2026-08-16)  ·  PUBLIC (station token)
   3.1 adds the MEDIA tab: pick a job, shoot the WALKAROUND video before
   paint (the shop's sign-off + documentation) or the INSTALL photos and
   video ("the doors sell themselves when people see them move").
@@ -210,8 +210,8 @@ function tab(t){ TAB=t;
 function travKitBlock(t,kits){
   const mine=(kits||[]).filter(k=>t.job_id&&k.job_id===t.job_id);
   if(!mine.length)return "";
-  const LBL={hw:"🔩 Hardware kit",seal:"🧊 Seal package",casing_int:"🪵 Interior casing",casing_ext:"🌦 Exterior casing"};
-  const ORD={hw:0,seal:1,casing_int:2,casing_ext:3};
+  const LBL={hw:"🔩 Hardware kit",seal:"🧊 Seal package",casing_int:"🪵 Interior casing",casing_ext:"🌦 Exterior casing",lumber:"🪚 Cladding lumber cutlist"};
+  const ORD={hw:0,seal:1,casing_int:2,casing_ext:3,lumber:4};
   mine.sort((a,b)=>(ORD[a.kind??"hw"]??9)-(ORD[b.kind??"hw"]??9));
   return mine.map(k=>'<details style="margin:6px 0;background:#faf8f4;border:1px solid #e8e2d6;border-radius:10px;padding:6px 10px">'+
     '<summary style="font-size:14px;font-weight:600;cursor:pointer">'+(LBL[k.kind??"hw"]||"🔩 Package")+' — '+esc(k.name)+' <span class="note">rev '+k.rev+'</span></summary>'+
