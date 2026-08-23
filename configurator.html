@@ -79,10 +79,11 @@ aside p.sub{margin:0 0 18px;font-size:12.5px;color:var(--mfg)}
       src="bifold_16ft_3L3R.glb"
       alt="Bifold garage door, 16 ft, six panels"
       camera-controls interaction-prompt="none"
-      shadow-intensity="1.1" shadow-softness="0.9"
-      exposure="1.0" environment-image="neutral"
-      camera-orbit="18deg 78deg 620in" min-camera-orbit="auto 20deg auto"
-      max-camera-orbit="auto 92deg auto" field-of-view="26deg"
+      shadow-intensity="1.4" shadow-softness="0.7"
+      exposure="1.15" environment-image="neutral"
+      camera-orbit="22deg 74deg 115%" min-camera-orbit="auto 15deg auto"
+      max-camera-orbit="auto 92deg auto" field-of-view="30deg"
+      tone-mapping="neutral" min-field-of-view="12deg"
       animation-name="Fold" pause>
     </model-viewer>
     <div class="ctl">
@@ -128,8 +129,13 @@ let dur = 2, playing = false, dir = 1;
 mv.addEventListener('load', () => {
   const names = mv.availableAnimations || [];
   if (names.length) { mv.animationName = names[0]; }
-  dur = mv.duration || 2;
+  // The mixer has to be ENGAGED before currentTime does anything: model-viewer
+  // creates the animation action lazily on the first play(). Setting
+  // currentTime straight after load looked like it worked -- the slider moved,
+  // the percentage updated -- and the door never budged.
+  mv.play({repetitions: 1});
   mv.pause();
+  dur = mv.duration || 2;
   mv.currentTime = 0;
   pick('wood_walnut', true);
 });
@@ -138,6 +144,9 @@ function setFold(p) {
   fold.value = p;
   pct.textContent = Math.round(p) + '%';
   mv.currentTime = (p / 100) * dur;
+  // Nudge the renderer: a paused model-viewer will not redraw on a
+  // currentTime change by itself.
+  mv.dispatchEvent(new CustomEvent('camera-change'));
 }
 fold.addEventListener('input', () => { playing = false; play.textContent = 'Open';
   mv.pause(); setFold(+fold.value); });
