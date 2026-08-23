@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bifolded Families — Live 3D</title>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Chivo+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#1a1a1a;--fg:#f5f5f5;--card:#1f1f1f;--muted:#262626;--mfg:#8c8c8c;
+ --bd:#333;--acc:#a98b66;--accd:#6d5842;--r:.25rem;
+ --ui:"Archivo","Helvetica Neue",Arial,sans-serif;--num:"Chivo Mono",monospace}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;
+ display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+header{border-bottom:1px solid var(--bd)}
+header .in{max-width:1500px;margin:0 auto;padding:0 22px;height:54px;display:flex;align-items:center}
+.brand{font-weight:600;letter-spacing:.16em;text-transform:uppercase;font-size:14px}
+.brand span{color:var(--acc)}
+header em{font-style:normal;margin-left:auto;font-size:11px;letter-spacing:.16em;
+ text-transform:uppercase;color:var(--mfg)}
+main{flex:1;display:grid;grid-template-columns:212px 1fr 252px;min-height:0;
+ max-width:1500px;width:100%;margin:0 auto}
+@media(max-width:980px){main{grid-template-columns:1fr;grid-template-rows:auto 56vh auto}}
+nav.fams{border-right:1px solid var(--bd);overflow-y:auto;padding:16px 12px;background:var(--card)}
+nav.fams h2, aside h2{margin:0 0 10px;font-size:10px;letter-spacing:.2em;
+ text-transform:uppercase;color:var(--mfg);font-weight:500}
+.fam{display:block;width:100%;text-align:left;font-family:inherit;color:var(--mfg);
+ background:var(--muted);border:1px solid var(--bd);border-radius:var(--r);
+ padding:10px 12px;margin-bottom:7px;cursor:pointer}
+.fam b{display:block;font-size:12.5px;font-weight:500;color:var(--fg)}
+.fam span{font-size:10.5px}
+.fam:hover{border-color:var(--accd)}
+.fam.on{border-color:var(--acc);background:#2a251e}
+.fam.on b{color:var(--acc)}
+.stage{position:relative;min-height:0;background:radial-gradient(ellipse at 50% 40%,#242424,#161616 72%)}
+model-viewer{width:100%;height:100%;--progress-bar-color:#a98b66}
+.badge{position:absolute;left:18px;top:14px;z-index:3;pointer-events:none}
+.badge b{display:block;font-size:19px;font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+.badge span{display:block;margin-top:4px;font-size:11.5px;color:var(--mfg);font-family:var(--num)}
+.ctl{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:3;
+ display:flex;align-items:center;gap:12px;background:rgba(26,26,26,.92);
+ border:1px solid var(--bd);border-radius:var(--r);padding:9px 14px}
+.ctl label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mfg)}
+.ctl input[type=range]{width:170px;accent-color:var(--acc)}
+.btn{font-family:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+ font-weight:500;border-radius:var(--r);padding:8px 14px;cursor:pointer;
+ background:var(--acc);color:var(--bg);border:0}
+aside{border-left:1px solid var(--bd);overflow-y:auto;padding:16px 14px;background:var(--card)}
+aside h3{margin:14px 0 7px;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
+ color:var(--mfg);font-weight:500}
+aside h3:first-of-type{margin-top:0}
+aside .note{font-size:10px;color:#6a6a6a;margin:2px 0 6px}
+.sw{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font-family:inherit;
+ color:var(--mfg);background:transparent;border:1px solid transparent;border-radius:var(--r);
+ padding:4px 6px;cursor:pointer;font-size:12px}
+.sw i{flex:0 0 18px;height:18px;border-radius:3px;border:1px solid rgba(255,255,255,.18)}
+.sw:hover{background:var(--muted);color:var(--fg)}
+.sw.on{border-color:var(--acc);color:var(--acc);background:#2a251e}
+</style></head><body>
+<header><div class="in">
+ <div class="brand">Bi<span>Folded</span></div>
+ <em>Families &middot; live 3D &middot; staging</em>
+</div></header>
+<main>
+ <nav class="fams"><h2>Door family</h2><button class="fam" data-g="fam_rs_band" data-base="fin_white" type="button"><b>Paint-grade R&S</b><span>lite band, 3 lites</span></button><button class="fam" data-g="fam_rs_solid" data-base="fin_walnut" type="button"><b>Hardwood R&S</b><span>solid panels</span></button><button class="fam" data-g="fam_glasspanel" data-base="fin_white" type="button"><b>Glass + lower panel</b><span>Drexel geometry</span></button><button class="fam" data-g="fam_fullview" data-base="fin_tricorn" type="button"><b>Full-view glass R&S</b><span>all openings glass</span></button><button class="fam" data-g="fam_tb_flat" data-base="fin_tricorn" type="button"><b>TB — painted flat</b><span>torsion box slab</span></button><button class="fam" data-g="fam_tbclad_v" data-base="fin_cedar" type="button"><b>TB clad — vertical</b><span>T&G boards</span></button><button class="fam" data-g="fam_tbclad_h" data-base="fin_cedar" type="button"><b>TB clad — horizontal</b><span>T&G boards</span></button><button class="fam" data-g="fam_tbclad_louvre" data-base="fin_cedar" type="button"><b>TB clad — louvre</b><span>fixed blades</span></button></nav>
+ <div class="stage">
+  <div class="badge"><b id="bF">Paint-grade R&S</b><span id="bS"></span></div>
+  <model-viewer id="mv" src="fam_rs_band.glb"
+    alt="Bifolded door family" camera-controls interaction-prompt="none"
+    shadow-intensity="1.3" shadow-softness="0.8" exposure="0.85"
+    environment-image="neutral" tone-mapping="neutral"
+    camera-orbit="20deg 76deg 112%" min-camera-orbit="auto 15deg auto"
+    max-camera-orbit="auto 92deg auto" field-of-view="30deg"
+    animation-name="Fold" pause></model-viewer>
+  <div class="ctl">
+    <button class="btn" id="play" type="button">Open</button>
+    <label for="fold">Fold</label>
+    <input type="range" id="fold" min="0" max="100" value="0">
+    <span id="pct" style="font-family:var(--num);font-size:11.5px;color:var(--mfg);width:34px">0%</span>
+  </div>
+ </div>
+ <aside>
+  <h2>Finish — Dru's samples</h2>
+  <h3>Sampled paints</h3><button class="sw" data-v="fin_white" title="Vista OTS White — SBG / Tyler Pass" type="button"><i style="background:#f0ede3"></i><span>Vista OTS White</span></button><button class="sw" data-v="fin_swiss" title="BM Swiss Coffee — Tyler Pass" type="button"><i style="background:#edebdd"></i><span>BM Swiss Coffee</span></button><button class="sw" data-v="fin_whitetail" title="SW Whitetail — Kimmie" type="button"><i style="background:#eae6da"></i><span>SW Whitetail</span></button><button class="sw" data-v="fin_behrgrey" title="Behr Grey match — Living Waters int." type="button"><i style="background:#e0ded7"></i><span>Behr Grey match</span></button><button class="sw" data-v="fin_falgray" title="FAL 18296 Gray — McKinney" type="button"><i style="background:#877d6b"></i><span>FAL 18296 Gray</span></button><button class="sw" data-v="fin_portobello" title="Pella Portobello — DeLeers" type="button"><i style="background:#69604f"></i><span>Pella Portobello</span></button><button class="sw" data-v="fin_teal" title="Deep Teal — sample stack" type="button"><i style="background:#244867"></i><span>Deep Teal</span></button><button class="sw" data-v="fin_tricorn" title="SW Tricorn Black — Living Waters ext." type="button"><i style="background:#2f2f30"></i><span>SW Tricorn Black</span></button><button class="sw" data-v="fin_jet" title="RAL 9005 Jet Black — SBG / Kuznetsov" type="button"><i style="background:#0d0d10"></i><span>RAL 9005 Jet Black</span></button>
+  <h3>Stains</h3><button class="sw" data-v="fin_coffee" title="GF Coffee Bean — Abrahamsson (Okoume)" type="button"><i style="background:#3a2415"></i><span>GF Coffee Bean</span></button><button class="sw" data-v="fin_walnut" title="Walnut clear — hardwood R&S" type="button"><i style="background:#5d4331"></i><span>Walnut clear</span></button><button class="sw" data-v="fin_sapele" title="Sapele clear — approx — teak scan" type="button"><i style="background:#7a4a33"></i><span>Sapele clear</span></button><button class="sw" data-v="fin_birch" title="Birch clear — hardwood R&S" type="button"><i style="background:#d9bf98"></i><span>Birch clear</span></button><button class="sw" data-v="fin_cedar" title="Cedar — cladding" type="button"><i style="background:#a9714b"></i><span>Cedar</span></button><button class="sw" data-v="fin_shousugi" title="Shou Sugi (charred) — cladding" type="button"><i style="background:#1e1a17"></i><span>Shou Sugi (charred)</span></button>
+  <h3>Palette tones</h3>
+  <p class="note">screen colours — no sprayed sample yet</p><button class="sw" data-v="fin_oriental" title="Oriental Red — Oriental Red" type="button"><i style="background:#a8302a"></i><span>Oriental Red</span></button><button class="sw" data-v="fin_taupegrey" title="Taupe Grey — Taupe Grey" type="button"><i style="background:#8d857a"></i><span>Taupe Grey</span></button><button class="sw" data-v="fin_lightgrey" title="Light Grey — Light Grey" type="button"><i style="background:#d3d4d0"></i><span>Light Grey</span></button><button class="sw" data-v="fin_marine" title="Marine Blue — Marine Blue" type="button"><i style="background:#31597f"></i><span>Marine Blue</span></button><button class="sw" data-v="fin_sage" title="Sage Green — Sage Green" type="button"><i style="background:#93a184"></i><span>Sage Green</span></button><button class="sw" data-v="fin_ochre" title="Ochre — Ochre" type="button"><i style="background:#c8a464"></i><span>Ochre</span></button>
+ </aside>
+</main>
+<script>
+const LABEL={"fin_white": "Vista OTS White", "fin_swiss": "BM Swiss Coffee", "fin_whitetail": "SW Whitetail", "fin_behrgrey": "Behr Grey match", "fin_falgray": "FAL 18296 Gray", "fin_portobello": "Pella Portobello", "fin_teal": "Deep Teal", "fin_tricorn": "SW Tricorn Black", "fin_jet": "RAL 9005 Jet Black", "fin_coffee": "GF Coffee Bean", "fin_walnut": "Walnut clear", "fin_sapele": "Sapele clear", "fin_birch": "Birch clear", "fin_cedar": "Cedar", "fin_shousugi": "Shou Sugi (charred)", "fin_oriental": "Oriental Red", "fin_taupegrey": "Taupe Grey", "fin_lightgrey": "Light Grey", "fin_marine": "Marine Blue", "fin_sage": "Sage Green", "fin_ochre": "Ochre"};
+const mv=document.getElementById('mv');
+const fams=[...document.querySelectorAll('.fam')];
+const sws=[...document.querySelectorAll('.sw')];
+const fold=document.getElementById('fold'),pct=document.getElementById('pct'),
+      play=document.getElementById('play');
+let dur=2,playing=!1,dir=1,finish=null,famName='Paint-grade R&S';
+
+function frame(){mv.play({repetitions:1});mv.pause();}
+mv.addEventListener('load',()=>{
+  const a=mv.availableAnimations||[];if(a.length)mv.animationName=a[0];
+  frame();dur=mv.duration||2;mv.currentTime=(+fold.value/100)*dur;frame();
+  if(finish)apply(finish,!0);
+});
+function setFold(p){fold.value=p;pct.textContent=Math.round(p)+'%';
+  mv.currentTime=(p/100)*dur;frame();}
+fold.addEventListener('input',()=>{playing=!1;play.textContent='Open';setFold(+fold.value)});
+function tick(){if(!playing)return;let p=+fold.value+dir*1.7;
+  if(p>=100){p=100;playing=!1;play.textContent='Close';dir=-1}
+  if(p<=0){p=0;playing=!1;play.textContent='Open';dir=1}
+  setFold(p);requestAnimationFrame(tick)}
+play.addEventListener('click',()=>{
+  if(playing){playing=!1;play.textContent=dir>0?'Open':'Close';return}
+  dir=(+fold.value>=99)?-1:1;playing=!0;play.textContent='Stop';requestAnimationFrame(tick)});
+function apply(v,silent){finish=v;mv.variantName=v;
+  sws.forEach(s=>s.classList.toggle('on',s.dataset.v===v));
+  document.getElementById('bS').textContent=(LABEL[v]||v)+' \u00b7 16\u2032 \u00d7 8\u2032 \u00b7 3L / 3R';}
+sws.forEach(s=>s.addEventListener('click',()=>apply(s.dataset.v)));
+fams.forEach(f=>f.addEventListener('click',()=>{
+  fams.forEach(x=>x.classList.toggle('on',x===f));
+  famName=f.querySelector('b').textContent;
+  document.getElementById('bF').textContent=famName;
+  if(!finish)finish=f.dataset.base;
+  playing=!1;play.textContent='Open';fold.value=0;pct.textContent='0%';
+  mv.src=f.dataset.g+'.glb';
+}));
+fams[0].classList.add('on');apply('fin_white',!0);
+</script></body></html>
