@@ -80,7 +80,7 @@ aside p.sub{margin:0 0 18px;font-size:12.5px;color:var(--mfg)}
       alt="Bifold garage door, 16 ft, six panels"
       camera-controls interaction-prompt="none"
       shadow-intensity="1.4" shadow-softness="0.7"
-      exposure="1.15" environment-image="neutral"
+      exposure="0.82" environment-image="neutral"
       camera-orbit="22deg 74deg 115%" min-camera-orbit="auto 15deg auto"
       max-camera-orbit="auto 92deg auto" field-of-view="30deg"
       tone-mapping="neutral" min-field-of-view="12deg"
@@ -144,9 +144,12 @@ function setFold(p) {
   fold.value = p;
   pct.textContent = Math.round(p) + '%';
   mv.currentTime = (p / 100) * dur;
-  // Nudge the renderer: a paused model-viewer will not redraw on a
-  // currentTime change by itself.
-  mv.dispatchEvent(new CustomEvent('camera-change'));
+  // A paused model-viewer does not redraw when currentTime changes on its
+  // own -- the value updates, the picture does not. The rAF loop from the
+  // Open button hid this because it supplied frames; a single slider drag
+  // did not, so the door sat still at 32%. play()/pause() forces one frame.
+  mv.play({repetitions: 1});
+  mv.pause();
 }
 fold.addEventListener('input', () => { playing = false; play.textContent = 'Open';
   mv.pause(); setFold(+fold.value); });
