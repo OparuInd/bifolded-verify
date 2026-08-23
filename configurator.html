@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bifolded Configurator</title>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Chivo+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#1a1a1a;--fg:#f5f5f5;--card:#1f1f1f;--muted:#262626;--mfg:#8c8c8c;
+ --sec:#2e2e2e;--bd:#333;--acc:#a98b66;--accd:#6d5842;--r:.25rem;
+ --ui:"Archivo","Helvetica Neue",Arial,sans-serif;--num:"Chivo Mono",monospace;}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;
+ -webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+header{border-bottom:1px solid var(--bd);flex:0 0 auto}
+header .in{max-width:1400px;margin:0 auto;padding:0 22px;height:56px;display:flex;
+ align-items:center;gap:18px}
+.brand{font-weight:600;letter-spacing:.16em;text-transform:uppercase;font-size:14px}
+.brand span{color:var(--acc)}
+header em{font-style:normal;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+ color:var(--mfg);margin-left:auto}
+main{flex:1 1 auto;display:grid;grid-template-columns:1fr 320px;min-height:0;
+ max-width:1400px;width:100%;margin:0 auto}
+@media(max-width:900px){main{grid-template-columns:1fr;grid-template-rows:1fr auto}}
+.stage{position:relative;min-height:0;background:
+ radial-gradient(ellipse at 50% 42%,#242424 0%,#171717 70%)}
+model-viewer{width:100%;height:100%;--progress-bar-color:#a98b66;background:transparent}
+.badge{position:absolute;left:20px;top:16px;z-index:3;pointer-events:none}
+.badge b{display:block;font-size:22px;font-weight:500;letter-spacing:.1em;
+ text-transform:uppercase;line-height:1}
+.badge span{display:block;margin-top:6px;font-size:12px;color:var(--mfg);font-family:var(--num)}
+.hint{position:absolute;right:20px;bottom:16px;z-index:3;font-size:11px;color:#5f5f5f;
+ letter-spacing:.1em;text-transform:uppercase;pointer-events:none}
+.ctl{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;z-index:3;
+ display:flex;align-items:center;gap:14px;background:rgba(26,26,26,.9);
+ border:1px solid var(--bd);border-radius:var(--r);padding:10px 16px;backdrop-filter:blur(6px)}
+.ctl label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mfg)}
+.ctl input[type=range]{width:200px;accent-color:var(--acc)}
+.btn{font-family:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+ font-weight:500;border-radius:var(--r);padding:8px 15px;cursor:pointer;
+ background:var(--acc);color:var(--bg);border:0}
+.btn:hover{background:#bf9d74}
+.btn.g{background:transparent;color:var(--mfg);border:1px solid var(--bd)}
+.btn.g:hover{color:var(--fg);border-color:var(--accd)}
+aside{border-left:1px solid var(--bd);overflow-y:auto;padding:20px 18px 40px;background:var(--card)}
+@media(max-width:900px){aside{border-left:0;border-top:1px solid var(--bd);max-height:44vh}}
+aside h2{margin:0 0 2px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:500}
+aside p.sub{margin:0 0 18px;font-size:12.5px;color:var(--mfg)}
+.grp{margin-bottom:20px}
+.grp h3{margin:0 0 9px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+ color:var(--mfg);font-weight:500;display:flex;justify-content:space-between}
+.grp h3 span{color:#5f5f5f}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:inherit;font-size:12px;color:var(--mfg);background:var(--muted);
+ border:1px solid var(--bd);border-radius:var(--r);padding:7px 11px;cursor:pointer;
+ transition:background .15s,border-color .15s,color .15s}
+.chip:hover{color:var(--fg);border-color:var(--accd)}
+.chip.on{background:#2a251e;border-color:var(--acc);color:var(--acc)}
+.chip:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.spec{margin-top:22px;border-top:1px solid var(--bd);padding-top:14px;
+ font-family:var(--num);font-size:12px;color:var(--mfg);line-height:1.9}
+.spec b{color:var(--fg);font-weight:500}
+.note{margin-top:14px;padding-left:12px;border-left:2px solid var(--accd);
+ font-size:12px;color:var(--mfg);line-height:1.5}
+</style></head><body>
+
+<header><div class="in">
+  <div class="brand">Bi<span>Folded</span></div>
+  <em>Live configurator &middot; prototype</em>
+</div></header>
+
+<main>
+  <div class="stage">
+    <div class="badge"><b id="bName">Walnut</b><span id="bSpec">wood &middot; 16&prime;-0&Prime; &times; 8&prime;-0&Prime; &middot; 6-panel 3L / 3R</span></div>
+    <model-viewer id="mv"
+      src="bifold_16ft_3L3R.glb"
+      alt="Bifold garage door, 16 ft, six panels"
+      camera-controls interaction-prompt="none"
+      shadow-intensity="1.1" shadow-softness="0.9"
+      exposure="1.0" environment-image="neutral"
+      camera-orbit="18deg 78deg 620in" min-camera-orbit="auto 20deg auto"
+      max-camera-orbit="auto 92deg auto" field-of-view="26deg"
+      animation-name="Fold" pause>
+    </model-viewer>
+    <div class="ctl">
+      <button class="btn" id="play" type="button">Open</button>
+      <label for="fold">Fold</label>
+      <input type="range" id="fold" min="0" max="100" value="0">
+      <span id="pct" style="font-family:var(--num);font-size:12px;color:var(--mfg);width:38px">0%</span>
+    </div>
+    <div class="hint">Drag to orbit &middot; scroll to zoom</div>
+  </div>
+
+  <aside>
+    <h2>Cladding finish</h2>
+    <p class="sub">All 43 finishes, live on the model. Nothing here is a photograph.</p>
+<section class="grp"><h3>Wood <span>7</span></h3><div class="chips"><button class="chip" data-v="wood_ash" type="button" role="tab" aria-selected="false">Ash</button><button class="chip" data-v="wood_cedar" type="button" role="tab" aria-selected="false">Cedar</button><button class="chip" data-v="wood_maple" type="button" role="tab" aria-selected="false">White Maple</button><button class="chip" data-v="wood_oak" type="button" role="tab" aria-selected="false">White Oak</button><button class="chip" data-v="wood_teak" type="button" role="tab" aria-selected="false">Teak</button><button class="chip" data-v="wood_walnut" type="button" role="tab" aria-selected="false">Walnut</button><button class="chip" data-v="wood_walnut_dark" type="button" role="tab" aria-selected="false">Walnut, Dark Stain</button></div></section>
+<section class="grp"><h3>Metal <span>16</span></h3><div class="chips"><button class="chip" data-v="aluminum_matte_black" type="button" role="tab" aria-selected="false">Matte Black Aluminium</button><button class="chip" data-v="metal_acm_panel" type="button" role="tab" aria-selected="false">ACM Panel (PVDF)</button><button class="chip" data-v="metal_anodized_black" type="button" role="tab" aria-selected="false">Anodised Black</button><button class="chip" data-v="metal_anodized_bronze" type="button" role="tab" aria-selected="false">Anodised Bronze</button><button class="chip" data-v="metal_anodized_clear" type="button" role="tab" aria-selected="false">Anodised Clear</button><button class="chip" data-v="metal_antiqued_steel" type="button" role="tab" aria-selected="false">Antiqued Steel</button><button class="chip" data-v="metal_blackened_steel" type="button" role="tab" aria-selected="false">Blackened Steel</button><button class="chip" data-v="metal_brass_satin" type="button" role="tab" aria-selected="false">Satin Brass</button><button class="chip" data-v="metal_brushed_aluminum" type="button" role="tab" aria-selected="false">Brushed Aluminium</button><button class="chip" data-v="metal_copper_patina" type="button" role="tab" aria-selected="false">Patinated Copper</button><button class="chip" data-v="metal_corten" type="button" role="tab" aria-selected="false">Corten</button><button class="chip" data-v="metal_polished_stainless" type="button" role="tab" aria-selected="false">Polished Stainless</button><button class="chip" data-v="metal_satin_stainless" type="button" role="tab" aria-selected="false">Satin Stainless</button><button class="chip" data-v="metal_steel_hot_rolled" type="button" role="tab" aria-selected="false">Hot-Rolled (mill scale)</button><button class="chip" data-v="steel_brushed" type="button" role="tab" aria-selected="false">Brushed Steel</button><button class="chip" data-v="steel_hot_rolled" type="button" role="tab" aria-selected="false">Hot-Rolled (textured)</button></div></section>
+<section class="grp"><h3>Stone <span>9</span></h3><div class="chips"><button class="chip" data-v="stone_concrete_cast" type="button" role="tab" aria-selected="false">Board-Formed Concrete</button><button class="chip" data-v="stone_ledgestone" type="button" role="tab" aria-selected="false">Ledgestone</button><button class="chip" data-v="stone_limestone" type="button" role="tab" aria-selected="false">Limestone</button><button class="chip" data-v="stone_limestone_pale" type="button" role="tab" aria-selected="false">Pale Limestone</button><button class="chip" data-v="stone_marble_calacatta" type="button" role="tab" aria-selected="false">Calacatta Gold</button><button class="chip" data-v="stone_marble_carrara" type="button" role="tab" aria-selected="false">Carrara</button><button class="chip" data-v="stone_marble_nero" type="button" role="tab" aria-selected="false">Nero Marquina</button><button class="chip" data-v="stone_marble_thassos" type="button" role="tab" aria-selected="false">Thassos White</button><button class="chip" data-v="stone_travertine" type="button" role="tab" aria-selected="false">Travertine</button></div></section>
+<section class="grp"><h3>Glass <span>8</span></h3><div class="chips"><button class="chip" data-v="glass_bamboo_reed" type="button" role="tab" aria-selected="false">Bamboo Reed</button><button class="chip" data-v="glass_frosted" type="button" role="tab" aria-selected="false">Frosted</button><button class="chip" data-v="glass_reeded" type="button" role="tab" aria-selected="false">Reeded</button><button class="chip" data-v="glass_reeded_heavy" type="button" role="tab" aria-selected="false">Heavy Reeded</button><button class="chip" data-v="glass_satin_etched" type="button" role="tab" aria-selected="false">Satin Etched</button><button class="chip" data-v="glass_clear" type="button" role="tab" aria-selected="false">Clear</button><button class="chip" data-v="glass_low_iron" type="button" role="tab" aria-selected="false">Low-Iron</button><button class="chip" data-v="glass_smoked" type="button" role="tab" aria-selected="false">Smoked</button></div></section>
+<section class="grp"><h3>Paint <span>3</span></h3><div class="chips"><button class="chip" data-v="paint_gloss" type="button" role="tab" aria-selected="false">Gloss</button><button class="chip" data-v="paint_matte" type="button" role="tab" aria-selected="false">Matte</button><button class="chip" data-v="paint_satin" type="button" role="tab" aria-selected="false">Satin</button></div></section>
+    <div class="spec">
+      Selected: <b id="sName">Walnut</b><br>
+      Family: <b id="sFam">Wood</b><br>
+      Opening: <b>16&prime;-0&Prime; &times; 8&prime;-0&Prime;</b><br>
+      Panels: <b>6 &middot; 3L / 3R</b><br>
+      Swing: <b>Outswing</b>
+    </div>
+    <p class="note">Prototype: the finish axis and the fold are live. Panel count,
+    cladding style and the cast-stone surround are geometry, not materials, so they
+    need their own models &mdash; that is the next build.</p>
+  </aside>
+</main>
+
+<script>
+const LABEL = {"aluminum_matte_black": "Matte Black Aluminium", "glass_bamboo_reed": "Bamboo Reed", "glass_frosted": "Frosted", "glass_reeded": "Reeded", "glass_reeded_heavy": "Heavy Reeded", "glass_satin_etched": "Satin Etched", "metal_acm_panel": "ACM Panel (PVDF)", "metal_anodized_black": "Anodised Black", "metal_anodized_bronze": "Anodised Bronze", "metal_anodized_clear": "Anodised Clear", "metal_antiqued_steel": "Antiqued Steel", "metal_blackened_steel": "Blackened Steel", "metal_brass_satin": "Satin Brass", "metal_brushed_aluminum": "Brushed Aluminium", "metal_copper_patina": "Patinated Copper", "metal_corten": "Corten", "metal_polished_stainless": "Polished Stainless", "metal_satin_stainless": "Satin Stainless", "metal_steel_hot_rolled": "Hot-Rolled (mill scale)", "paint_gloss": "Gloss", "paint_matte": "Matte", "paint_satin": "Satin", "steel_brushed": "Brushed Steel", "steel_hot_rolled": "Hot-Rolled (textured)", "stone_concrete_cast": "Board-Formed Concrete", "stone_ledgestone": "Ledgestone", "stone_limestone": "Limestone", "stone_limestone_pale": "Pale Limestone", "stone_marble_calacatta": "Calacatta Gold", "stone_marble_carrara": "Carrara", "stone_marble_nero": "Nero Marquina", "stone_marble_thassos": "Thassos White", "stone_travertine": "Travertine", "wood_ash": "Ash", "wood_cedar": "Cedar", "wood_maple": "White Maple", "wood_oak": "White Oak", "wood_teak": "Teak", "wood_walnut": "Walnut", "wood_walnut_dark": "Walnut, Dark Stain", "glass_clear": "Clear", "glass_low_iron": "Low-Iron", "glass_smoked": "Smoked"};
+const FAM = {"aluminum_matte_black": "Metal", "glass_bamboo_reed": "Glass", "glass_frosted": "Glass", "glass_reeded": "Glass", "glass_reeded_heavy": "Glass", "glass_satin_etched": "Glass", "metal_acm_panel": "Metal", "metal_anodized_black": "Metal", "metal_anodized_bronze": "Metal", "metal_anodized_clear": "Metal", "metal_antiqued_steel": "Metal", "metal_blackened_steel": "Metal", "metal_brass_satin": "Metal", "metal_brushed_aluminum": "Metal", "metal_copper_patina": "Metal", "metal_corten": "Metal", "metal_polished_stainless": "Metal", "metal_satin_stainless": "Metal", "metal_steel_hot_rolled": "Metal", "paint_gloss": "Paint", "paint_matte": "Paint", "paint_satin": "Paint", "steel_brushed": "Metal", "steel_hot_rolled": "Metal", "stone_concrete_cast": "Stone", "stone_ledgestone": "Stone", "stone_limestone": "Stone", "stone_limestone_pale": "Stone", "stone_marble_calacatta": "Stone", "stone_marble_carrara": "Stone", "stone_marble_nero": "Stone", "stone_marble_thassos": "Stone", "stone_travertine": "Stone", "wood_ash": "Wood", "wood_cedar": "Wood", "wood_maple": "Wood", "wood_oak": "Wood", "wood_teak": "Wood", "wood_walnut": "Wood", "wood_walnut_dark": "Wood", "glass_clear": "Glass", "glass_low_iron": "Glass", "glass_smoked": "Glass"};
+const mv = document.getElementById('mv');
+const chips = [...document.querySelectorAll('.chip')];
+const fold = document.getElementById('fold');
+const pct = document.getElementById('pct');
+const play = document.getElementById('play');
+let dur = 2, playing = false, dir = 1;
+
+mv.addEventListener('load', () => {
+  const names = mv.availableAnimations || [];
+  if (names.length) { mv.animationName = names[0]; }
+  dur = mv.duration || 2;
+  mv.pause();
+  mv.currentTime = 0;
+  pick('wood_walnut', true);
+});
+
+function setFold(p) {
+  fold.value = p;
+  pct.textContent = Math.round(p) + '%';
+  mv.currentTime = (p / 100) * dur;
+}
+fold.addEventListener('input', () => { playing = false; play.textContent = 'Open';
+  mv.pause(); setFold(+fold.value); });
+
+function tick() {
+  if (!playing) return;
+  let p = +fold.value + dir * 1.6;
+  if (p >= 100) { p = 100; playing = false; play.textContent = 'Close'; dir = -1; }
+  if (p <= 0)   { p = 0;   playing = false; play.textContent = 'Open';  dir = 1; }
+  setFold(p);
+  requestAnimationFrame(tick);
+}
+play.addEventListener('click', () => {
+  if (playing) { playing = false; mv.pause(); play.textContent = dir > 0 ? 'Open' : 'Close'; return; }
+  dir = (+fold.value >= 99) ? -1 : 1;
+  playing = true; play.textContent = 'Stop';
+  mv.pause();
+  requestAnimationFrame(tick);
+});
+
+function pick(name, silent) {
+  mv.variantName = name;
+  chips.forEach(c => {
+    const on = c.dataset.v === name;
+    c.classList.toggle('on', on);
+    c.setAttribute('aria-selected', on ? 'true' : 'false');
+    if (on && !silent) c.scrollIntoView({block:'nearest'});
+  });
+  const label = LABEL[name] || name;
+  document.getElementById('bName').textContent = label;
+  document.getElementById('sName').textContent = label;
+  document.getElementById('sFam').textContent = FAM[name];
+  document.getElementById('bSpec').textContent =
+    FAM[name].toLowerCase() + ' \u00b7 16\u2032-0\u2033 \u00d7 8\u2032-0\u2033 \u00b7 6-panel 3L / 3R';
+}
+chips.forEach(c => c.addEventListener('click', () => pick(c.dataset.v)));
+</script>
+</body></html>
