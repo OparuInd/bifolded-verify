@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuro — Yakisugi Bifold | Tungsten Royce</title>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<style>
+  :root { --red:#942E2C; --ink:#111; --grey:#6b6b6b; --rule:#d9d4cf; --paper:#faf9f7; }
+  html,body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { display:flex; align-items:baseline; justify-content:space-between; padding:18px 28px 10px; border-bottom:2px solid var(--red); }
+  header h1 { margin:0; font-size:20px; letter-spacing:.02em; }
+  header small { color:var(--grey); }
+  main { display:grid; grid-template-columns: 1fr 300px; gap:24px; padding:20px 28px; max-width:1400px; margin:0 auto; }
+  model-viewer { width:100%; height:68vh; min-height:420px; background:#e9e6e0; border:1px solid var(--rule); border-radius:4px; }
+  aside h2 { font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--red); margin:6px 0 10px; }
+  .sw { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .sw button { display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:6px; border:1px solid var(--rule); background:#fff; border-radius:4px; cursor:pointer; text-align:left; }
+  .sw button.on { outline:2px solid var(--red); }
+  .sw span.chip { width:100%; height:44px; border-radius:3px; background-size:cover; background-position:center; }
+  .sw b { font-size:12px; } .sw i { font-style:normal; font-size:11px; color:var(--grey); }
+  .fold { margin-top:18px; }
+  .fold input { width:100%; }
+  .note { font-size:12px; color:var(--grey); margin-top:16px; border-top:1px solid var(--rule); padding-top:10px; }
+  @media (max-width:900px){ main{grid-template-columns:1fr} model-viewer{height:52vh} }
+</style>
+</head>
+<body>
+<header>
+  <h1>KURO 黒 — Yakisugi bifold <small>· Nakamoto Forestry charred Japanese cedar, 1×6 vertical, 16 ft 2L+2R</small></h1>
+  <small>Tungsten Royce · Bifolded</small>
+</header>
+<main>
+  <model-viewer id="mv" src="fam_kuro_v.glb" camera-controls shadow-intensity="0.7" exposure="1.0"
+     environment-image="neutral" camera-orbit="-20deg 82deg 105%" min-camera-orbit="auto auto 60%" max-camera-orbit="auto auto 200%"
+     animation-name="Fold" interaction-prompt="none" alt="Kuro yakisugi bifold door"></model-viewer>
+  <aside>
+    <h2>Finish</h2>
+    <div class="sw" id="sw"></div>
+    <div class="fold">
+      <h2>Fold</h2>
+      <input id="fold" type="range" min="0" max="1000" value="0">
+    </div>
+    <p class="note">Textures are derived from a cedar scan until yakisugi boards are scanned; colour is matched to the Nakamoto swatch mean. Patina 0 = colourfast, 10 = weathers within seasons — this shows day one.</p>
+  </aside>
+</main>
+<script>
+const VARIANTS = [
+  ["nk_pika_alkyd_lightgray","Kuro · Pika-Pika Light Gray","#a8a8a8","alkyd · patina 2 · LIVE line"],
+  ["nk_gendai_alkyd_black","Gendai Black","#232323","alkyd · patina 2"],
+  ["nk_gendai_alkyd_darkgray","Gendai Dark Gray","#353535","alkyd · patina 2"],
+  ["nk_gendai_alkyd_natural","Gendai Natural","#3f362e","alkyd · patina 4"],
+  ["nk_gendai_weathering_silver","Gendai Silver","#817970","weathering stain · patina 9"],
+  ["nk_pika_alkyd_black","Pika-Pika Black","#232323","alkyd · patina 2"],
+  ["nk_pika_alkyd_natural","Pika-Pika Natural","#71472b","alkyd · patina 5"],
+  ["nk_pika_alkyd_white","Pika-Pika White","#c9c1b6","alkyd · patina 2"],
+  ["nk_suyaki_tung_black","Suyaki Tung Oil Black","#2d2d2d","unbrushed soot · low-touch"],
+  ["nk_sugi_flat_unoiled","Sugi, unoiled","#b38d6d","uncharred · WUI listed"],
+];
+const mv = document.getElementById('mv'), sw = document.getElementById('sw');
+let current = VARIANTS[0][0];
+function draw(){ sw.innerHTML = VARIANTS.map(([k,n,hex,sub]) =>
+  `<button data-k="${k}" class="${k===current?'on':''}"><span class="chip" style="background:${hex}"></span><b>${n}</b><i>${sub}</i></button>`).join(''); }
+draw();
+sw.addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return; current = b.dataset.k; setVariant(current); draw(); });
+function setVariant(name){
+  // KHR_materials_variants: names are the finish keys; fall back to the material-name match.
+  const names = mv.availableVariants || [];
+  const hit = names.find(v => v === name) || names.find(v => v.includes(name));
+  if (hit) mv.variantName = hit;
+}
+mv.addEventListener('load', () => {
+  setVariant(current);
+  // engage the mixer so currentTime has effect, then pause at closed
+  mv.play(); mv.pause(); mv.currentTime = 0;
+});
+const fold = document.getElementById('fold');
+fold.addEventListener('input', () => {
+  const d = mv.duration || 0; if (!d) return;
+  // the Fold cycle is closed -> open -> hold -> closed; map 0..1 onto the opening half
+  mv.currentTime = (fold.value/1000) * d * 0.4;
+  mv.play(); mv.pause();
+});
+</script>
+</body>
+</html>
