@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 1.4</title>
+<title>Tungsten Royce — Input Desk 1.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
-     TR INPUT DESK 1.4 (lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
+     TR INPUT DESK 1.5 (part #: quick reference fast0001 + the box's mfg part number, two fields; 1.4 lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
      Dru's desk. Ryan, verbatim: "a functional Input app that presents the data required in a clear and
      concise manner … separated out by category … shows a sample of what he's looking for if it's an
      inventory item. If that sample photo does not exist, then an option to capture a picture, which
@@ -122,12 +122,12 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 [data-theme=light] .src .jh{background:#efeae2!important}[data-theme=light] .ocr{background:#faf8f4!important}
 .themebtn{border:1px solid var(--line2);background:transparent;color:var(--mute);border-radius:var(--r);padding:4px 8px;font-size:13px;min-height:0;flex:0 0 auto;cursor:pointer;line-height:1}
 .vt{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px}.vt td{padding:4px 6px;border-top:1px solid var(--line)}.vt tr.pref td{color:var(--bronze2)}
-.lines input.ln{width:150px}.lines select{max-width:150px}
+.lines input.ln{width:118px}.lines select{max-width:116px}.lines input.lp{width:86px}.lines input.lq{width:44px!important}.lines input.lc{width:64px!important}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><h1>Input Desk</h1><span class="v">1.4</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><h1>Input Desk</h1><span class="v">1.5</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts → inventory</button></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -299,7 +299,7 @@ function renderWork(r){
   $("rcWork").innerHTML=`<div class="panel"><div class="work"><div>${r.image_url?`<img src="${r.image_url}" style="width:100%;border-radius:3px;background:#000">`:`<div style="height:180px;border:1px dashed var(--line2);border-radius:3px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--mute)"><span class="flag">⚑ no scan</span><button class="sm" onclick="attachScan('${r.id}')">📷 add the scan</button></div>`}<div style="display:flex;gap:6px;margin-top:8px"><button class="go" style="flex:1" onclick="runOcr('${r.id}')" ${r.image_url?"":"disabled"}>Read it (OCR)</button>${r.id==="new"?`<button class="sm" onclick="scanPaper()" title="retake">📷 Retake</button>`:""}</div><div class="prog"><i id="ocrBar" style="width:0"></i></div><div class="hint" id="ocrMsg"></div></div>
     <div>${r.id==="new"?`<div class="kindsel" id="kindsel">${[["receipt","Receipt"],["invoice","Vendor invoice"],["packing_slip","Packing slip"],["other","Other paper"]].map(([k,l])=>`<span class="${(KIND||"receipt")===k?"on":""}" data-k="${k}" onclick="setKind('${k}')">${l}</span>`).join("")}</div>`:""}<div class="f3"><div class="f"><label>Store / vendor</label>${vsel}<input id="r_store" value="${esc(r.store||"")}" placeholder="branch" style="margin-top:4px"></div><div class="f"><label>Date</label><input id="r_date" type="date" value="${r.bought_at||""}"></div><div class="f"><label>Total <i id="totFlag" style="color:var(--warn);font-style:normal">${r.total?"":"⚑ none"}</i></label><input id="r_total" inputmode="decimal" value="${r.total?r.total:""}" oninput="$('totFlag').textContent=this.value?'':'⚑ none'"></div></div>
     <div style="display:flex;gap:8px;margin:2px 0 8px"><button class="sm ok" onclick="saveHeader('${r.id}')">${r.id==="new"?"Save receipt":"Save changes"}</button></div>
-    <div class="tblwrap"><table class="lines" id="lines"><tr><th>Line</th><th>Qty</th><th>Each</th><th>Category</th><th>Item · code</th><th>Stock</th><th></th></tr></table></div>
+    <div class="tblwrap"><table class="lines" id="lines"><tr><th>Line</th><th>Qty</th><th>Each</th><th>Category</th><th>Item · code</th><th>Part #</th><th>Stock</th><th></th></tr></table></div>
     <div style="display:flex;gap:8px;margin-top:8px"><button class="sm" onclick="addLine()">+ line</button><span style="flex:1"></span><button class="go" onclick="saveLines('${r.id}')">Save lines to inventory</button></div>
     
     <div class="ocr" id="ocrText" style="margin-top:10px">${esc(r.ocr_text||"")}</div></div></div></div>`;
@@ -320,11 +320,11 @@ function linesFromText(t){
   for(const s of lines){ if(/sub ?total|total|tax|visa|master|change|cash|tender|balance|approved|thank|receipt|store|^\d{3}-\d{3}/i.test(s))continue; const m=s.match(/^(.*?)(?:\s+(\d+)\s*(?:@|x)\s*)?\s*\$?(\d+[.,]\d{2})\s*[A-Z]?\s*$/); if(!m)continue; const name=m[1].replace(/[^\w\s\/"'#.-]/g," ").replace(/\s+/g," ").trim(); if(name.length<3)continue; addLine({name,qty:m[2]||1,each:m[3].replace(",",".")}); }
 }
 const CATS=["fastener","hinge","pivot","track","roller","seal","adhesive","finish","lumber","sheet","glass","tooling","consumable","electrical","hardware","other"];
-function lineOpts(cat,sel){ return `<option value="">— new item —</option>`+ITEMS.filter(i=>!cat||(i.category||"other")===cat).map(i=>`<option value="${i.id}" ${sel===i.id?"selected":""}>${esc(i.inv_code?i.inv_code+" · ":"")}${esc(i.name)}</option>`).join(""); }
+function lineOpts(cat,sel){ return `<option value="">— new item —</option>`+ITEMS.filter(i=>!cat||(i.category||"other")===cat).map(i=>`<option value="${i.id}" ${sel===i.id?"selected":""}>${esc(i.inv_code?i.inv_code+" · ":"")}${esc(i.name)}${i.part_no?" · "+esc(i.part_no):""}</option>`).join(""); }
 function addLine(v={}){ const tb=$("lines"); const tr=document.createElement("tr"); tr.className="l";
   const guess=v.name?ITEMS.find(i=>i.name.toLowerCase().includes(v.name.toLowerCase().split(" ")[0])&&v.name.toLowerCase().split(" ")[0].length>3):null;
   const cat=guess?(guess.category||"other"):(v.category||"consumable");
-  tr.innerHTML=`<td><input class="ln" value="${esc(v.name||"")}"></td><td><input class="lq" value="${v.qty||1}" style="width:60px"></td><td><input class="lc" value="${v.each||""}" style="width:80px"></td><td><select class="lk" onchange="this.closest('tr').querySelector('.li').innerHTML=lineOpts(this.value,'')">${CATS.map(c=>`<option ${c===cat?"selected":""}>${c}</option>`).join("")}</select></td><td><select class="li">${lineOpts(cat,guess?guess.id:"")}</select></td><td style="text-align:center"><input type="checkbox" class="ls" checked></td><td><button class="sm ghost" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tr.innerHTML=`<td><input class="ln" value="${esc(v.name||"")}"></td><td><input class="lq" value="${v.qty||1}" style="width:60px"></td><td><input class="lc" value="${v.each||""}" style="width:80px"></td><td><select class="lk" onchange="this.closest('tr').querySelector('.li').innerHTML=lineOpts(this.value,'')">${CATS.map(c=>`<option ${c===cat?"selected":""}>${c}</option>`).join("")}</select></td><td><select class="li" onchange="const it=ITEMS.find(i=>i.id===this.value);const p=this.closest('tr').querySelector('.lp');if(it&&it.part_no){p.value=it.part_no}">${lineOpts(cat,guess?guess.id:"")}</select></td><td><input class="lp" value="${esc(v.part_no||(guess&&guess.part_no)||"")}" placeholder="mfg part #"></td><td style="text-align:center"><input type="checkbox" class="ls" checked></td><td><button class="sm ghost" onclick="this.closest('tr').remove()">✕</button></td>`;
   tb.appendChild(tr); }
 async function vendorPick(sel){ if(sel.value!=="__new") return; const name=(prompt("Vendor name")||"").trim(); if(!name){ sel.value=""; return; } try{ const j=await desk({action:"vendor_new",name}); VENDORS.push({id:j.id,name:j.name}); VENDORS.sort((a,b)=>a.name.localeCompare(b.name)); const o=document.createElement("option"); o.value=j.id; o.textContent=j.name; sel.insertBefore(o, sel.querySelector('option[value="__new"]')); sel.value=j.id; toast(j.existed?"already on the list":"vendor added"); }catch(e){ toast(e.message,true); sel.value=""; } }
 function vendorName(){ const s=$("r_vendor"); return s&&s.value&&s.value!=="__new"?s.options[s.selectedIndex].textContent:""; }
@@ -337,7 +337,7 @@ async function saveHeader(id){ try{ const vid=$("r_vendor").value; if(!vid||vid=
 let ATTACH=null;
 function attachScan(id){ ATTACH=id; $("rcFile").click(); }
 async function saveLines(id){
-  const lines=[...document.querySelectorAll("#lines tr.l")].map(tr=>({name:tr.querySelector(".ln").value.trim(),qty:+tr.querySelector(".lq").value||1,unit_cost:+String(tr.querySelector(".lc").value).replace(/[^0-9.]/g,""),item_id:tr.querySelector(".li").value||undefined,category:tr.querySelector(".lk").value,add_to_stock:tr.querySelector(".ls").checked})).filter(l=>l.name&&l.unit_cost>=0);
+  const lines=[...document.querySelectorAll("#lines tr.l")].map(tr=>({name:tr.querySelector(".ln").value.trim(),qty:+tr.querySelector(".lq").value||1,unit_cost:+String(tr.querySelector(".lc").value).replace(/[^0-9.]/g,""),item_id:tr.querySelector(".li").value||undefined,category:tr.querySelector(".lk").value,part_no:tr.querySelector(".lp").value.trim()||undefined,add_to_stock:tr.querySelector(".ls").checked})).filter(l=>l.name&&l.unit_cost>=0);
   if(!lines.length&&!(id==="new"&&(KIND==="packing_slip"||KIND==="other"))){toast("No lines to save.",true);return;}
   try{
     let rid=id;
