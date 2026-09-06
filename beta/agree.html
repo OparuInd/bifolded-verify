@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TR Agreement 2.0</title>
+<title>TR Agreement 2.1</title>
 <!--
   TR AGREEMENT 1.1 · Tungsten Royce · BY BIFOLDED
   Copyright Tungsten Royce. Proprietary.
@@ -330,6 +330,7 @@ function schedule(total){
    which is the number that decides whether this is an ordinary install or an
    afternoon of scribing.
 ============================================================================ */
+var SURVEYS=[];
 function surveyOf(o){ return o && o.survey ? o.survey : null }
 function anySurvey(){ return (D.openings||[]).some(o=>surveyOf(o)) }
 function readLaser(txt){
@@ -1071,14 +1072,17 @@ function renderPrep(){
   <div class="help" style="margin-top:12px">These are the openings as they stand today. Until a survey is attached, the
   agreement says plainly that they are tape figures — which is what stops a tape measure quietly becoming a promise.
   Attach the laser file and the same rows become measured, dated, and signed for.</div>
-  <div class="field" style="margin-top:18px"><label>Or paste a survey</label>
-    <textarea id="laserPaste" rows="2" placeholder="paste the contents of a laser file here, then choose which opening it belongs to"></textarea>
-    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <select id="laserTo" style="border:none;border-bottom:1px solid var(--rule);background:transparent;
-        font:var(--s1) var(--sans);padding:6px 2px;width:auto;max-width:16rem">
+  <div style="margin-top:22px"><p class="eyebrow" style="margin:0 0 8px">Laser surveys in the cloud</p>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <select id="laserPick" style="border:none;border-bottom:1px solid var(--rule);background:transparent;font:var(--s1) var(--sans);padding:6px 2px;width:auto;max-width:28rem">
+        ${(SURVEYS||[]).length?SURVEYS.map(v=>`<option value="${esc(v.id)}">${esc(v.date||String(v.at||"").slice(0,10))} · ${esc(v.site||"—")}${v.opening?" · "+esc(v.opening):""} · ${fmtIn(v.w)} × ${fmtIn(v.h)}${v.by_name?" · "+esc(v.by_name):""}</option>`).join(""):'<option value="">— none yet —</option>'}</select>
+      <span style="font-size:var(--s1);color:var(--soft)">→</span>
+      <select id="laserTo" style="border:none;border-bottom:1px solid var(--rule);background:transparent;font:var(--s1) var(--sans);padding:6px 2px;width:auto;max-width:16rem">
         ${D.openings.map((o,i)=>`<option value="${i}">${esc(o.nm)}</option>`).join("")}</select>
-      <button class="ghost" style="padding:10px 16px" onclick="importLaserPaste()">Attach it</button>
-      <span id="laserMsg" style="font-size:var(--s1);color:var(--soft)"></span></div></div>
+      <button class="ghost" style="padding:10px 16px" onclick="attachCloudSurvey()">Attach</button>
+      <button class="ghost" style="padding:10px 16px" onclick="loadSurveys(true)">↻</button>
+      <span id="laserMsg" style="font-size:var(--s1);color:var(--soft)"></span></div>
+    <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><textarea id="laserPaste" rows="1" style="max-width:26rem" placeholder="or paste a laser file"></textarea><button class="ghost" style="padding:7px 13px;font-size:var(--s0)" onclick="importLaserPaste()">Attach the paste</button></div></div>
 
   <hr><p class="eyebrow">The specification</p>
   <p>Each of these prints on their copy with its sentence underneath. Pick <i>Custom</i> where they asked for something
@@ -1573,12 +1577,20 @@ if(!D.buyer){
 show("prep");
 
 /* ---- laser survey ---- */
+/* 2.1 (0090): surveys live in the cloud (tr-desk survey_list / survey_add). A file or paste attached here is
+   filed there too, so the next person picks it from the list instead of hunting for the file. */
+async function loadSurveys(rerender){ try{ const j=await deskCall({action:"survey_list"}); if(j&&j.ok){ SURVEYS=j.rows||[]; if(rerender) render(); } }catch(e){} }
+function cloudToSurvey(v){ return {date:v.date||String(v.at||"").slice(0,10), job:v.site||"", w:Number(v.w), h:Number(v.h), wMin:Number(v.w_min??v.w), wMax:Number(v.w_max??v.w), hMin:Number(v.h_min??v.h), hMax:Number(v.h_max??v.h), nW:Number(v.n_w||0), nH:Number(v.n_h||0), clearances:v.clearances||null, by:v.by_name||"", cloud_id:v.id}; }
+window.attachCloudSurvey=function(){ const pick=$("laserPick"), sel=$("laserTo"), msg=$("laserMsg"); const v=SURVEYS.find(x=>x.id===pick.value); if(!v){ msg.textContent="Pick a survey."; return; }
+  const o=D.openings[+sel.value||0]; if(!o){ msg.textContent="No such opening."; return; } o.survey=cloudToSurvey(v); o.w=String(Math.round(o.survey.w*1000)/1000); o.h=String(Math.round(o.survey.h*1000)/1000); if((!o.nm||/^Opening \d+$/.test(o.nm))&&v.opening) o.nm=v.opening; render(); };
+async function fileSurvey(sv,o){ try{ const j=await deskCall({action:"survey_add",survey:{date:sv.date,site:sv.job||(D.site||""),opening:o.nm||"",w:sv.w,h:sv.h,wMin:sv.wMin,wMax:sv.wMax,hMin:sv.hMin,hMax:sv.hMax,nW:sv.nW,nH:sv.nH,clearances:sv.clearances,by:sv.by||"",source:"agreement",raw:sv.raw||null},quote_id:(D._db&&D._db.quote_id)||null,customer_id:(D._db&&D._db.customer_id)||null}); if(j&&j.ok){ sv.cloud_id=j.id; loadSurveys(false); } }catch(e){} }
 function attachSurvey(i,txt,msgEl){
   const r=readLaser(txt);
   const say=t=>{ if(msgEl)msgEl.textContent=t; else if(r.err)alert(t) };
   if(r.err){ say(r.err); return false }
   const o=D.openings[i]; if(!o){ say("No such opening."); return false }
-  o.survey=r.survey;
+  try{ r.survey.raw=JSON.parse(txt); }catch(e){}
+  o.survey=r.survey; fileSurvey(r.survey,o);
   /* The survey overwrites the tape figures, because that is the entire point.
      What it must NOT do is overwrite the door count or the way it folds —
      those are decisions, not measurements, and the laser knows nothing about
@@ -1646,6 +1658,9 @@ function signOut(){ try{ localStorage.removeItem(SESS_KEY); localStorage.removeI
 async function sessJwt(){ let s=getSess(); if(!s||!s.access_token){ signOut(); return ""; }
   if((s.expires_at||0)*1000<Date.now()+90000){ try{ const r=await fetch(CREW_EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+DB_AK},body:JSON.stringify({action:"refresh",refresh_token:s.refresh_token})}); const j=await r.json(); if(!j.ok){ signOut(); return ""; } s=j.session; localStorage.setItem(SESS_KEY,JSON.stringify(s)); }catch(e){} }
   return s.access_token; }
+async function deskCall(body){
+  try{ const jwt=await sessJwt(); if(!jwt) return {ok:false,error:"signed out"}; let tok=""; try{ tok=localStorage.getItem("tr_dk")||""; }catch(e){}
+    const r=await fetch(DESK_EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+DB_AK},body:JSON.stringify(Object.assign({jwt,token:tok},body))}); return await r.json(); }catch(e){ return {ok:false,error:String(e)} } }
 let dbTimer=null;
 async function dbCall(body){
   try{
@@ -1657,7 +1672,7 @@ async function dbCall(body){
     return j;
   }catch(e){ return {ok:false,error:String(e)} }
 }
-(function gate(){ const s=getSess(); if(!s||!s.refresh_token) location.replace("./?next="+encodeURIComponent(HERE)); })();
+(function gate(){ const s=getSess(); if(!s||!s.refresh_token) location.replace("./?next="+encodeURIComponent(HERE)); else setTimeout(()=>loadSurveys(true),0); })();
 function dbToggle(){ const p=document.getElementById("dbPanel"); p.style.display=p.style.display==="none"?"block":"none"; if(p.style.display==="block")document.getElementById("dbQ").focus(); }
 function dbSay(t){ document.getElementById("dbMsg").textContent=t||""; }
 function dbStamp(){
