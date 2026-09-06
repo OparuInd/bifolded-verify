@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 1.5</title>
+<title>Tungsten Royce — Input Desk 1.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
-     TR INPUT DESK 1.5 (part #: quick reference fast0001 + the box's mfg part number, two fields; 1.4 lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
+     TR INPUT DESK 1.6 (SCANS: the scan database — every scan / photo / document in the cloud, click to view from anywhere; 1.5 part #: quick reference fast0001 + the box's mfg part number, two fields; 1.4 lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
      Dru's desk. Ryan, verbatim: "a functional Input app that presents the data required in a clear and
      concise manner … separated out by category … shows a sample of what he's looking for if it's an
      inventory item. If that sample photo does not exist, then an option to capture a picture, which
@@ -80,6 +80,9 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 .assist.mine{border-color:var(--bronze)}
 .ans{margin-top:6px;padding:8px 10px;border-left:2px solid var(--ok);background:var(--bg2);font-size:13px}
 .rc{display:grid;grid-template-columns:300px 1fr;gap:18px}
+.sctop{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.sctop input{max-width:260px}.chip{font-family:var(--fm);font-size:11px;letter-spacing:.06em;border:1px solid var(--line2);border-radius:3px;padding:3px 8px;background:transparent;color:var(--mute);cursor:pointer}.chip.on{border-color:var(--bronze);color:var(--bronze2)}
+.scgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.sc{border:1px solid var(--line);border-radius:var(--r);background:var(--card);cursor:pointer;overflow:hidden}.sc:hover{border-color:var(--bronze)}.sc .th{aspect-ratio:1/1;background:#0f0f0f;display:flex;align-items:center;justify-content:center;color:var(--mute2);font-size:26px}.sc .th img{width:100%;height:100%;object-fit:cover}.sc .cap{padding:6px 8px;font-size:11.5px;line-height:1.3}.sc .cap b{font-family:var(--fm);font-size:12px}.sc .cap .m{color:var(--mute);font-size:11px}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:50;align-items:center;justify-content:center;padding:16px}.lb.on{display:flex}.lbi{background:var(--card);border:1px solid var(--line2);border-radius:var(--r);max-width:96vw;max-height:94vh;display:flex;flex-direction:column;min-width:min(520px,94vw)}.lbh{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12.5px}.lbh #lbCap{font-family:var(--fm);font-size:12px;color:var(--fg2)}.lbb{overflow:auto;display:flex;align-items:center;justify-content:center;background:#000}.lbb img{max-width:94vw;max-height:84vh;object-fit:contain}.lbb iframe{width:94vw;height:84vh;border:0;background:#fff}a.btn{display:inline-block;border:1px solid var(--line2);border-radius:var(--r);padding:4px 8px;font-size:12px;font-weight:600;color:inherit;text-decoration:none;background:var(--card2)}
 .lines .ln{min-width:220px}.lines .li{min-width:150px}.lines .lk{min-width:110px}.lines td:first-child{width:38%}
 .rc .list{display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
 .rr{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--card);cursor:pointer;display:flex;gap:10px;align-items:center}.rr.on{border-color:var(--bronze)}.rr img{width:56px;height:56px;object-fit:cover;border-radius:3px;background:#000}.rr .m{font-size:12px;color:var(--mute)}.rr b{font-family:var(--fm)}
@@ -127,13 +130,15 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><h1>Input Desk</h1><span class="v">1.5</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts → inventory</button></div>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><h1>Input Desk</h1><span class="v">1.6</span>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts → inventory</button><button id="t_scans" onclick="tab('scans')">Scans</button></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
   <div id="v_assist" style="display:none"></div>
   <div id="v_rcpt" style="display:none"></div>
+  <div id="v_scans" style="display:none"></div>
+  <div id="lb" class="lb" onclick="if(event.target===this)lbClose()"><div class="lbi"><div class="lbh"><span id="lbCap"></span><span style="margin-left:auto;display:flex;gap:8px"><button class="sm" id="lbRc" onclick="lbOpenRc()">Open receipt</button><a class="sm btn" id="lbNew" target="_blank" rel="noopener">Open in new tab</a><button class="sm" onclick="lbClose()">✕</button></span></div><div class="lbb" id="lbBody"></div></div></div>
 </main>
 <div class="toast" id="toast"></div>
 <input type="file" id="camFile" accept="image/*" capture="environment" style="display:none">
@@ -162,7 +167,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t){TAB=t;for(const x of ["deck","assist","rcpt"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","scans"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="scans")loadScans();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); }
 function rows(){ const rs=(Q.rows||[]).filter(r=>CAT==="all"||r.category===CAT); const key=r=>r.table_name+"|"+r.row_id; const idx=new Map(ORDER.map((k,i)=>[k,i])); return rs.slice().sort((a,b)=>(idx.has(key(a))?idx.get(key(a)):1e9)-(idx.has(key(b))?idx.get(key(b)):1e9)); }
 function keyOf(r){ return r.table_name+"|"+r.row_id; }
@@ -272,6 +277,23 @@ async function loadAssist(){
 async function assistAnswer(table,id){ const v=$("aa_"+id).value.trim(); if(v.length<2){$("aa_"+id).focus();return;} try{ await desk({action:"assist_answer",table,id,answer:v}); toast("Answered · Dru is notified"); loadAssist(); loadAssistCount(); }catch(e){toast(e.message,true);} }
 /* ---- receipts → inventory (OCR here, on this machine) ---- */
 let RC=null,ITEMS=[],RSEL=null,OCR="",KIND="receipt",AUTO_OCR=false;
+// ---- SCANS — the scan database (1.6). Every file in the job-files bucket, signed for an hour, click to view. ----
+let SC=[],SCF="all",SCQ="",LBI=null;
+async function loadScans(){ $("v_scans").innerHTML='<div class="empty">Loading scans…</div>'; try{ const r=await desk({action:"scans"}); SC=r.rows; }catch(e){ $("v_scans").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderScans(); }
+const FOLD={receipts:"Receipts",catalog:"Part photos",docs:"Documents",contracts:"Agreements",media:"Job photos"}; const fold=x=>FOLD[x]||(/^[0-9a-f]{8}-/.test(x)?"Job files":x);
+function scCap(f){ if(f.receipt) return {b:(f.receipt.total?money(f.receipt.total):"⚑ no total")+" · "+(f.receipt.store||"—"),m:f.receipt.bought_at}; if(f.part) return {b:f.part.name,m:"part photo"}; return {b:f.name,m:fold(f.folder)+" · "+(f.updated_at||"").slice(0,10)}; }
+function renderScans(){
+  const folders=[...new Set(SC.map(f=>f.folder))]; const q=SCQ.toLowerCase();
+  const rows=SC.filter(f=>(SCF==="all"||f.folder===SCF)&&(!q||JSON.stringify([f.path,f.receipt,f.part]).toLowerCase().includes(q)));
+  $("v_scans").innerHTML=`<div class="sctop"><input id="scq" placeholder="store · date · part · file" value="${esc(SCQ)}" oninput="SCQ=this.value;renderScans();$('scq').focus();$('scq').setSelectionRange(99,99)"><button class="chip ${SCF==="all"?"on":""}" onclick="SCF='all';renderScans()">all · ${SC.length}</button>${folders.map(x=>`<button class="chip ${SCF===x?"on":""}" onclick="SCF='${x}';renderScans()">${esc(fold(x))} · ${SC.filter(f=>f.folder===x).length}</button>`).join("")}<span style="margin-left:auto" class="m"></span><button class="sm ghost" onclick="loadScans()">↻</button></div>
+  <div class="scgrid">${rows.map((f,i)=>{ const c=scCap(f); return `<div class="sc" onclick="lbOpen('${esc(f.path)}')"><div class="th">${f.kind==="image"&&f.url?`<img src="${f.url}" loading="lazy">`:f.kind==="pdf"?"📄":"📎"}</div><div class="cap"><b>${esc(c.b)}</b><div class="m">${esc(c.m)}</div></div></div>`; }).join("")||'<div class="empty">Nothing here yet.</div>'}</div>`;
+}
+function lbOpen(path){ const f=SC.find(x=>x.path===path); if(!f) return; LBI=f; const c=scCap(f); $("lbCap").textContent=c.b+" · "+c.m; $("lbRc").style.display=f.receipt?"":"none"; $("lbNew").href=f.url||"#";
+  $("lbBody").innerHTML=f.kind==="image"?`<img src="${f.url}">`:f.kind==="pdf"?`<iframe src="${f.url}"></iframe>`:/\.html?$/i.test(f.name)?`<iframe id="lbHtml"></iframe>`:`<div class="empty" style="padding:40px">${esc(f.name)} — open in new tab</div>`; $("lb").classList.add("on");
+  if(/\.html?$/i.test(f.name)&&f.url) fetch(f.url).then(r=>r.text()).then(t=>{ const i=$("lbHtml"); if(i) i.srcdoc=t; }).catch(()=>{}); }
+function lbClose(){ $("lb").classList.remove("on"); $("lbBody").innerHTML=""; LBI=null; }
+async function lbOpenRc(){ if(!LBI||!LBI.receipt) return; const id=LBI.receipt.id; lbClose(); RSEL=id; tab("rcpt",true); await loadReceipts(); if(RC&&RC.find(x=>x.id===id)) pickRc(id); }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&$("lb").classList.contains("on")) lbClose(); });
 function setKind(k){ KIND=k; document.querySelectorAll("#kindsel span").forEach(e=>e.classList.toggle("on",e.dataset.k===k)); }
 /* PHONE SCAN — the camera opens straight away (capture=environment); the shot is downscaled here, shown, and read at once. */
 function scanPaper(){ $("scanFile").click(); }
