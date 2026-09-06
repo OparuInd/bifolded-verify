@@ -223,14 +223,37 @@ button.ghost:hover{border-color:var(--plum2);color:var(--plum)}
 #signBar .box label.consent{text-transform:none;letter-spacing:0;font-weight:400;font-size:var(--s1);color:var(--ink2)}
 #signBar .padbar button{font:600 13px var(--sans);background:transparent;color:var(--plum);border:1px solid var(--line);border-radius:3px;padding:7px 12px;margin:0}#signBar .padbar button.on{border-color:var(--plum);background:var(--plumSoft)}
 .seal{font-family:Menlo,monospace;font-size:11.5px;color:var(--soft);word-break:break-all;margin-top:10px}
+
+/* 2.1 — contract shell */
+header.tr .wm{font-weight:700;letter-spacing:.18em;font-size:13px}header.tr .wm span{color:#C9AB7F}
+header.tr .sub{margin-top:3px}
+main.sheet{padding:34px 0 70px}
+.paper{background:#fff;border:1px solid var(--line);box-shadow:0 1px 2px rgba(32,24,41,.06),0 12px 40px -18px rgba(32,24,41,.25);padding:56px 64px;max-width:900px;margin:0 auto;border-top:4px solid var(--plum)}
+.paper h1:first-child{margin-bottom:14px}
+.exec{max-width:900px;margin:0 auto 16px;background:linear-gradient(120deg,#1B1324,#33223F);color:#F4F0F7;padding:18px 26px;border-left:4px solid #C9AB7F;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.exec .k{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:#C9AB7F;font-weight:700}
+.exec .t{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.exec .m{font-family:Menlo,ui-monospace,monospace;font-size:11.5px;color:#B5A8C2;margin-left:auto}
+.record{max-width:900px;margin:18px auto 0;background:var(--card);border:1px solid var(--line);padding:22px 26px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.record .k{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--plum);font-weight:700;margin-right:6px}
+.record a{font:600 13.5px var(--sans);color:var(--plum);border:1px solid var(--line);border-radius:3px;padding:10px 14px;text-decoration:none;background:#fff;margin:0}
+.record a.pri{background:var(--plum);color:#fff;border-color:var(--plum)}
+.record .seal{width:100%;margin-top:6px}
+#signBar{max-width:900px;padding:30px 40px}
+#state{margin:60px auto}
+footer.tr{border-top:1px solid var(--line);padding:22px 0 40px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:center}
+@media screen and (max-width:760px){.paper{padding:28px 20px}.exec{padding:14px 16px}.exec .m{margin-left:0}#signBar{padding:20px 18px}.record{padding:16px}}
+
 #state h2{margin-bottom:12px}
 #state p{margin:0 auto}
 </style>
 </head>
 <body>
-<div style="position:fixed;top:8px;right:10px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #b08a3a;color:#8a6a1e;border-radius:3px;padding:1px 6px;background:#fff">beta</div>
+<header class="tr"><div class="wrap"><div><div class="wm">TUNGSTEN <span>ROYCE</span><span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #b08a3a;color:#8a6a1e;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><div class="sub">Agreement · electronic signature</div></div><div class="who" id="hdrWho"></div></div></header>
+<main class="sheet"><div class="wrap">
 <div id="state"><h2>Loading your agreement…</h2><p style="color:var(--soft)">One moment.</p></div>
-<div id="doc" style="display:none"></div>
+<div class="exec" id="exec" style="display:none"></div>
+<article class="paper" id="doc" style="display:none"></article>
 <div id="signBar" style="display:none">
   <p class="eyebrow">Sign</p>
   <h3>Sign your agreement</h3>
@@ -255,11 +278,14 @@ button.ghost:hover{border-color:var(--plum2);color:var(--plum)}
     <button id="sigGo" onclick="doSign()">Sign the agreement</button>
   </div>
 </div>
-<div id="done" style="display:none;max-width:34rem;margin:0 auto 60px" class="docs"></div>
+<div id="done" style="display:none" class="record"></div>
+</div></main>
+<footer class="tr">Tungsten Royce · Bifolded</footer>
 <script>
 "use strict";
 const EP="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
 const AK="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; /* publishable — public by design; the link opens the document, the ACCOUNT signs it */
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const TOKEN=new URLSearchParams(location.search).get("t")||"";
 const $=id=>document.getElementById(id);
 /* customer session (0084) */
@@ -275,6 +301,7 @@ async function load(){
   const j=await call({action:"agree_view",token:TOKEN}); V=j;
   if(!j.ok){ state("This link is not valid.", j.error||"Call us and we will send a fresh one."); return }
   $("state").style.display="none";
+  $("hdrWho").innerHTML="<b>Quote "+(j.quote_no||"")+"</b><br>"+esc((j.customer&&j.customer.name)||"");
   const doc=$("doc"); doc.innerHTML=(j.doc&&j.doc.html)||""; doc.style.display="block";
   if(j.signed){ showDone({name:j.signed_name,job_no:j.quote_no,esign_id:j.esign_id,sealed_url:j.sealed_url,certificate_url:j.certificate_url,signed_at:j.signed_at}); return; }
   $("signBar").style.display="block";
@@ -316,12 +343,15 @@ async function doSign(){
 }
 function dl(u,name){ return u+(u.indexOf("?")>0?"&":"?")+"download="+encodeURIComponent(name); }
 function showDone(d){
-  state("Signed by "+(d.name||"you")+".","Job <b style='color:var(--ink)'>"+d.job_no+"</b> is in motion. Welcome to the wait.");
-  const box=$("done"); box.style.display="block";
+  $("state").style.display="none"; $("signBar").style.display="none";
+  const ex=$("exec"); ex.style.display="flex";
+  ex.innerHTML="<div><div class='k'>Agreement executed</div><div class='t'>Signed by "+esc(d.name||"you")+(d.signed_at?" · "+new Date(d.signed_at).toLocaleString([], {dateStyle:"long",timeStyle:"short"}):"")+"</div></div>"+(d.esign_id?"<div class='m'>"+esc(d.esign_id)+"</div>":"");
+  const box=$("done"); box.style.display="flex";
   const fn="Agreement-"+(d.job_no||"")+(d.esign_id?"-"+d.esign_id:"");
-  box.innerHTML=(d.esign_id?"<div class='seal'>certificate "+d.esign_id+(d.signed_at?" · "+new Date(d.signed_at).toLocaleString():"")+"</div>":"")+
-    (d.sealed_url?"<a href='"+dl(d.sealed_url,fn+".html")+"'>Signed agreement ⤓</a>":"")+(d.certificate_url?"<a href='"+d.certificate_url+"' target='_blank'>Certificate of completion (PDF) ↗</a>":"")+
-    (!d.sealed_url&&!d.certificate_url&&!V.signed_in?"<p style='font-size:13px;color:var(--soft);margin-top:10px'>Sign in at <a href='portal.html'>your portal</a> to download the signed copy and certificate.</p>":"<a href='portal.html'>Your portal ↗</a>");
+  box.innerHTML="<span class='k'>Record</span>"+
+    (d.sealed_url?"<a class='pri' href='"+dl(d.sealed_url,fn+".html")+"'>Signed agreement ⤓</a>":"")+(d.certificate_url?"<a href='"+d.certificate_url+"' target='_blank'>Certificate of completion (PDF)</a>":"")+
+    (!d.sealed_url&&!d.certificate_url&&!V.signed_in?"<a href='portal.html'>Sign in to your portal for the signed copy and certificate</a>":"<a href='portal.html'>Your portal</a>")+
+    "<div class='seal'>Job "+esc(d.job_no||"")+" is in motion. Welcome to the wait.</div>";
   if(d.sealed_url){ fetch(d.sealed_url).then(r=>r.ok?r.text():"").then(h=>{ if(h){ const doc=$("doc"); doc.innerHTML=h; doc.style.display="block"; } }).catch(()=>{}); }
 }
 // rasterize the agreement THIS page rendered into US-Letter page images and
