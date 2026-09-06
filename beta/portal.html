@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tungsten Royce — Your account</title>
+<!--
+  TR FINAL SOLUTION — Portal 1.0 (2026-09-06)  ·  PUBLIC PAGE, ACCOUNT-GATED
+  The customer signs in (e-mail + password minted at publish) and sees: agreements to sign / signed copies +
+  certificates, jobs to track, and a way to send us files. Never prices beyond their own agreement, never internals.
+  Backend: tr-intake v5.7 (customer_login, my_documents, portal_upload_url/record).
+-->
+<style>
+:root{--sans:"Helvetica Neue",Helvetica,"Inter",Arial,sans-serif;--ink:#201829;--ink2:#3E344A;--soft:#6E6579;--plum:#41275C;--plum2:#6B4A8F;--plumSoft:#F4F0F7;--paper:#FBF9FB;--card:#FFFEFF;--line:#CFCAD3;--gold:#9C7A3E;--alert:#8C2B48;--ok:#2F6B4F}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans);font-variant-numeric:tabular-nums}
+header{background:linear-gradient(120deg,#1B1324 0%,#271A33 55%,#33223F 100%);color:#F4F0F7;padding:18px 0;border-bottom:3px solid var(--plum2)}
+.wrap{max-width:820px;margin:0 auto;padding:0 22px}
+.wm{font-weight:700;letter-spacing:.16em;font-size:13px}.wm span{color:#C9AB7F}
+h1{font-size:26px;font-weight:600;letter-spacing:-.02em;margin:34px 0 4px}h2{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--plum);font-weight:700;margin:30px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px;margin-bottom:10px}
+.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.row b{font-size:16px}.mono{font-family:Menlo,ui-monospace,monospace;font-size:12px;color:var(--soft)}
+a.btn,button{font:600 14px var(--sans);background:var(--plum);color:#fff;border:0;border-radius:3px;padding:11px 16px;cursor:pointer;text-decoration:none;display:inline-block}
+a.btn.ghost,button.ghost{background:transparent;color:var(--plum);border:1px solid var(--line)}button:disabled{opacity:.5}
+label{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:700;margin:12px 0 5px}
+input[type=email],input[type=password],input[type=text]{font:16px var(--sans);color:var(--ink);width:100%;border:1px solid var(--line);border-radius:3px;padding:11px 12px;background:#fff}input:focus{outline:none;border-color:var(--plum2)}
+.flag{font-size:13px;color:var(--alert);min-height:18px;margin-top:8px}
+.tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:12px;padding:3px 9px;color:var(--soft)}.tag.ok{color:var(--ok);border-color:#BFD8C9}.tag.warn{color:var(--gold);border-color:#E3D3B2}
+.files{margin-top:10px;font-size:13px;color:var(--soft)}.files div{padding:3px 0}
+.empty{color:var(--soft)}
+.top{display:flex;align-items:center;gap:12px}.top .spacer{flex:1}.top button{padding:7px 12px;font-size:13px}
+@media(max-width:600px){h1{font-size:22px}.card{padding:14px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="wm">TUNGSTEN <span>ROYCE</span><span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #b08a3a;color:#8a6a1e;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div></div></header>
+<div class="wrap">
+  <div id="login">
+    <h1>Your account</h1>
+    <div class="card" style="max-width:420px">
+      <label for="e">E-mail</label><input type="email" id="e" autocomplete="username">
+      <label for="p">Password</label><input type="password" id="p" autocomplete="current-password">
+      <div class="flag" id="flag"></div>
+      <button id="go" onclick="login()">Sign in</button>
+    </div>
+  </div>
+  <div id="app" style="display:none">
+    <div class="top"><h1 id="who"></h1><span class="spacer"></span><button class="ghost" onclick="signOut()">Sign out</button></div>
+    <h2>Agreements</h2><div id="agreements"></div>
+    <h2>Jobs</h2><div id="jobs"></div>
+  </div>
+</div>
+<input type="file" id="up" style="display:none" accept="image/*,application/pdf,video/*,.dwg,.dxf,.skp">
+<script>
+"use strict";
+const EP="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
+const AK="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN";
+const $=id=>document.getElementById(id); const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function getSess(){ try{ return JSON.parse(localStorage.getItem("tr_cust")||"null"); }catch(e){ return null; } }
+async function raw(body){ try{ const r=await fetch(EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+AK},body:JSON.stringify(body)}); return await r.json(); }catch(e){ return {ok:false,error:"offline"} } }
+async function jwt(){ let s=getSess(); if(!s||!s.access_token) return ""; if((s.expires_at||0)*1000<Date.now()+90000){ const j=await raw({action:"customer_refresh",refresh_token:s.refresh_token}); if(!j.ok){ localStorage.removeItem("tr_cust"); return ""; } s=j.session; localStorage.setItem("tr_cust",JSON.stringify(s)); } return s.access_token; }
+async function call(body){ const j=await raw(Object.assign({jwt:await jwt()},body)); if(j&&j.error==="signed out") signOut(); return j; }
+function signOut(){ try{localStorage.removeItem("tr_cust");localStorage.removeItem("tr_cust_who");}catch(e){} location.reload(); }
+async function login(){ $("flag").textContent="…"; $("go").disabled=true; const j=await raw({action:"customer_login",email:$("e").value.trim(),password:$("p").value}); $("go").disabled=false;
+  if(!j.ok){ $("flag").textContent=j.error||"⚑ wrong password"; return; } try{ localStorage.setItem("tr_cust",JSON.stringify(j.session)); localStorage.setItem("tr_cust_who",$("e").value.trim()); }catch(e){} load(); }
+let D=null, UPJOB=null;
+async function load(){
+  if(!getSess()){ $("login").style.display="block"; $("app").style.display="none"; const w=localStorage.getItem("tr_cust_who"); if(w)$("e").value=w; return; }
+  const j=await call({action:"my_documents"}); if(!j.ok){ $("flag").textContent=j.error||""; return; } D=j;
+  $("login").style.display="none"; $("app").style.display="block"; $("who").textContent=j.name;
+  $("agreements").innerHTML=j.agreements.map(a=>`<div class="card"><div class="row"><b>Quote ${a.quote_no}${a.rev>1?" rev "+a.rev:""}</b>${a.signed?`<span class="tag ok">signed ${new Date(a.signed_at).toLocaleDateString()}</span>`:`<span class="tag warn">awaiting your signature</span>`}<span class="spacer" style="flex:1"></span>
+    ${a.signed?`${a.sealed_url?`<a class="btn ghost" href="${a.sealed_url}&download=Agreement-${a.quote_no}-${a.esign_id||""}.html">Signed agreement ⤓</a>`:""}${a.certificate_url?`<a class="btn ghost" href="${a.certificate_url}" target="_blank">Certificate</a>`:""}${a.pdf_url?`<a class="btn ghost" href="${a.pdf_url}" target="_blank">PDF</a>`:""}`:`<a class="btn" href="sign.html?t=${encodeURIComponent(a.sign_token)}">Review &amp; sign</a>`}</div>
+    ${a.esign_id?`<div class="mono" style="margin-top:6px">certificate ${esc(a.esign_id)}${a.signed_name?" · signed by "+esc(a.signed_name):""}</div>`:""}</div>`).join("")||'<div class="empty">No agreements yet.</div>';
+  $("jobs").innerHTML=j.jobs.map(jb=>`<div class="card"><div class="row"><b>${esc(jb.job_no)}</b><span class="tag">${esc(jb.stage)}</span><span style="flex:1"></span>${jb.track_token?`<a class="btn ghost" href="track.html?t=${encodeURIComponent(jb.track_token)}">Track</a>`:""}<button class="ghost" onclick="pick('${jb.id}')">Send a file</button></div>
+    <div class="files">${jb.files.map(f=>`<div>📎 ${esc(f.note||f.kind)} · ${new Date(f.created_at).toLocaleDateString()}</div>`).join("")}</div></div>`).join("")||'<div class="empty">No jobs yet.</div>';
+}
+function pick(id){ UPJOB=id; $("up").click(); }
+$("up").onchange=async()=>{ const f=$("up").files[0]; $("up").value=""; if(!f||!UPJOB)return; const ext=(f.name.split(".").pop()||"").toLowerCase();
+  const u=await call({action:"portal_upload_url",job_id:UPJOB,ext}); if(!u.ok){ alert(u.error); return; }
+  const put=await fetch(u.url,{method:"PUT",headers:{"content-type":f.type||"application/octet-stream"},body:f}); if(!put.ok){ alert("upload failed"); return; }
+  const note=prompt("What is it? (optional)",f.name)||f.name;
+  const r=await call({action:"portal_upload_record",job_id:UPJOB,path:u.path,note}); if(!r.ok){ alert(r.error); return; } load(); };
+load();
+</script>
+</body>
+</html>
