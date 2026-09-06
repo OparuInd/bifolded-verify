@@ -127,7 +127,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <body>
 <header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">1.0</span><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts → inventory</button></div>
-  <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
+  <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
   <div id="v_assist" style="display:none"></div>
@@ -147,14 +147,21 @@ const SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co", BASE=SB_URL+"/functions
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let NAME=""; const BY=()=>NAME;
-const post=async(fn,body)=>{const r=await fetch(BASE+fn,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN},body))});const j=await r.json().catch(()=>({ok:false,error:"HTTP "+r.status}));if(!j||!j.ok)throw new Error((j&&j.error)||("HTTP "+r.status));return j;};
+const CREW=BASE+"tr-crew";
+/* 0083 — session. The home page signs in (name + password) and leaves {access_token, refresh_token, expires_at} here;
+   every call carries it as jwt, refreshed through tr-crew when it is about to expire. ⏻ clears it. */
+const SESS_KEY="tr_sess";
+function getSess(){ try{ return JSON.parse(localStorage.getItem(SESS_KEY)||"null"); }catch(e){ return null; } }
+async function sessJwt(){ let s=getSess(); if(!s||!s.access_token) return ""; if((s.expires_at||0)*1000<Date.now()+90000){ try{ const r=await fetch(CREW,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify({action:"refresh",refresh_token:s.refresh_token})}); const j=await r.json(); if(!j.ok){ signOut(); return ""; } s=j.session; localStorage.setItem(SESS_KEY,JSON.stringify(s)); }catch(e){} } return s.access_token; }
+function signOut(){ try{ localStorage.removeItem(SESS_KEY); localStorage.removeItem("tr_k"); localStorage.removeItem("tr_station_k"); localStorage.removeItem("tr_dk"); }catch(e){} location.replace("./"); }
+const post=async(fn,body)=>{const r=await fetch(BASE+fn,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN,jwt:await sessJwt()},body))});const j=await r.json().catch(()=>({ok:false,error:"HTTP "+r.status}));if(j&&j.error==="signed out"){signOut();}if(!j||!j.ok)throw new Error((j&&j.error)||("HTTP "+r.status));return j;};
 const desk=b=>post("tr-desk",b);
 const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(bad?" bad":"");e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",bad?5000:2600);};
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
 function tab(t){TAB=t;for(const x of ["deck","assist","rcpt"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts();}
-async function load(){ if(!TOKEN){ $("deck").innerHTML='<div class="empty" style="padding:60px">No link. Ask Ryan.</div>'; return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); }
+async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); }
 function rows(){ const rs=(Q.rows||[]).filter(r=>CAT==="all"||r.category===CAT); const key=r=>r.table_name+"|"+r.row_id; const idx=new Map(ORDER.map((k,i)=>[k,i])); return rs.slice().sort((a,b)=>(idx.has(key(a))?idx.get(key(a)):1e9)-(idx.has(key(b))?idx.get(key(b)):1e9)); }
 function keyOf(r){ return r.table_name+"|"+r.row_id; }
 function toBack(){ if(!CUR)return; const k=keyOf(CUR); ORDER=ORDER.filter(x=>x!==k); ORDER.push(k); DONE_N++; }

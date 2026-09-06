@@ -131,7 +131,7 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
 <body>
 <header>
   <div><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><div class="eyebrow" id="who">The Slip</div></div>
-  <div class="r"><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><span class="livedot" id="liveDot" title="live"></span><button class="sm ghost" id="bell" onclick="enablePush()" style="display:none">🔔 Notify me</button></div>
+  <div class="r"><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span class="livedot" id="liveDot" title="live"></span><button class="sm ghost" id="bell" onclick="enablePush()" style="display:none">🔔 Notify me</button></div>
 </header>
 <main>
   <div id="gate">Checking your link…</div>
@@ -205,7 +205,13 @@ let TOKEN=new URLSearchParams(location.search).get("k")||"";
 try{ if(TOKEN.length>=20) localStorage.setItem("tr_k",TOKEN); else TOKEN=localStorage.getItem("tr_k")||""; }catch(e){}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const call=async(url,b)=>{try{const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN},b))});return await r.json();}catch(e){return{ok:false,error:"Offline — try again in a moment."};}};
+/* 0083 — session. The home page signs in (name + password) and leaves {access_token, refresh_token, expires_at} here;
+   every call carries it as jwt, refreshed through tr-crew when it is about to expire. ⏻ clears it. */
+const SESS_KEY="tr_sess";
+function getSess(){ try{ return JSON.parse(localStorage.getItem(SESS_KEY)||"null"); }catch(e){ return null; } }
+async function sessJwt(){ let s=getSess(); if(!s||!s.access_token) return ""; if((s.expires_at||0)*1000<Date.now()+90000){ try{ const r=await fetch(CREW,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify({action:"refresh",refresh_token:s.refresh_token})}); const j=await r.json(); if(!j.ok){ signOut(); return ""; } s=j.session; localStorage.setItem(SESS_KEY,JSON.stringify(s)); }catch(e){} } return s.access_token; }
+function signOut(){ try{ localStorage.removeItem(SESS_KEY); localStorage.removeItem("tr_k"); localStorage.removeItem("tr_station_k"); localStorage.removeItem("tr_dk"); }catch(e){} location.replace("./"); }
+const call=async(url,b)=>{try{const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN,jwt:await sessJwt()},b))});const j=await r.json();if(j&&j.error==="signed out"){signOut();}return j;}catch(e){return{ok:false,error:"Offline — try again in a moment."};}};
 const pub=b=>call(INTAKE,b), crew=b=>call(CREW,b);
 const fmtH=h=>{h=Number(h||0);return (Math.round(h*4)/4).toFixed(h%1?2:1).replace(/\.?0+$/,"")+" h"};
 const hhmm=s=>s==null?"":(s%12||12)+(s<12?" am":" pm");
@@ -252,9 +258,9 @@ function tick(){
   el.innerHTML=`${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}<small>live</small>`;
 }
 async function boot(){
-  if(TOKEN.length<20){ $("gate").innerHTML="This page opens from your personal link.<br>Ask the office if yours is missing."; return; }
+  if(TOKEN.length<20){ location.replace("./"); return; }
   const j=await crew({action:"mine"});
-  if(!j.ok){ $("gate").textContent=j.error; return; }
+  if(!j.ok){ if(/not valid|bad link/i.test(j.error||"")){ try{localStorage.removeItem("tr_k")}catch(e){} location.replace("./"); return; } $("gate").textContent=j.error; return; }
   M=j; for(const k of ["now","next","later","overdue","open"]) j[k]=(j[k]||[]).slice().sort(byPrio); j.messages=(j.messages||[]).slice().sort((a,b)=>(PR[a.priority||"normal"]-PR[b.priority||"normal"])||(new Date(b.created_at)-new Date(a.created_at)));
   $("gate").style.display="none"; $("app").style.display="block";
   $("who").textContent=j.name+" · The Slip"; $("hello").textContent=j.name;

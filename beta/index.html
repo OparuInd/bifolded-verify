@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Tungsten Royce — sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#141414;--bg2:#1a1a1a;--card:#1f1f1f;--card2:#262626;--line:#2c2c2c;--line2:#3a3a3a;--fg:#f4f2ee;--mute:#8f8a82;--bronze:#a98a63;--bronze2:#c9ab7f;--warn:#d9a441;--fm:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 Inter,ui-sans-serif,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.w{width:min(400px,100%)}.wm{font-family:"Familjen Grotesk",ui-sans-serif,sans-serif;font-weight:700;letter-spacing:.12em;font-size:13px;margin-bottom:22px;display:flex;align-items:center}.wm b{color:var(--bronze)}.wm i{font-style:normal;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:var(--warn);border-radius:3px;padding:1px 6px;margin-left:8px}
+.eyebrow{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}.names button{background:var(--card);border:1px solid var(--line);border-radius:4px;color:var(--fg);font:inherit;font-weight:600;padding:14px 12px;text-align:left;min-height:52px;cursor:pointer}.names button small{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:400;margin-top:2px}.names button.on{border-color:var(--bronze);background:var(--card2)}
+label{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:0 0 5px}
+input{width:100%;font:inherit;font-size:17px;color:var(--fg);background:var(--bg2);border:1px solid var(--line2);border-radius:4px;padding:13px 12px;min-height:50px}input:focus{outline:none;border-color:var(--bronze)}
+.row{position:relative}.row button.eye{position:absolute;right:6px;top:6px;bottom:6px;background:none;border:0;color:var(--mute);font-size:14px;padding:0 10px;cursor:pointer}
+button.go{width:100%;margin-top:14px;background:var(--bronze);border:1px solid var(--bronze);color:#141414;font:inherit;font-weight:600;font-size:16px;border-radius:4px;padding:14px;min-height:52px;cursor:pointer}button.go:disabled{opacity:.5}
+.flag{font-family:var(--fm);font-size:12px;color:var(--warn);min-height:18px;margin-top:10px}
+.empty{color:var(--mute);padding:8px 0 16px}
+@media(prefers-color-scheme:light){:root{--bg:#f3f0ea;--bg2:#faf8f4;--card:#fff;--card2:#efeae2;--line:#e3ded5;--line2:#cfc7ba;--fg:#1c1a17;--mute:#6f6960;--bronze:#9a7b52;--bronze2:#7a5f3c;--warn:#a5701a}}
+</style></head>
+<body><div class="w"><div class="wm">TUNGSTEN <b>ROYCE</b><i>beta</i></div>
+<form id="f" autocomplete="on" onsubmit="return go(event)">
+<div class="eyebrow">Who</div><div class="names" id="names"><div class="empty">…</div></div>
+<input type="text" id="u" name="username" autocomplete="username" style="position:absolute;left:-9999px" tabindex="-1" aria-hidden="true">
+<label for="p">Password</label><div class="row"><input type="password" id="p" name="password" autocomplete="current-password" required minlength="6"><button type="button" class="eye" onclick="const p=$('p');p.type=p.type==='password'?'text':'password'">👁</button></div>
+<button class="go" id="goBtn" type="submit" disabled>Sign in</button>
+<div class="flag" id="flag"></div></form></div>
+<script>
+const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN", SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co";
+const $=id=>document.getElementById(id); const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const crew=b=>fetch(SB_URL+"/functions/v1/tr-crew",{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(b)}).then(r=>r.json());
+const K={crew:"tr_k",station:"tr_station_k",office:"tr_dk"};
+let WHO="";
+(async()=>{
+  const k=new URL(location.href).searchParams.get("k"); if(k&&k.length>=20){ location.replace("myday.html?k="+encodeURIComponent(k)); return; }   // an old link still works
+  try{ const s=JSON.parse(localStorage.getItem("tr_sess")||"null"); const p=localStorage.getItem("tr_page"); if(s&&s.refresh_token&&p){ location.replace(p); return; } }catch(e){}
+  const j=await crew({action:"roster"}).catch(()=>null);
+  if(!j||!j.ok){ $("names").innerHTML='<div class="empty">'+esc((j&&j.error)||"offline")+'</div>'; return; }
+  $("names").innerHTML=j.rows.map(r=>`<button type="button" onclick="pick(this,'${esc(r.name)}')">${esc(r.name)}<small>${r.kind}</small></button>`).join("")||'<div class="empty">no accounts yet</div>';
+  const last=localStorage.getItem("tr_who"); if(last){ const b=[...document.querySelectorAll("#names button")].find(b=>b.textContent.startsWith(last)); if(b) pick(b,last); }
+})();
+function pick(btn,n){ WHO=n; document.querySelectorAll("#names button").forEach(b=>b.classList.toggle("on",b===btn)); $("u").value=n; $("goBtn").disabled=false; $("flag").textContent=""; $("p").focus(); }
+async function go(e){ e.preventDefault(); if(!WHO)return false; $("goBtn").disabled=true; $("flag").textContent="…";
+  const j=await crew({action:"login",name:WHO,password:$("p").value}).catch(()=>({ok:false,error:"offline"}));
+  if(!j.ok){ $("flag").textContent=j.error||"⚑ wrong password"; $("goBtn").disabled=false; $("p").select(); return false; }
+  try{ localStorage.setItem("tr_sess",JSON.stringify(j.session)); localStorage.setItem("tr_who",j.name); localStorage.setItem("tr_page",j.page); if(j.token) localStorage.setItem(K[j.kind]||"tr_k",j.token); }catch(e){}
+  location.replace(j.page); return false; }
+</script></body></html>

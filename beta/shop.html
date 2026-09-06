@@ -131,7 +131,7 @@ details.kit{margin:6px 0;background:var(--bg2);border:1px solid var(--line);bord
 <header>
   <div><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><div class="eyebrow" id="station">Shop floor</div></div>
   <div class="d" id="today"></div>
-  <div class="r"><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><span class="livedot" id="liveDot"></span><span class="eyebrow" id="clock"></span></div>
+  <div class="r"><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span class="livedot" id="liveDot"></span><span class="eyebrow" id="clock"></span></div>
 </header>
 <nav id="tabs" style="display:none">
   <button id="t_board" class="on" onclick="tab('board')">Board</button>
@@ -186,7 +186,13 @@ let TOKEN=new URLSearchParams(location.search).get("k")||"";
 try{ if(TOKEN.length>=20) localStorage.setItem("tr_station_k",TOKEN); else TOKEN=localStorage.getItem("tr_station_k")||""; }catch(e){}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const call=async(url,b)=>{try{const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN},b))});return await r.json();}catch(e){return{ok:false,error:"Offline — trying again shortly."};}};
+/* 0083 — session. The home page signs in (name + password) and leaves {access_token, refresh_token, expires_at} here;
+   every call carries it as jwt, refreshed through tr-crew when it is about to expire. ⏻ clears it. */
+const SESS_KEY="tr_sess";
+function getSess(){ try{ return JSON.parse(localStorage.getItem(SESS_KEY)||"null"); }catch(e){ return null; } }
+async function sessJwt(){ let s=getSess(); if(!s||!s.access_token) return ""; if((s.expires_at||0)*1000<Date.now()+90000){ try{ const r=await fetch(CREW,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify({action:"refresh",refresh_token:s.refresh_token})}); const j=await r.json(); if(!j.ok){ signOut(); return ""; } s=j.session; localStorage.setItem(SESS_KEY,JSON.stringify(s)); }catch(e){} } return s.access_token; }
+function signOut(){ try{ localStorage.removeItem(SESS_KEY); localStorage.removeItem("tr_k"); localStorage.removeItem("tr_station_k"); localStorage.removeItem("tr_dk"); }catch(e){} location.replace("./"); }
+const call=async(url,b)=>{try{const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN,jwt:await sessJwt()},b))});const j=await r.json();if(j&&j.error==="signed out"){signOut();}return j;}catch(e){return{ok:false,error:"Offline — trying again shortly."};}};
 const pub=b=>call(INTAKE,b), crew=b=>call(CREW,b);
 const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(bad?" bad":"");e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",bad?5000:2400);};
 const fmtH=h=>{h=Number(h||0);const r=Math.round(h*4)/4;return (r%1?r.toFixed(2).replace(/0$/,""):r.toFixed(0))+" h"};
@@ -206,7 +212,7 @@ function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav"]){ $("
 /* ================= BOARD (tr-crew) ================= */
 async function loadBoard(){
   const j=await crew({action:"board"});
-  if(!j.ok){ $("gate").textContent=j.error; return; }
+  if(!j.ok){ if(/not valid|bad link/i.test(j.error||"")){ try{localStorage.removeItem("tr_station_k")}catch(e){} location.replace("./"); return; } $("gate").textContent=j.error; return; }
   B=j; $("gate").style.display="none"; $("tabs").style.display="flex"; $("askbar").style.display="flex"; $("v_board").style.display=TAB==="board"?"block":"none";
   $("station").textContent=j.station+" · shop floor"; $("today").textContent=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
   renderWho(); renderBoard(); clearInterval(TICK); TICK=setInterval(tick,1000);
@@ -340,7 +346,7 @@ async function ask(){ const q=$("aQ").value.trim(); if(!WHO){ toast("Pick your n
 /* ================= live ================= */
 try{ const sb=supabase.createClient(SB_URL,APIKEY); sb.channel("tr-crew").on("broadcast",{event:"change"},()=>{ if(TAB==="board") loadBoard(); }).subscribe(st=>{ $("liveDot").className="livedot"+(st==="SUBSCRIBED"?" on":""); }); }catch(e){}
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
-if(TOKEN.length<20){ $("gate").textContent="This board opens from the station link — ask the office."; } else { loadBoard(); }
+if(TOKEN.length<20){ location.replace("./"); } else { loadBoard(); }
 setInterval(()=>{ if(document.visibilityState!=="visible")return; if(TAB==="board")loadBoard(); else if(TAB==="trav")loadTrav(); else if(TAB!=="med")loadShop(); }, 45000);
 window.tab=tab;window.setView=setView;window.setWho=setWho;window.startC=startC;window.pauseC=pauseC;window.ackC=ackC;window.ackM=ackM;window.claim=claim;window.doneAsk=doneAsk;window.doneGo=doneGo;window.donePhoto=donePhoto;window.dayLog=dayLog;window.travStep=travStep;window.medPick=medPick;window.medGo=medGo;window.medStatus=medStatus;window.grpAdd=grpAdd;window.grpSub=grpSub;window.grpColor=grpColor;window.itemAdd=itemAdd;window.cond=cond;window.sharpItem=sharpItem;window.sendPic=sendPic;window.picTaken=picTaken;window.setCount=setCount;window.reqItem=reqItem;window.reqFree=reqFree;window.reportIssue=reportIssue;window.machReq=machReq;window.serviced=serviced;window.ask=ask;window.tog=tog;
 </script>
