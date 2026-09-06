@@ -124,6 +124,7 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
 [data-theme=light] .card.live,[data-theme=light] .cardline.started{box-shadow:inset 0 0 0 1px rgba(46,125,76,.35)!important}
 [data-theme=light] .src .jh{background:#efeae2!important}[data-theme=light] .ocr{background:#faf8f4!important}
 .themebtn{border:1px solid var(--line2);background:transparent;color:var(--mute);border-radius:var(--r);padding:4px 8px;font-size:13px;min-height:0;flex:0 0 auto;cursor:pointer;line-height:1}
+.flag{color:var(--warn)}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
@@ -144,16 +145,16 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
     <section><div class="sh"><span class="eyebrow">Slip log</span><span class="n" id="logN"></span></div>
       <div class="card">
         <div class="eyebrow">Pre — what I'm on this morning</div>
-        <textarea id="preTxt" placeholder="e.g. RDM cladding with Sawyer, then pull WRC stock for Flick"></textarea>
+        <textarea id="preTxt" placeholder="plan"></textarea>
         <div class="row"><button class="go" onclick="dayLog('pre')">Save morning note</button></div>
         <div class="eyebrow" style="margin-top:14px">Post — what I did today</div>
-        <textarea id="postTxt" placeholder="what got done, what didn't, anything the office should know"></textarea>
+        <textarea id="postTxt" placeholder="done / not done"></textarea>
         <div class="row"><input class="hrs" id="dayHrs" inputmode="decimal" placeholder="hours"><button class="go" onclick="dayLog('post')">Save end of day</button></div>
         <div class="msg" id="logMsg"></div>
       </div>
       <div class="kv">
         <div class="card"><div class="eyebrow">Signed this week</div><div class="big" id="wkSigned">—</div><div class="bar"><i id="wkBar" style="width:0"></i></div><div class="note" id="wkCap"></div></div>
-        <div class="card"><div class="eyebrow">Reported this week</div><div class="big" id="wkRep">—</div><div class="note">from your day logs · rates live in the office, never here</div></div>
+        <div class="card"><div class="eyebrow">Reported this week</div><div class="big" id="wkRep">—</div><div class="note">from your day logs</div></div>
       </div>
     </section>
 
@@ -168,18 +169,18 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
     <details id="oqcard" style="display:none"><summary><span class="eyebrow">Questions from the office</span><span class="pip" id="oqn"></span></summary><div class="body" id="oq"></div></details>
 
     <details><summary><span class="eyebrow">Ask the office</span></summary><div class="body">
-      <textarea id="q" placeholder="Stuck? Missing material? Ask here — it lands on the office screen."></textarea>
+      <textarea id="q" placeholder="ask the office"></textarea>
       <div class="row"><select id="qJob"><option value="">no job</option></select><button class="go sm" onclick="ask()">Send</button></div>
       <div id="qs" style="margin-top:10px"></div></div></details>
 
     <details><summary><span class="eyebrow">Job media</span></summary><div class="body">
-      <div class="note" style="margin-bottom:8px">Walkaround before paint · install photos + a video of the doors moving. Full quality.</div>
+      
       <select id="medJob" onchange="medStatus()"></select><div id="medChips" class="note" style="margin:6px 0"></div>
       <div class="btns"><button class="sm" onclick="medPick('walkaround','video')">🎥 Walkaround</button><button class="sm" onclick="medPick('install','photo')">📷 Install</button><button class="sm" onclick="medPick('install','video')">🎥 Install</button></div>
       <div class="note" id="medMsg"></div><input type="file" id="medFile" style="display:none" onchange="medGo()"></div></details>
 
     <details><summary><span class="eyebrow">Bought something?</span></summary><div class="body">
-      <div class="note" style="margin-bottom:8px">Snap the receipt before it goes soft in your pocket. Photo and total is all we need.</div>
+      
       <button class="go" onclick="$('rcFile').click()">📷 Snap the receipt</button>
       <input type="file" id="rcFile" accept="image/*" capture="environment" style="display:none" onchange="rcPick()">
       <div id="rcPrev" style="display:none;margin-top:10px"><img id="rcImg" class="prev"></div>
@@ -192,7 +193,7 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
 
     <div class="msg" id="msg"></div>
   </div>
-  <footer>Tungsten Royce · updates live as the office plans</footer>
+  <footer>Tungsten Royce</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -284,7 +285,7 @@ async function loadIntake(){
   const j=await pub({action:"crew_view"}); if(!j.ok)return;
   $("asks").innerHTML=j.asks.length?j.asks.map(a=>`<div class="card">${a.job_no?`<div class="job">${esc(a.job_no)}</div>`:""}<div class="title">Photo: ${esc(a.what)}</div>
       <input type="file" accept="image/*" capture="environment" id="f_${a.id}" style="display:none" onchange="shoot('${a.id}')">
-      <div class="btns"><button class="go" onclick="document.getElementById('f_${a.id}').click()">📷 Take the photo</button></div></div>`).join(""):'<div class="empty">Nothing asked. You are all caught up.</div>';
+      <div class="btns"><button class="go" onclick="document.getElementById('f_${a.id}').click()">📷 Take the photo</button></div></div>`).join(""):'<div class="empty">Nothing asked.</div>';
   $("asksN").textContent=j.asks.length||"";
   const qs=j.questions||[];
   $("qs").innerHTML=qs.map(q=>`<div class="card">${q.job_no?`<div class="job">${esc(q.job_no)}</div>`:""}<div style="font-weight:600">${esc(q.question)}</div>
@@ -302,11 +303,11 @@ function renderToday(){
   $("todayN").textContent=j.now.length?j.now.length+" card"+(j.now.length===1?"":"s")+" · "+fmtH(j.now.reduce((t,x)=>t+Number(x.est_hours||0),0))+" planned":"";
   if(VIEW==="deck"){
     $("secHero").innerHTML="";
-    if(!todo.length){ $("today").innerHTML='<div class="card hero"><div class="eyebrow">Today</div><div class="title" style="font-size:20px">Nothing left on today\'s deck</div><div class="note">The office plans the day from the Crew Planner — it lands here the moment they do. Check Open below.</div></div>'+(j.done_today||[]).map(x=>card(x)).join(""); return; }
+    if(!todo.length){ $("today").innerHTML='<div class="card hero"><div class="eyebrow">Today</div><div class="title" style="font-size:20px">Nothing left on today\'s deck</div></div>'+(j.done_today||[]).map(x=>card(x)).join(""); return; }
     DECK_I=Math.min(DECK_I,todo.length-1);
     const order=[...todo.slice(DECK_I),...todo.slice(0,DECK_I)];
     $("today").innerHTML=`<div class="deck" id="deck"><div class="swhint r">▶ start</div><div class="swhint l">✓ done</div>${order.slice(0,3).reverse().map((d,i,arr)=>{const k=arr.length-1-i;return (k===0?hero(d):card(d,{today:true})).replace('class="card',`data-id="${d.id}" data-title="${esc(d.title||"").replace(/"/g,"&quot;")}" class="card ${k===0?"top":"s"+k}`)}).join("")}</div>
-      <div class="deckbar"><span>${DECK_I+1} of ${todo.length} · swipe → start · ← tear off</span><span style="flex:1"></span><div class="dots">${todo.map((_,i)=>`<i class="${i===DECK_I?"on":""}"></i>`).join("")}</div>${todo.length>1?`<button class="sm ghost" onclick="deckNext()">skip ›</button>`:""}</div>`
+      <div class="deckbar"><span>${DECK_I+1} of ${todo.length}</span><span style="flex:1"></span><div class="dots">${todo.map((_,i)=>`<i class="${i===DECK_I?"on":""}"></i>`).join("")}</div>${todo.length>1?`<button class="sm ghost" onclick="deckNext()">skip ›</button>`:""}</div>`
       +(j.done_today||[]).map(x=>card(x)).join("");
     requestAnimationFrame(()=>{ const deck=$("deck"); const top=deck&&deck.querySelector(".card.top"); if(top){ const h=top.offsetHeight; deck.style.minHeight=(h+66)+"px"; deck.querySelectorAll(".card.s1,.card.s2").forEach(c=>c.style.height=h+"px"); wireSwipe(top,order[0]); } });
   } else {
@@ -364,8 +365,8 @@ function doneAsk(id){
   const box=document.createElement("div"); box.className="card"; box.id="donebox";
   box.innerHTML=`<div class="eyebrow">Sign off — ${esc(d.title)}</div>
     <div class="row"><input class="hrs" id="doneHrs" inputmode="decimal" placeholder="${live||"hours"}" value="${d.live_hours>0?(Math.round(d.live_hours*4)/4):""}"><input id="doneNote" placeholder="note (optional)"></div>
-    ${needPhoto?`<div class="row"><input type="file" accept="image/*" capture="environment" id="doneFile" style="display:none" onchange="donePhoto()"><button class="sm" id="donePhotoBtn" onclick="$('doneFile').click()">📷 Photo first</button><span class="note" id="donePhotoMsg">this step needs a photo</span></div>`:""}
-    <div class="btns"><button class="ghost" onclick="$('donebox').remove()">Cancel</button><button class="go" id="doneGo" onclick="doneGo()" ${needPhoto?"disabled":""}>✓ Sign off</button></div><div class="msg" id="doneMsg"></div>`;
+    ${needPhoto?`<div class="row"><input type="file" accept="image/*" capture="environment" id="doneFile" style="display:none" onchange="donePhoto()"><button class="sm" id="donePhotoBtn" onclick="$('doneFile').click()">📷 Photo</button><span class="note flag" id="donePhotoMsg">⚑ no photo</span></div>`:""}
+    <div class="btns"><button class="ghost" onclick="$('donebox').remove()">Cancel</button><button class="go" id="doneGo" onclick="doneGo()">✓ Sign off</button></div><div class="msg" id="doneMsg"></div>`;
   const old=$("donebox"); if(old)old.remove(); el.after(box); $("doneHrs").focus();
 }
 let DONE_PHOTO=false;
@@ -375,11 +376,11 @@ function donePhoto(){
   const img=new Image(); img.onload=async function(){
     const Mx=1600,sc=Math.min(1,Mx/Math.max(img.width,img.height)); const cv=document.createElement("canvas"); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc); cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
     const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",.85));
-    if(!d.job_id){ DONE_PHOTO=true; $("donePhotoMsg").textContent="✓ kept (no job on this card)"; $("doneGo").disabled=false; return; }
+    if(!d.job_id){ DONE_PHOTO=true; $("donePhotoMsg").classList.remove("flag"); $("donePhotoMsg").textContent="✓ kept"; $("doneGo").disabled=false; return; }
     const u=await pub({action:"media_upload_url",job_id:d.job_id,ext:"jpg"}); if(!u.ok){$("donePhotoMsg").textContent=u.error;return;}
     const put=await fetch(u.url,{method:"PUT",headers:{"content-type":"image/jpeg"},body:blob}); if(!put.ok){$("donePhotoMsg").textContent="upload failed";return;}
     await pub({action:"media_record",job_id:d.job_id,path:u.path,purpose:"step",kind:"photo",note:d.title});
-    DONE_PHOTO=true; $("donePhotoMsg").textContent="✓ photo on the job"; $("doneGo").disabled=false;
+    DONE_PHOTO=true; $("donePhotoMsg").classList.remove("flag"); $("donePhotoMsg").textContent="✓ photo"; $("doneGo").disabled=false;
   }; img.src=URL.createObjectURL(f);
 }
 async function doneGo(){
@@ -407,10 +408,10 @@ async function pushHint(){
   const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent);
   if("serviceWorker" in navigator){ try{ await navigator.serviceWorker.register("sw.js"); }catch(e){} }
-  if(!("PushManager" in window)||!("Notification" in window)){ if(ios&&!standalone){ $("installHint").style.display="block"; $("installHint").innerHTML="<b>Add to Home Screen</b> to get notifications on this iPhone: tap Share → Add to Home Screen. The app opens straight to your day."; } return; }
+  if(!("PushManager" in window)||!("Notification" in window)){ if(ios&&!standalone){ $("installHint").style.display="block"; $("installHint").innerHTML="Add to Home Screen for notifications."; } return; }
   if(Notification.permission==="granted"){ const reg=await navigator.serviceWorker.ready; const s=await reg.pushManager.getSubscription(); if(s){ crew({action:"push_subscribe",subscription:s.toJSON(),ua:navigator.userAgent}); return; } }
   if(Notification.permission!=="denied"){ $("bell").style.display="inline-block"; }
-  if(!standalone){ $("installHint").style.display="block"; $("installHint").innerHTML=ios?"<b>Add to Home Screen</b> (Share → Add to Home Screen) so this opens like an app and can notify you.":"<b>Install this page</b> from the browser menu (Add to Home screen) so it opens like an app."; }
+  if(!standalone){ $("installHint").style.display="block"; $("installHint").innerHTML="Add to Home screen."; }
 }
 async function enablePush(){
   try{
@@ -431,7 +432,7 @@ async function loadOffice(){
   $("oq").innerHTML=OQ.map(q=>`<div class="card"><div style="font-weight:600">${esc(q.title)}</div>${q.question?`<div class="note" style="white-space:pre-wrap;color:var(--fg2)">${esc(q.question)}</div>`:""}
       <div class="note">${q.asked_by?"sent by "+esc(q.asked_by):"from the office"}${q.ref?" · "+esc(q.ref):""}</div>
       ${q.reject_note?`<div class="oqback"><b>Sent back:</b> ${esc(q.reject_note)}</div>`:""}
-      ${q.status==="answered"?`<div class="oqsent">Answered — waiting for the office to check it.</div><div class="note">${esc(q.answer||"")}</div>`
+      ${q.status==="answered"?`<div class="oqsent">Answered.</div><div class="note">${esc(q.answer||"")}</div>`
         :`<textarea id="oa_${q.id}" placeholder="your answer — say it how you would say it" style="margin-top:8px"></textarea><div class="btns"><button class="go" onclick="oqSend('${q.id}')">Send it in</button></div>`}</div>`).join("");
 }
 async function oqSend(id){ const el=$("oa_"+id); const v=String(el&&el.value||"").trim(); if(v.length<2){if(el)el.focus();return;} const j=await pub({action:"oq_answer",id,answer:v}); if(!j.ok){alert("Not sent: "+j.error);return;} loadOffice(); }
