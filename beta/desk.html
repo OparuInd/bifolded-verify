@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 1.9</title>
+<title>Tungsten Royce — Input Desk 2.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -33,7 +33,7 @@
 header{display:flex;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);background:#161616;position:sticky;top:0;z-index:10}
 .wm{font-family:var(--fh);font-weight:700;letter-spacing:.12em;font-size:13px}.wm b{color:var(--bronze)}
 header h1{font-family:var(--fh);font-size:16px;font-weight:600;margin:0}header .v{color:var(--mute2);font-size:12px}
-.tabs{display:flex;gap:2px;margin-left:14px}.tabs button{border:1px solid transparent;background:transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600}.tabs button.on{background:var(--card2);color:var(--bronze2);border-color:var(--line2)}.tabs .pip{font-family:var(--fm);font-size:10.5px;background:var(--bad);color:#fff;border-radius:9px;padding:0 6px;margin-left:5px}
+.tabs{display:flex;gap:2px;margin-left:14px}.tabs button,.tabs a{white-space:nowrap}.tabs button{border:1px solid transparent;background:transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600}.tabs button.on{background:var(--card2);color:var(--bronze2);border-color:var(--line2)}.tabs .pip{font-family:var(--fm);font-size:10.5px;background:var(--bad);color:#fff;border-radius:9px;padding:0 6px;margin-left:5px}
 header .r{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mute)}
 .eyebrow{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 button{font:inherit;color:inherit;cursor:pointer;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);padding:8px 12px;font-weight:600}button:hover{border-color:var(--bronze)}button:disabled{opacity:.4;cursor:default}
@@ -87,6 +87,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 .rc .list{display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
 .rr.new{border-left:3px solid var(--bronze)}.kd{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);min-width:52px}.kd.survey{color:var(--bronze2)}
 .linkbox{border:1px solid var(--line2);border-radius:var(--r);background:var(--card2);padding:12px;margin-bottom:12px}.linkbox .r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.linkbox select,.linkbox input{flex:1;min-width:160px}.url{font-family:var(--fm);font-size:12px;word-break:break-all;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:8px}
+.stl{display:grid;grid-template-columns:1fr 1fr;gap:14px}.stl .box{border:1px solid var(--line2);border-radius:var(--r);background:var(--card2);padding:12px}.stl h3{margin:0 0 8px;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:500}.need{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}.need b{font-family:var(--fm);font-weight:500;color:var(--fg2)}.need .m{color:var(--mute);font-family:var(--fm);font-size:11px}.need .use{margin-left:auto}.cost{font-family:var(--fm);font-size:12px;display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--line)}.cost .na{color:var(--warn)}.cost .ok{color:var(--ok)}.seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{font-size:12px}.seg button.on{border-color:var(--bronze);color:var(--bronze)}.flag{font-family:var(--fm);font-size:11px;color:var(--warn);letter-spacing:.04em}@media(max-width:980px){.stl{grid-template-columns:1fr}}
 .lk{display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}.lk .m{color:var(--mute);font-family:var(--fm);font-size:11px}.lk.off{opacity:.5}
 .rr{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--card);cursor:pointer;display:flex;gap:10px;align-items:center}.rr.on{border-color:var(--bronze)}.rr img{width:56px;height:56px;object-fit:cover;border-radius:3px;background:#000}.rr .m{font-size:12px;color:var(--mute)}.rr b{font-family:var(--fm)}
 .lines{width:100%;border-collapse:collapse;font-size:13px}.lines th{font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line2)}.lines td{padding:4px 6px;border-bottom:1px solid var(--line)}.lines input,.lines select{padding:5px 7px;font-size:13px}
@@ -133,8 +134,8 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">1.9</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts → inventory</button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.0</span>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Steel</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
@@ -143,6 +144,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
   <div id="v_scans" style="display:none"></div>
   <div id="v_surveys" style="display:none"></div>
   <div id="v_rcvd" style="display:none"></div>
+  <div id="v_steel" style="display:none"></div>
   <div id="lb" class="lb" onclick="if(event.target===this)lbClose()"><div class="lbi"><div class="lbh"><span id="lbCap"></span><span style="margin-left:auto;display:flex;gap:8px"><button class="sm" id="lbRc" onclick="lbOpenRc()">Open receipt</button><a class="sm btn" id="lbNew" target="_blank" rel="noopener">Open in new tab</a><button class="sm" onclick="lbClose()">✕</button></span></div><div class="lbb" id="lbBody"></div></div></div>
 </main>
 <div class="toast" id="toast"></div>
@@ -172,7 +174,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","scans","surveys","rcvd"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","scans","surveys","rcvd","steel"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); }
 function rows(){ const rs=(Q.rows||[]).filter(r=>CAT==="all"||r.category===CAT); const key=r=>r.table_name+"|"+r.row_id; const idx=new Map(ORDER.map((k,i)=>[k,i])); return rs.slice().sort((a,b)=>(idx.has(key(a))?idx.get(key(a)):1e9)-(idx.has(key(b))?idx.get(key(b)):1e9)); }
 function keyOf(r){ return r.table_name+"|"+r.row_id; }
@@ -447,6 +449,75 @@ async function shareNew(){ const tv=$("shTarget").value; if(!tv){ toast("pick th
 async function shareOff(id,on){ try{ await desk({action:"share_off",id,on}); const l=await desk({action:"share_list"}); LK=l.rows||[]; renderRcvd(); }catch(e){ toast(e.message,true); } }
 window.pickRcvd=pickRcvd;window.seenAll=seenAll;window.rcvdLb=rcvdLb;window.shareNew=shareNew;window.shareOff=shareOff;
 
+
+/* ===== STEEL (2.0) — operator steel and track supports on a job (tr-desk 2.6 steel_get / steel_set / track_stock_set).
+   Ryan, 7 Sep: track supports need the TYPE and the QUANTITY / FOOTAGE; custom motor supports are quoted by Angelo (JR Billington);
+   the track length comes from the laser surveys; track on hand is a count with a name on it. A cost the book does not know is a flag, never $0. */
+let ST=null, STT=null, STSAVE=null;
+async function loadSteel(){ const el=$("v_steel"); if(!SHT){ try{ SHT=await desk({action:"survey_targets"}); }catch(e){ el.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } }
+  if(!STT){ try{ STT=localStorage.getItem("tr_steel_t")||""; }catch(e){ STT=""; } }
+  renderSteel(); if(STT) steelPull(); }
+function steelTgt(){ if(!STT) return null; const [k,id]=STT.split(":"); return k==="j"?{job_id:id}:k==="q"?{quote_id:id}:{customer_id:id}; }
+async function steelPull(){ const t=steelTgt(); if(!t) return; try{ ST=await desk(Object.assign({action:"steel_get"},t)); }catch(e){ toast(e.message,true); return; } renderSteel(); }
+function stPick(v){ STT=v; try{ localStorage.setItem("tr_steel_t",v); }catch(e){} ST=null; renderSteel(); if(v) steelPull(); }
+function stSel(){ return `<optgroup label="Jobs">${(SHT.jobs||[]).map(j=>`<option value="j:${j.id}" ${STT==="j:"+j.id?"selected":""}>${esc(j.label)}</option>`).join("")}</optgroup><optgroup label="Open quotes">${(SHT.quotes||[]).map(q=>`<option value="q:${q.id}" ${STT==="q:"+q.id?"selected":""}>${esc(q.label)}</option>`).join("")}</optgroup><optgroup label="Customers">${(SHT.customers||[]).map(c=>`<option value="c:${c.id}" ${STT==="c:"+c.id?"selected":""}>${esc(c.label)}</option>`).join("")}</optgroup>`; }
+const TRK=[["m8","M8"],["m10","M10"],["e3","E3"],["e4","E4"]];
+function stRole(r){ return ((ST&&ST.roles)||[]).find(x=>x.role===r)||null; }
+function stPart(r){ const R=stRole(r); if(!R||!R.parts.length) return null; return R.parts.find(p=>p.accepted)||R.parts[0]; }
+function stCostLine(label, role, qty, unit){ const p=stPart(role); const R=stRole(role);
+  if(!R) return `<div class="cost"><span>${esc(label)}</span><span class="na">no role in the book</span></div>`;
+  if(!p) return `<div class="cost"><span>${esc(label)} · ${qty} ${esc(unit)}</span><span class="na">no part — ${role==="e4_track"?"TRK-02":"ask"}</span></div>`;
+  const q=`${esc(label)} · ${qty} ${esc(unit)} · ${esc(p.code)}${p.vendor?" · "+esc(p.vendor):""}`;
+  if(p.unit_cost!=null) return `<div class="cost"><span>${q}</span><span class="ok">${money(p.unit_cost)} × ${qty} = ${money(p.unit_cost*qty)}</span></div>`;
+  if(p.cost_known&&!p.accepted) return `<div class="cost"><span>${q}</span><span class="na">link not accepted — Part Mapper</span></div>`;
+  return `<div class="cost"><span>${q}</span><span class="na">${p.price_basis&&/quote/i.test(p.price_basis)?"quote per job":"cost unknown — "+esc(p.cost_source||"ask")}</span></div>`; }
+function stForm(){ return ST&&ST.steel?ST.steel:{}; }
+function stVal(id){ const e=$(id); return e?e.value:""; }
+function renderSteel(){ const el=$("v_steel"); const f=stForm();
+  const top=`<div class="linkbox"><div class="r"><select id="stTarget" onchange="stPick(this.value)"><option value="">— job · quote · customer —</option>${stSel()}</select><button class="sm ghost" onclick="steelPull()">Refresh</button></div></div>`;
+  if(!STT){ el.innerHTML=top+'<div class="empty">Pick the job the steel belongs to.</div>'; return; }
+  if(!ST){ el.innerHTML=top+'<div class="empty">Loading…</div>'; return; }
+  const need=(ST.need||[]); const opts=ST.options||[]; const sup=opts.filter(o=>o.group_key==="trk_sup");
+  const trk=f.track||""; const tft=f.track_ft!=null?f.track_ft:""; const supT=f.sup_type||""; const arm=f.arm||(ST.auto==="mot_ht"?"ht":"std");
+  const needRows=need.length?need.map(n=>`<div class="need"><div><b>${fmtInch(n.opening_w_in)}</b> · ${esc(n.site||"")}${n.opening?" · "+esc(n.opening):""}<div class="m">${esc(String(n.at).slice(0,10))} · ${esc(n.by_name||"")} · ${esc(n.source||"")}</div></div><span class="m">${n.track_ft!=null?Number(n.track_ft).toFixed(2)+" ft":""} ${n.allowance_unknown?'<span class="flag">⚑ opening width — TRK-01</span>':""}</span><button class="sm use" onclick="stUse(${Number(n.track_ft)||0})">Use</button></div>`).join(""):'<div class="empty" style="padding:14px">No laser survey on this yet — Surveys / Received.</div>';
+  const ordering=ST.ordering||{}; const ordTxt=trk&&ordering[trk]?`<span class="m">${esc(trk.toUpperCase())} · ${esc(ordering[trk])}</span>`:"";
+  const trkP=trk?stPart(trk+"_track"):null; const onHand=trkP&&trkP.stock?trkP.stock:null;
+  const stockRows=TRK.map(([k,n])=>{ const p=stPart(k+"_track"); if(!p) return `<div class="need"><b>${n}</b><span class="m">no part in the book${k==="e4"?" — TRK-02":""}</span></div>`; const s=p.stock||{}; return `<div class="need"><b>${n}</b><span class="m">${esc(p.code)}${p.qualifier?" · "+esc(p.qualifier):""} · ${esc(ordering[k]||"")}</span><input inputmode="decimal" id="stk_${k}" value="${s.qty!=null?s.qty:""}" placeholder="—" style="width:80px;margin-left:auto"> <span class="m">ft${s.counted_by?" · "+esc(s.counted_by)+" "+esc(String(s.counted_at||"").slice(0,10)):' · <span class="flag">not counted — TRK-03</span>'}</span><button class="sm" onclick="stCount('${esc(p.part_key||"")}','${k}')">Count</button></div>`; }).join("");
+  const supUnit=supT==="bar"?"qty":supT==="l"?"ft":"";
+  // cost preview from the book — a flag where the book has no number
+  const lines=[]; if(trk&&tft) lines.push(stCostLine(trk.toUpperCase()+" track", trk+"_track", Number(tft), "ft"));
+  if(supT==="bar"&&f.sup_qty) lines.push(stCostLine("Track support — bar", "track_support_bar", Number(f.sup_qty), "ea"));
+  if(supT==="l"&&f.sup_ft) lines.push(stCostLine("Track support — L-steel", "track_support_l", Number(f.sup_ft), "ft"));
+  if(supT&&supT!=="none") lines.push(`<div class="cost"><span>Drill / tap / cut labor</span><span class="na">hours unknown — STL-06</span></div>`);
+  const isMot=ST.auto==="mot"||ST.auto==="mot_ht"||arm==="ht"||f.bracket_custom;
+  if(isMot){ lines.push(stCostLine("Standard motor bracket","motor_bracket_std",1,"ea")); lines.push(stCostLine("Linkage arm","linkage_arm_std",1,"ea")); }
+  if(arm==="ht") lines.push(stCostLine("High-torque motor arm","motor_arm_ht",1,"ea"));
+  if(f.bracket_custom) lines.push(f.bracket_quote!=null&&f.bracket_quote!==""?`<div class="cost"><span>Custom bracket · JR Billington${f.bracket_quote_ref?" · "+esc(f.bracket_quote_ref):""}</span><span class="ok">${money(f.bracket_quote)}</span></div>`:`<div class="cost"><span>Custom bracket · JR Billington</span><span class="na">${f.bracket_status==="asked"?"quote asked — waiting on Angelo":"quote per job — design it in the Steel Support Studio, send it to Angelo"}</span></div>`);
+  const known=lines.length&&!lines.some(l=>l.includes('class="na"'));
+  el.innerHTML=top+`<div class="stl">
+   <div>
+    <div class="box"><h3>Track · from the laser</h3>${needRows}</div>
+    <div class="box" style="margin-top:14px"><h3>Track on hand</h3>${stockRows}</div>
+   </div>
+   <div>
+    <div class="box"><h3>This job</h3>
+     <div class="f"><label>Track</label><div class="seg">${TRK.map(([k,n])=>`<button class="sm ${trk===k?"on":""}" onclick="stSet('track','${k}')">${n}</button>`).join("")} ${ordTxt}</div></div>
+     <div class="f2"><div class="f"><label>Track length · ft ${f.track_from==="survey"?"<i>from the laser</i>":""}</label><input id="st_track_ft" inputmode="decimal" value="${tft}" placeholder="—" onchange="stSet('track_ft',this.value,'typed')"></div><div class="f"><label>On hand</label><div style="padding:7px 0;font-family:var(--fm);font-size:13px">${onHand&&onHand.qty!=null?esc(String(onHand.qty))+" ft":'<span class="flag">not counted</span>'}${onHand&&onHand.qty!=null&&tft?(Number(onHand.qty)>=Number(tft)?' <span style="color:var(--ok)">· enough</span>':' <span class="flag">· order</span>'):""}</div></div></div>
+     <div class="f"><label>Track support</label><div class="seg">${sup.map(o=>`<button class="sm ${supT===o.opt_id?"on":""}" title="${esc(o.blurb||"")}" onclick="stSet('sup_type','${o.opt_id}')">${esc(o.name)}</button>`).join("")}</div></div>
+     ${supUnit?`<div class="f2"><div class="f"><label>${supUnit==="qty"?"Pieces":"Feet"}</label><input inputmode="decimal" value="${supUnit==="qty"?(f.sup_qty??""):(f.sup_ft??"")}" placeholder="—" onchange="stSet('${supUnit==="qty"?"sup_qty":"sup_ft"}',this.value)"></div><div class="f"><label>Labor</label><div style="padding:7px 0" class="flag">drill · tap · cut — hours STL-06</div></div></div>`:""}
+     <div class="f"><label>Operator</label><div class="seg"><button class="sm ${arm==="std"?"on":""}" onclick="stSet('arm','std')">Standard arm</button><button class="sm ${arm==="ht"?"on":""}" onclick="stSet('arm','ht')">High-torque arm</button><button class="sm ${f.bracket_custom?"on":""}" onclick="stSet('bracket_custom',${!f.bracket_custom})">Custom bracket</button>${ST.auto?`<span class="m">agreement · ${esc(ST.auto==="mot_ht"?"Motorised · high-torque":ST.auto==="mot"?"Motorised":"By hand")}</span>`:""}</div></div>
+     ${f.bracket_custom?`<div class="f3"><div class="f"><label>Angelo's quote</label><div class="seg">${[["designed","Designed"],["asked","Asked"],["quoted","Quoted"]].map(([k,n])=>`<button class="sm ${f.bracket_status===k?"on":""}" onclick="stSet('bracket_status','${k}')">${n}</button>`).join("")}</div></div><div class="f"><label>Quote $</label><input inputmode="decimal" value="${f.bracket_quote??""}" placeholder="—" onchange="stSet('bracket_quote',this.value)"></div><div class="f"><label>Quote ref</label><input value="${esc(f.bracket_quote_ref||"")}" placeholder="—" onchange="stSet('bracket_quote_ref',this.value)"></div></div>`:""}
+     <div class="f"><label>Note</label><input value="${esc(f.note||"")}" placeholder="—" onchange="stSet('note',this.value)"></div>
+     <div class="m" style="font-size:11px;color:var(--mute)">${f.updated_by?"saved · "+esc(f.updated_by)+" · "+esc(String(f.updated_at||"").slice(0,16).replace("T"," ")):"nothing saved yet"}</div>
+    </div>
+    <div class="box" style="margin-top:14px"><h3>Cost · from the book${known?"":' <span class="flag">⚑ incomplete</span>'}</h3>${lines.join("")||'<div class="empty" style="padding:14px">Pick the track and the supports.</div>'}</div>
+   </div></div>`; }
+function stUse(ft){ stSet("track_ft", Math.ceil(ft*4)/4, "survey"); }
+async function stSet(k,v,from){ const f=Object.assign({}, stForm()); f[k]=v; if(k==="track_ft") f.track_from=from||"typed"; if(k==="sup_type"){ if(v!=="bar") f.sup_qty=null; if(v!=="l") f.sup_ft=null; }
+  if(k==="bracket_custom"&&!v){ f.bracket_status=null; f.bracket_quote=null; f.bracket_quote_ref=null; }
+  ST.steel=f; renderSteel(); clearTimeout(STSAVE); STSAVE=setTimeout(stSave,250); }
+async function stSave(){ const f=stForm(); const t=steelTgt(); if(!t) return; try{ const r=await desk(Object.assign({action:"steel_set"},t,{track:f.track,track_ft:f.track_ft,track_from:f.track_from,sup_type:f.sup_type,sup_qty:f.sup_qty,sup_ft:f.sup_ft,arm:f.arm||"std",bracket_custom:!!f.bracket_custom,bracket_status:f.bracket_status,bracket_quote:f.bracket_quote,bracket_quote_ref:f.bracket_quote_ref,note:f.note})); ST.steel=r.steel; renderSteel(); }catch(e){ toast(e.message,true); } }
+async function stCount(key,k){ if(!key){ toast("no part key on that track — Part Mapper",true); return; } const q=$("stk_"+k).value; try{ const r=await desk({action:"track_stock_set",part_key:key,qty:q===""?null:Number(q),unit:"ft"}); toast(q===""?"count cleared":"counted · "+q+" ft"); await steelPull(); }catch(e){ toast(e.message,true); } }
 /* ---- push (1.9): the office phone hears when a customer / contractor sends something through their link ---- */
 async function pushHint(){ if(!("serviceWorker" in navigator)) return; try{ await navigator.serviceWorker.register("sw.js"); }catch(e){}
   if(!("PushManager" in window)||!("Notification" in window)) return;

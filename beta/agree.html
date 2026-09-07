@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TR Agreement 2.2</title>
+<title>TR Agreement 2.3</title>
 <!--
   TR AGREEMENT 1.1 · Tungsten Royce · BY BIFOLDED
   Copyright Tungsten Royce. Proprietary.
@@ -485,7 +485,8 @@ const OPT={
   {id:"mangaris",n:"1″ Mangaris Hardwood", c:"A dense hardwood threshold, one inch proud."}]},
  auto:{n:"Operation",list:[
   {id:"none",n:"By Hand", c:"Balanced to move with the slightest touch."},
-  {id:"mot", n:"Motorised", c:"A concealed operator on a wall switch. Worth it past about twenty feet."}]},
+  {id:"mot", n:"Motorised", c:"A concealed operator on a wall switch. Worth it past about twenty feet."},
+  {id:"mot_ht", n:"Motorised · High-Torque Arm", c:"The concealed operator with a custom arm made for a heavier or taller door."}]},
  casingInt:{n:"Interior Casing",list:[
   {id:"int_std", n:"Standard Casing",  c:"Head and legs cased to the opening, with the apron — cut, fitted and finished to your door colour."},
   {id:"int_prem",n:"Premium Upgrade",  c:"A wider profile with backband and plinth blocks. The opening reads as joinery rather than trim."},
@@ -1593,7 +1594,7 @@ function surveySvg(v, opt){
   const wmin=Number(v.w_min??(wr.length?Math.min(...wr.map(x=>x.t)):W)), wmax=Number(v.w_max??(wr.length?Math.max(...wr.map(x=>x.t)):W));
   const hmin=Number(v.h_min??(hr.length?Math.min(...hr.map(x=>x.t)):H)), hmax=Number(v.h_max??(hr.length?Math.max(...hr.map(x=>x.t)):H));
   const cl=v.clearances||raw.clearances||{}; const ct=Number(cl.top||0), cL=Number(cl.left||0), cR=Number(cl.right||0);
-  const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+wh+(F?"-"+F:"")+"″"; };
+  const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+(wh||!F?wh:"")+(F?(wh?"-":"")+F:"")+"″"; };
   const dark=opt.dark!==false; const ink=dark?"#f4f2ee":"#1c1a20", mute=dark?"#8f8a82":"#6b6558", bronze="#c9ab7f", line=dark?"#3a3a3a":"#cfc8ba", bg=dark?"#141414":"#fbf9f6", warn="#d9a441";
   const pw=560, ph=Math.round(pw*Math.min(1.15,Math.max(0.45,H/W))+110); const pad=78; const iw=pw-pad*2, ih=ph-pad-60; const sx=iw/wmax, sy=ih/hmax;
   const cx=pad+iw/2, top=48;
