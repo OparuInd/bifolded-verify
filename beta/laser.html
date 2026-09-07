@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tungsten Royce — Laser 2.3</title>
+  <title>Tungsten Royce — Laser 2.4</title>
   <!-- v1.7 — the true-opening outline is now a toggle, and any leg 1/2in or more
        outside the buildable box draws in red instead of grey. -->
   <style>
@@ -781,45 +781,9 @@
   </div>
 </div>
 
-<!-- CLEARANCES -->
+<!-- 2.4: the clearance / gap card is gone — the laser records the opening; gaps are applied in the office (studios, Agreement) -->
 <div class="card">
-  <div class="card-title">Clearances <span class="opt-label">(optional)</span></div>
-  <p style="font-size:0.78rem;color:#999;margin-bottom:14px">Gap to deduct from the opening on each side</p>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px">
-    <div class="field" style="margin-bottom:0">
-      <label>Top</label>
-      <select id="cl-top" class="cl-select" onchange="onInput()">
-        <option value="0">0</option>
-        <option value="0.25">¼″</option>
-        <option value="0.375">⅜″</option>
-        <option value="0.5">½″</option>
-        <option value="0.625">⅝″</option>
-      </select>
-    </div>
-    <div class="field" style="margin-bottom:0">
-      <label>Left</label>
-      <select id="cl-left" class="cl-select" onchange="onInput()">
-        <option value="0">0</option>
-        <option value="0.25">¼″</option>
-        <option value="0.375">⅜″</option>
-        <option value="0.5">½″</option>
-        <option value="0.625">⅝″</option>
-      </select>
-    </div>
-    <div class="field" style="margin-bottom:0">
-      <label>Right</label>
-      <select id="cl-right" class="cl-select" onchange="onInput()">
-        <option value="0">0</option>
-        <option value="0.25">¼″</option>
-        <option value="0.375">⅜″</option>
-        <option value="0.5">½″</option>
-        <option value="0.625">⅝″</option>
-      </select>
-    </div>
-  </div>
-
-  <button class="calc-btn" onclick="calculate()">Calculate Door Size</button>
+  <button class="calc-btn" onclick="calculate()">Calculate the opening</button>
 </div>
 
 <!-- RESULTS -->
@@ -965,13 +929,7 @@ function surveySvg(v, opt){
     return ids;
   }
 
-  function getClearances() {
-    return {
-      top:   parseFloat(document.getElementById('cl-top')?.value)   || 0,
-      left:  parseFloat(document.getElementById('cl-left')?.value)  || 0,
-      right: parseFloat(document.getElementById('cl-right')?.value) || 0,
-    };
-  }
+  function getClearances() { return { top: 0, left: 0, right: 0 }; }   // 2.4 — gaps live in the office, not on the tape
 
   function setUnit(u) {
     unit = u;
@@ -1217,7 +1175,7 @@ function surveySvg(v, opt){
 
     // Max door size — primary result
     html += `<div class="result-main">
-      <div class="door-label" style="margin-bottom:10px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:#888">Maximum door size</div>
+      <div class="door-label" style="margin-bottom:10px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;color:#888">Opening · smallest reading each way</div>
       <div style="display:flex;justify-content:center;gap:24px;align-items:center;margin-bottom:4px">
         <div style="text-align:center">
           <div class="door-size">${decIn(minWidth)}</div>
@@ -1433,7 +1391,7 @@ function surveySvg(v, opt){
     doc.setFontSize(7.5);
     doc.setFont(undefined, 'normal');
     doc.setTextColor(160, 170, 200);
-    doc.text('DOOR UNIT SIZE', lm + 5, y + 7);
+    doc.text('OPENING (SMALLEST READING EACH WAY)', lm + 5, y + 7);
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
