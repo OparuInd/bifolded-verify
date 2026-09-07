@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tungsten Royce — Laser 2.0</title>
+  <title>Tungsten Royce — Laser 2.2</title>
   <!-- v1.7 — the true-opening outline is now a toggle, and any leg 1/2in or more
        outside the buildable box draws in red instead of grey. -->
   <style>
@@ -212,6 +212,28 @@
     }
 
     .ft-pair .input-group { flex: 1; }
+    .ft-pair .input-group { min-width: 0; flex: 1 1 0; }
+    .ft-pair .input-group input { min-width: 0; }
+    .ft-pair .input-group.frac { flex: 0 0 auto; position: relative; }
+    .ft-pair { flex-wrap: wrap; }
+    .ft-pair .input-group.frac.wide { flex: 1 0 100%; }
+    .ft-pair .input-group.frac.wide select.frac { width: 100%; min-height: 40px; }
+    .input-group.frac::after { content: "▾"; position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #8a8f9c; font-size: 0.75rem; pointer-events: none; }
+    .input-group select.frac {
+      border: none; background: transparent; outline: none; color: #1a1a2e;
+      font-size: 0.88rem; font-weight: 600; padding: 9px 14px 9px 4px; min-width: 52px; width: 52px; min-height: 44px;
+      -webkit-appearance: none; appearance: none; text-align: center; font-variant-numeric: tabular-nums;
+    }
+    .input-group select.frac.set { color: #4361ee; }
+    .frac-strip { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+    .frac-strip button {
+      flex: 1 0 calc(12.5% - 4px); min-height: 34px; border: 1px solid #e0e3ea; border-radius: 6px; background: #fff;
+      font-size: 0.8rem; font-weight: 600; color: #444; padding: 0; font-variant-numeric: tabular-nums;
+    }
+    .frac-strip button.on { background: #4361ee; color: #fff; border-color: #4361ee; }
+    .echo { font-size: 0.72rem; color: #8a8f9c; margin-top: 3px; min-height: 0.9rem; font-variant-numeric: tabular-nums; }
+    .echo.bad { color: #d64545; }
+    .echo b { color: #1a1a2e; font-weight: 700; }
 
     /* Summary row */
     .summary-row {
@@ -521,6 +543,14 @@
     <div class="input-group" style="background:#f7f8fa">
       <select id="job-target" onchange="onTarget()" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"><option value="">— loading —</option></select>
     </div>
+  </div>
+  <div id="newCust" style="display:none;border:1px solid #e6e0d4;border-radius:6px;padding:10px;margin-bottom:12px;background:#fbf9f6">
+    <div class="field"><label>Customer name</label><div class="input-group" style="background:#fff"><input type="text" id="nc-name" placeholder="Mr & Mrs Lachman" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/></div></div>
+    <div class="field"><label>Site address</label><div class="input-group" style="background:#fff"><input type="text" id="nc-address" placeholder="street, city" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/></div></div>
+    <div class="field"><label>Phone</label><div class="input-group" style="background:#fff"><input type="tel" id="nc-phone" placeholder="" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/></div></div>
+    <div class="field" style="margin-bottom:6px"><label>Email</label><div class="input-group" style="background:#fff"><input type="email" id="nc-email" placeholder="" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/></div></div>
+    <button class="export-btn" id="nc-btn" onclick="saveCustomer()" style="background:#26221b;margin:0">Save customer</button>
+    <div id="nc-note" style="font-size:12px;color:#6b6558;margin-top:6px"></div>
   </div>
   <div class="field" style="margin-bottom:0">
     <label>Site / opening</label>
@@ -843,9 +873,19 @@
     try{ const r=await fetch(DESK_EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({jwt,token:tok},body))}); const j=await r.json(); if(j&&j.error==="signed out") signOut(); return j; }catch(e){ return {ok:false,error:String(e)}; } }
   let TARGETS={jobs:[],quotes:[]};
   async function loadTargets(){ const j=await desk({action:"survey_targets"}); const sel=document.getElementById("job-target"); if(!j.ok){ sel.innerHTML='<option value="">— offline —</option>'; return; } TARGETS=j;
-    sel.innerHTML='<option value="">— pick the job or quote —</option>'+(j.jobs||[]).map(x=>`<option value="j:${x.id}">${esc(x.label)}</option>`).join("")+(j.quotes||[]).map(x=>`<option value="q:${x.id}">${esc(x.label)}</option>`).join("")+'<option value="_">not in the book yet</option>';
+    sel.innerHTML='<option value="">— pick the job, quote or customer —</option>'+((j.jobs||[]).length?'<optgroup label="Jobs">'+(j.jobs||[]).map(x=>`<option value="j:${x.id}">${esc(x.label)}</option>`).join("")+'</optgroup>':'');
+    sel.innerHTML+=((j.quotes||[]).length?'<optgroup label="Open quotes">'+(j.quotes||[]).map(x=>`<option value="q:${x.id}">${esc(x.label)}</option>`).join("")+'</optgroup>':'')+((j.customers||[]).length?'<optgroup label="Customers">'+(j.customers||[]).map(x=>`<option value="c:${x.id}">${esc(x.label)}</option>`).join("")+'</optgroup>':'')+'<option value="_new">＋ new customer…</option>';
     try{ const last=localStorage.getItem("tr.laser.target"); if(last&&[...sel.options].some(o=>o.value===last)) sel.value=last; }catch(e){} }
-  function onTarget(){ try{ localStorage.setItem("tr.laser.target",document.getElementById("job-target").value); }catch(e){} }
+  function onTarget(){ const v=document.getElementById("job-target").value; document.getElementById("newCust").style.display=v==="_new"?"block":"none"; if(v==="_new") document.getElementById("nc-name").focus(); try{ localStorage.setItem("tr.laser.target",v); }catch(e){} }
+  async function saveCustomer(force){ const name=document.getElementById("nc-name").value.trim(), address=document.getElementById("nc-address").value.trim(), phone=document.getElementById("nc-phone").value.trim(), email=document.getElementById("nc-email").value.trim(); const note=document.getElementById("nc-note"); if(name.length<2){ note.innerHTML='<b style="color:#a33327">A name.</b>'; return; }
+    const btn=document.getElementById("nc-btn"); btn.disabled=true; const j=await desk({action:"survey_customer_new",name,address,phone,email,force:!!force}); btn.disabled=false;
+    if(j&&j.error==="exists"){ const ex=j.existing[0]; note.innerHTML=`<b>C-${ex.customer_no} ${esc(ex.name)}</b> is already in the book${ex.site_address?" · "+esc(ex.site_address):""}. <a href="#" onclick="useExisting('${ex.id}');return false">Use that one</a> · <a href="#" onclick="saveCustomer(true);return false">Save as a new one anyway</a>`; return; }
+    if(!j||!j.ok){ note.innerHTML='<b style="color:#a33327">'+esc((j&&j.error)||"offline")+'</b>'; return; }
+    const sel=document.getElementById("job-target"); const grp=[...sel.querySelectorAll("optgroup")].find(g=>g.label==="Customers")||(()=>{ const g=document.createElement("optgroup"); g.label="Customers"; sel.insertBefore(g, sel.querySelector('option[value="_new"]')); return g; })();
+    const o=document.createElement("option"); o.value="c:"+j.customer.id; o.textContent=j.label; grp.prepend(o); sel.value=o.value; TARGETS.customers=[{id:j.customer.id,label:j.label}].concat(TARGETS.customers||[]);
+    if(!document.getElementById("job-name").value.trim()&&address) document.getElementById("job-name").value=address;
+    document.getElementById("newCust").style.display="none"; note.textContent=""; onTarget(); }
+  async function useExisting(id){ await loadTargets(); const sel=document.getElementById("job-target"); sel.value="c:"+id; document.getElementById("newCust").style.display="none"; onTarget(); }
   const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   (function gate(){ const s=getSess(); if(!s||!s.refresh_token){ location.replace("./?next="+HERE); return; } try{ document.getElementById("who").textContent=localStorage.getItem("tr_who")||""; }catch(e){} loadTargets(); })();
   /* surveySvg(v) — one drawing of a laser survey. Used by laser.html, desk.html (Surveys), agree.html (picker).
@@ -928,29 +968,68 @@ function surveySvg(v, opt){
     renderFields();
   }
 
+  /* Fractions: every inch field takes decimal ("95.75"), a fraction ("95 3/4", "95-3/4", "3/4"),
+     or a whole number plus the fraction picker beside it. The echo under the field shows the two
+     readings of the same number, so the person always sees what the tool understood. */
+  const FRACS = [[0,'0'],[1,'1/16'],[2,'1/8'],[3,'3/16'],[4,'1/4'],[5,'5/16'],[6,'3/8'],[7,'7/16'],[8,'1/2'],[9,'9/16'],[10,'5/8'],[11,'11/16'],[12,'3/4'],[13,'13/16'],[14,'7/8'],[15,'15/16']];
+  function fracSelect(id) {
+    return `<div class="input-group frac"><select class="frac" id="${id}-fr" onchange="onFrac('${id}')" aria-label="fraction">${FRACS.map(f=>`<option value="${f[0]}">${f[1]}</option>`).join('')}</select></div>`;
+  }
   function buildInput(id) {
     if (unit === 'ft') {
       return `<div class="ft-pair">
         <div class="input-group">
-          <input type="number" inputmode="decimal" min="0" id="${id}-ft" placeholder="0" oninput="onInput()"/>
-          <span class="unit">ft</span>
+          <input type="number" inputmode="numeric" min="0" id="${id}-ft" placeholder="ft" oninput="onInput()"/>
         </div>
         <div class="input-group">
-          <input type="number" inputmode="decimal" min="0" max="11.99" id="${id}-in" placeholder="0" oninput="onInput()"/>
-          <span class="unit">in</span>
+          <input type="text" inputmode="decimal" id="${id}-in" placeholder="in" oninput="onInput()" autocomplete="off"/>
         </div>
-      </div>`;
+        ${fracSelect(id).replace('class="input-group frac"','class="input-group frac wide"')}
+      </div><div class="echo" id="${id}-echo"></div>`;
     } else if (unit === 'mm') {
       return `<div class="input-group">
         <input type="number" inputmode="decimal" min="0" id="${id}-mm" placeholder="0" oninput="onInput()"/>
         <span class="unit">mm</span>
-      </div>`;
+      </div><div class="echo" id="${id}-echo"></div>`;
     } else {
-      return `<div class="input-group">
-        <input type="number" inputmode="decimal" min="0" id="${id}-raw" placeholder="0" oninput="onInput()"/>
-        <span class="unit">in</span>
-      </div>`;
+      return `<div class="ft-pair">
+        <div class="input-group">
+          <input type="text" inputmode="decimal" id="${id}-raw" placeholder="0" oninput="onInput()" autocomplete="off"/>
+        </div>
+        ${fracSelect(id)}
+      </div><div class="echo" id="${id}-echo"></div>`;
     }
+  }
+  /* "95.75" → 95.75 · "95 3/4" → 95.75 · "95-3/4" → 95.75 · "3/4" → 0.75 · "95 3/4\"" → 95.75 · junk → NaN */
+  function parseInches(txt) {
+    let t = String(txt || '').trim().replace(/["″”in]+$/i, '').replace(/,/g, '.').trim();
+    if (!t) return 0;
+    let m = t.match(/^(\d+(?:\.\d+)?)?\s*[- ]?\s*(?:(\d+)\s*\/\s*(\d+))?$/);
+    if (!m || (m[1] === undefined && m[2] === undefined)) return NaN;
+    let v = m[1] ? parseFloat(m[1]) : 0;
+    if (m[2]) { const d = parseInt(m[3], 10); if (!d) return NaN; v += parseInt(m[2], 10) / d; }
+    return v;
+  }
+  function fracOf(id) { return (parseInt(document.getElementById(id+'-fr')?.value, 10) || 0) / 16; }
+  window.onFrac = function (id) {
+    const sel = document.getElementById(id+'-fr'); if (sel) sel.classList.toggle('set', sel.value !== '0');
+    onInput();
+  };
+  /* nearest sixteenth, as 95-3/4″ ; marks ≈ when the number is off the sixteenths grid (laser decimals) */
+  function fracStr(v) {
+    const s16 = Math.round(v * 16), whole = Math.floor(s16 / 16), n = s16 - whole * 16;
+    const off = Math.abs(v * 16 - s16) > 0.01;
+    let f = ''; if (n) { let d = 16, nn = n; while (nn % 2 === 0) { nn /= 2; d /= 2; } f = nn + '/' + d; }
+    return (off ? '≈ ' : '') + (f ? (whole ? whole + '-' + f : f) : String(whole)) + '″';
+  }
+  function echo(id, v, bad) {
+    const el = document.getElementById(id+'-echo'); if (!el) return;
+    el.classList.toggle('bad', !!bad);
+    if (bad) { el.textContent = 'not a measurement'; return; }
+    if (!v) { el.textContent = ''; return; }
+    if (unit === 'mm') { el.innerHTML = `<b>${fracStr(v)}</b> · ${(Math.round(v*1000)/1000)}″`; return; }
+    if (unit === 'ft') { const ft = Math.floor(v / 12), r = v - ft * 12; el.innerHTML = `<b>${ft}′ ${fracStr(r)}</b> · ${(Math.round(v*1000)/1000)} in`; return; }
+    el.innerHTML = `<b>${fracStr(v)}</b> · ${(Math.round(v*1000)/1000)}`;
   }
 
   function applyColors() {
@@ -981,22 +1060,27 @@ function surveySvg(v, opt){
   }
 
   function getIn(id) {
+    let v, bad = false;
     if (unit === 'ft') {
       const ft  = parseFloat(document.getElementById(id+'-ft')?.value)  || 0;
-      const inn = parseFloat(document.getElementById(id+'-in')?.value)  || 0;
-      return ft * 12 + inn;
+      const inn = parseInches(document.getElementById(id+'-in')?.value);
+      bad = isNaN(inn);
+      v = ft * 12 + (bad ? 0 : inn) + fracOf(id);
     } else if (unit === 'mm') {
-      return (parseFloat(document.getElementById(id+'-mm')?.value) || 0) / 25.4;
+      v = (parseFloat(document.getElementById(id+'-mm')?.value) || 0) / 25.4;
     } else {
-      return parseFloat(document.getElementById(id+'-raw')?.value) || 0;
+      const raw = parseInches(document.getElementById(id+'-raw')?.value);
+      bad = isNaN(raw);
+      v = (bad ? 0 : raw) + fracOf(id);
     }
+    echo(id, v, bad);
+    return v;
   }
 
   function fmtIn(v) {
     if (!v) return '—';
-    const ft  = Math.floor(v / 12);
-    const inn = Math.round((v % 12) * 100) / 100;
-    return inn === 0 ? `${ft}′` : `${ft}′ ${inn}″`;
+    if (unit === 'ft') { const ft = Math.floor(v / 12), r = v - ft * 12; return `${ft}′ ${fracStr(r)}`; }
+    return `${fracStr(v)} · ${Math.round(v * 100) / 100}`;
   }
 
   function fmt(v) {
@@ -1231,7 +1315,7 @@ function surveySvg(v, opt){
     const btn  = document.getElementById('send-btn');
     const note = document.getElementById('send-note');
     const tsel = document.getElementById('job-target'); const tv = tsel.value;
-    if (!tv) { note.innerHTML = '<b style="color:#a33327">Pick the job or quote first.</b>'; tsel.focus(); return; }
+    if (!tv || tv === '_new') { note.innerHTML = '<b style="color:#a33327">Pick the job, quote or customer first.</b>'; tsel.focus(); return; }
     if (!data.job) { const jn = prompt('Site / opening — how the shop will know this one', ''); if (jn === null) return; document.getElementById('job-name').value = (jn||'').trim(); data.job = (jn||'').trim(); }
     const wr = data.widthReadings.map(x=>x.total), hr = data.heightReadings.map(x=>x.total);
     const survey = { date: data.date, site: data.job, opening: '', w: data.maxDoor.widthIn, h: data.maxDoor.heightIn,
@@ -1240,6 +1324,7 @@ function surveySvg(v, opt){
     const body = { action: 'survey_add', survey };
     if (tv.startsWith('j:')) { const jb = TARGETS.jobs.find(x=>x.id===tv.slice(2)); body.job_id = jb.id; body.quote_id = jb.quote_id||null; body.customer_id = jb.customer_id||null; }
     else if (tv.startsWith('q:')) { const q = TARGETS.quotes.find(x=>x.id===tv.slice(2)); body.quote_id = q.id; body.customer_id = q.customer_id||null; }
+    else if (tv.startsWith('c:')) { body.customer_id = tv.slice(2); }
     btn.disabled = true; btn.textContent = 'Sending\u2026';
     const j = await desk(body);
     if (j && j.ok) {
