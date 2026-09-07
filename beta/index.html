@@ -30,7 +30,7 @@ let WHO="";
 (async()=>{
   const k=new URL(location.href).searchParams.get("k"); if(k&&k.length>=20){ location.replace("slip.html?k="+encodeURIComponent(k)); return; }   // an old link still works
   const NEXT=(()=>{ const n=new URL(location.href).searchParams.get("next")||""; return /^[a-z0-9_-]+\.html$/i.test(n)?n:""; })();   // 2.0: a tool sent us here — go back to it after
-  try{ const s=JSON.parse(localStorage.getItem("tr_sess")||"null"); const p=localStorage.getItem("tr_page"); if(s&&s.refresh_token&&p){ location.replace(NEXT&&p==="desk.html"?NEXT:p); return; } }catch(e){}
+  try{ const s=JSON.parse(localStorage.getItem("tr_sess")||"null"); const p=localStorage.getItem("tr_page"); if(s&&s.refresh_token&&p){ location.replace(NEXT&&(p==="desk.html"||NEXT==="laser.html")?NEXT:p); return; } }catch(e){}
   const j=await crew({action:"roster"}).catch(()=>null);
   if(!j||!j.ok){ $("names").innerHTML='<div class="empty">'+esc((j&&j.error)||"offline")+'</div>'; return; }
   $("names").innerHTML=j.rows.map(r=>`<button type="button" onclick="pick(this,'${esc(r.name)}')">${esc(r.name)}<small>${r.kind}</small></button>`).join("")||'<div class="empty">no accounts yet</div>';
@@ -41,5 +41,5 @@ async function go(e){ e.preventDefault(); if(!WHO)return false; $("goBtn").disab
   const j=await crew({action:"login",name:WHO,password:$("p").value}).catch(()=>({ok:false,error:"offline"}));
   if(!j.ok){ $("flag").textContent=j.error||"⚑ wrong password"; $("goBtn").disabled=false; $("p").select(); return false; }
   try{ localStorage.setItem("tr_sess",JSON.stringify(j.session)); localStorage.setItem("tr_who",j.name); localStorage.setItem("tr_page",j.page); if(j.token) localStorage.setItem(K[j.kind]||"tr_k",j.token); }catch(e){}
-  location.replace(NEXT&&j.page==="desk.html"?NEXT:j.page); return false; }
+  location.replace(NEXT&&(j.page==="desk.html"||NEXT==="laser.html")?NEXT:j.page); return false; }
 </script></body></html>

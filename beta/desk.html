@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 1.7</title>
+<title>Tungsten Royce — Input Desk 1.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
-     TR INPUT DESK 1.7 (Agreement ↗ link — the web Agreement 2.0; 1.6 SCANS: the scan database — every scan / photo / document in the cloud, click to view from anywhere; 1.5 part #: quick reference fast0001 + the box's mfg part number, two fields; 1.4 lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
+     TR INPUT DESK 1.8 (SURVEYS tab — every laser survey in the cloud with its drawing; 1.7 Agreement ↗ link — the web Agreement 2.0; 1.6 SCANS: the scan database — every scan / photo / document in the cloud, click to view from anywhere; 1.5 part #: quick reference fast0001 + the box's mfg part number, two fields; 1.4 lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
      Dru's desk. Ryan, verbatim: "a functional Input app that presents the data required in a clear and
      concise manner … separated out by category … shows a sample of what he's looking for if it's an
      inventory item. If that sample photo does not exist, then an option to capture a picture, which
@@ -130,14 +130,15 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><h1>Input Desk</h1><span class="v">1.7</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts → inventory</button><button id="t_scans" onclick="tab('scans')">Scans</button><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><h1>Input Desk</h1><span class="v">1.8</span>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts → inventory</button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
   <div id="v_assist" style="display:none"></div>
   <div id="v_rcpt" style="display:none"></div>
   <div id="v_scans" style="display:none"></div>
+  <div id="v_surveys" style="display:none"></div>
   <div id="lb" class="lb" onclick="if(event.target===this)lbClose()"><div class="lbi"><div class="lbh"><span id="lbCap"></span><span style="margin-left:auto;display:flex;gap:8px"><button class="sm" id="lbRc" onclick="lbOpenRc()">Open receipt</button><a class="sm btn" id="lbNew" target="_blank" rel="noopener">Open in new tab</a><button class="sm" onclick="lbClose()">✕</button></span></div><div class="lbb" id="lbBody"></div></div></div>
 </main>
 <div class="toast" id="toast"></div>
@@ -167,7 +168,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","scans"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="scans")loadScans();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","scans","surveys"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); }
 function rows(){ const rs=(Q.rows||[]).filter(r=>CAT==="all"||r.category===CAT); const key=r=>r.table_name+"|"+r.row_id; const idx=new Map(ORDER.map((k,i)=>[k,i])); return rs.slice().sort((a,b)=>(idx.has(key(a))?idx.get(key(a)):1e9)-(idx.has(key(b))?idx.get(key(b)):1e9)); }
 function keyOf(r){ return r.table_name+"|"+r.row_id; }
@@ -277,6 +278,47 @@ async function loadAssist(){
 async function assistAnswer(table,id){ const v=$("aa_"+id).value.trim(); if(v.length<2){$("aa_"+id).focus();return;} try{ await desk({action:"assist_answer",table,id,answer:v}); toast("Answered · Dru is notified"); loadAssist(); loadAssistCount(); }catch(e){toast(e.message,true);} }
 /* ---- receipts → inventory (OCR here, on this machine) ---- */
 let RC=null,ITEMS=[],RSEL=null,OCR="",KIND="receipt",AUTO_OCR=false;
+// ---- SURVEYS — every laser survey in the cloud, with its drawing (1.8, 0090) ----
+let SV=[],SVSEL=null;
+async function loadSurveys(){ $("v_surveys").innerHTML='<div class="empty">Loading…</div>'; try{ const r=await desk({action:"survey_list"}); SV=r.rows; }catch(e){ $("v_surveys").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } if(!SVSEL&&SV[0]) SVSEL=SV[0].id; renderSurveys(); }
+function renderSurveys(){ const v=SV.find(x=>x.id===SVSEL);
+  $("v_surveys").innerHTML=`<div class="rc"><div><div class="list">${SV.map(x=>`<div class="rr ${x.id===SVSEL?"on":""}" onclick="SVSEL='${x.id}';renderSurveys()"><div><b>${fmtInch(x.w)} × ${fmtInch(x.h)}</b> · ${esc(x.site||"—")}${x.opening?" · "+esc(x.opening):""}<div class="m">${esc(x.date||String(x.at||"").slice(0,10))} · ${esc(x.by_name||"")} · ${esc(x.source||"")}</div></div></div>`).join("")||'<div class="empty">No surveys yet.</div>'}</div></div><div>${v?surveySvg(v,{dark:document.documentElement.dataset.theme!=="light"}):'<div class="empty">Pick a survey.</div>'}${v?`<div class="m" style="margin-top:8px;font-size:12px;color:var(--mute)">${esc(v.site||"")}${v.opening?" · "+esc(v.opening):""} · ${esc(v.date||"")} · ${esc(v.by_name||"")} · ${v.n_w+v.n_h} readings${v.quote_id?" · on a quote":""}${v.job_id?" · on a job":""}</div>`:""}</div></div>`; }
+function fmtInch(n){ n=Number(n)||0; const ft=Math.floor(n/12), r=Math.round((n-ft*12)*16)/16; const wh=Math.floor(r), f=r-wh; const F={0:"",0.125:"1/8",0.25:"1/4",0.375:"3/8",0.5:"1/2",0.625:"5/8",0.75:"3/4",0.875:"7/8",0.0625:"1/16",0.1875:"3/16",0.3125:"5/16",0.4375:"7/16",0.5625:"9/16",0.6875:"11/16",0.8125:"13/16",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+wh+(F?"-"+F:"")+"″"; }
+/* surveySvg(v) — one drawing of a laser survey. Used by laser.html, desk.html (Surveys), agree.html (picker).
+   v = a surveys row (w, h, w_min.., raw{widthReadings[{pos,total}], heightReadings[..], clearances{top,left,right}}) */
+function surveySvg(v, opt){
+  opt=opt||{}; const W=Number(v.w)||0, H=Number(v.h)||0; if(!W||!H) return '<div style="padding:20px;color:#8f8a82">no opening</div>';
+  const raw=v.raw||{}; const wr=(raw.widthReadings||[]).map(x=>({pos:String(x.pos||""),t:Number(x.total)||0})).filter(x=>x.t>0);
+  const hr=(raw.heightReadings||[]).map(x=>({pos:String(x.pos||""),t:Number(x.total)||0})).filter(x=>x.t>0);
+  const wmin=Number(v.w_min??(wr.length?Math.min(...wr.map(x=>x.t)):W)), wmax=Number(v.w_max??(wr.length?Math.max(...wr.map(x=>x.t)):W));
+  const hmin=Number(v.h_min??(hr.length?Math.min(...hr.map(x=>x.t)):H)), hmax=Number(v.h_max??(hr.length?Math.max(...hr.map(x=>x.t)):H));
+  const cl=v.clearances||raw.clearances||{}; const ct=Number(cl.top||0), cL=Number(cl.left||0), cR=Number(cl.right||0);
+  const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+wh+(F?"-"+F:"")+"″"; };
+  const dark=opt.dark!==false; const ink=dark?"#f4f2ee":"#1c1a20", mute=dark?"#8f8a82":"#6b6558", bronze="#c9ab7f", line=dark?"#3a3a3a":"#cfc8ba", bg=dark?"#141414":"#fbf9f6", warn="#d9a441";
+  const pw=560, ph=Math.round(pw*Math.min(1.15,Math.max(0.45,H/W))+110); const pad=78; const iw=pw-pad*2, ih=ph-pad-60; const sx=iw/wmax, sy=ih/hmax;
+  const cx=pad+iw/2, top=48;
+  // true opening (max readings) faint, governing (min) solid
+  const gx=cx-(W*sx)/2, gy=top+(hmax-H)*sy;   // governing sits on the floor
+  const tx=cx-(wmax*sx)/2;
+  let s=`<svg viewBox="0 0 ${pw} ${ph}" width="100%" style="max-width:${pw}px;display:block;background:${bg};border-radius:4px;font-family:JetBrains Mono,ui-monospace,Menlo,monospace">`;
+  s+=`<rect x="${tx}" y="${top}" width="${wmax*sx}" height="${hmax*sy}" fill="none" stroke="${line}" stroke-dasharray="5 4"/>`;
+  s+=`<rect x="${gx}" y="${gy}" width="${W*sx}" height="${H*sy}" fill="${dark?"#1f1f1f":"#fff"}" stroke="${bronze}" stroke-width="2"/>`;
+  if(ct||cL||cR){ s+=`<rect x="${gx+cL*sx}" y="${gy+ct*sy}" width="${(W-cL-cR)*sx}" height="${(H-ct)*sy}" fill="none" stroke="${warn}" stroke-width="1" stroke-dasharray="3 3"/>`; }
+  // width readings across (bottom / mid / top)
+  const rowY={Bottom:gy+H*sy-10,Mid:gy+H*sy/2,Top:gy+10};
+  for(const r of wr){ const y=rowY[r.pos]??gy+H*sy/2; const gov=Math.abs(r.t-wmin)<1e-6; s+=`<line x1="${gx+6}" y1="${y}" x2="${gx+W*sx-6}" y2="${y}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${cx}" y="${r.pos==="Top"?y+13:y-4}" text-anchor="middle" font-size="11" fill="${gov?bronze:mute}">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
+  const colX={Left:gx+14,Centre:cx,Center:cx,Right:gx+W*sx-14};
+  for(const r of hr){ const x=colX[r.pos]??cx; const gov=Math.abs(r.t-hmin)<1e-6; s+=`<line x1="${x}" y1="${gy+6}" x2="${x}" y2="${gy+H*sy-6}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${x+4}" y="${gy+H*sy/2+(r.pos==="Right"?0:0)}" font-size="11" fill="${gov?bronze:mute}" transform="rotate(-90 ${x+4} ${gy+H*sy/2})" text-anchor="middle">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
+  // dimensions
+  s+=`<text x="${cx}" y="${top-16}" text-anchor="middle" font-size="13" fill="${ink}" font-weight="600">${fi(W)} × ${fi(H)}</text>`;
+  s+=`<text x="${cx}" y="${top-2}" text-anchor="middle" font-size="10" fill="${mute}">governing · smallest reading each way</text>`;
+  const spW=wmax-wmin, spH=hmax-hmin; const sq=Math.max(spW,spH); const call=sq<0.125?"square within an eighth":sq<0.375?"slightly out of square":sq<0.75?"out of square":"well out of square";
+  s+=`<text x="${cx}" y="${ph-34}" text-anchor="middle" font-size="11" fill="${sq>=0.375?warn:mute}">${call} · width varies ${spW.toFixed(3)}″ · height ${spH.toFixed(3)}″</text>`;
+  if(ct||cL||cR) s+=`<text x="${cx}" y="${ph-18}" text-anchor="middle" font-size="10" fill="${warn}">clearance top ${fi(ct)} · left ${fi(cL)} · right ${fi(cR)} → door ${fi(W-cL-cR)} × ${fi(H-ct)}</text>`;
+  else s+=`<text x="${cx}" y="${ph-18}" text-anchor="middle" font-size="10" fill="${mute}">${(v.site||"")+(v.opening?" · "+v.opening:"")+(v.date?" · "+v.date:"")+(v.by_name?" · "+v.by_name:"")}</text>`;
+  return s+`</svg>`;
+}
+
 // ---- SCANS — the scan database (1.6). Every file in the job-files bucket, signed for an hour, click to view. ----
 let SC=[],SCF="all",SCQ="",LBI=null;
 async function loadScans(){ $("v_scans").innerHTML='<div class="empty">Loading scans…</div>'; try{ const r=await desk({action:"scans"}); SC=r.rows; }catch(e){ $("v_scans").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderScans(); }

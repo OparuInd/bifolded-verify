@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TR Agreement 2.1</title>
+<title>TR Agreement 2.2</title>
 <!--
   TR AGREEMENT 1.1 · Tungsten Royce · BY BIFOLDED
   Copyright Tungsten Royce. Proprietary.
@@ -1080,6 +1080,7 @@ function renderPrep(){
       <select id="laserTo" style="border:none;border-bottom:1px solid var(--rule);background:transparent;font:var(--s1) var(--sans);padding:6px 2px;width:auto;max-width:16rem">
         ${D.openings.map((o,i)=>`<option value="${i}">${esc(o.nm)}</option>`).join("")}</select>
       <button class="ghost" style="padding:10px 16px" onclick="attachCloudSurvey()">Attach</button>
+      <button class="ghost" style="padding:10px 16px" onclick="viewSurvey()">View</button>
       <button class="ghost" style="padding:10px 16px" onclick="loadSurveys(true)">↻</button>
       <span id="laserMsg" style="font-size:var(--s1);color:var(--soft)"></span></div>
     <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><textarea id="laserPaste" rows="1" style="max-width:26rem" placeholder="or paste a laser file"></textarea><button class="ghost" style="padding:7px 13px;font-size:var(--s0)" onclick="importLaserPaste()">Attach the paste</button></div></div>
@@ -1581,6 +1582,43 @@ show("prep");
    filed there too, so the next person picks it from the list instead of hunting for the file. */
 async function loadSurveys(rerender){ try{ const j=await deskCall({action:"survey_list"}); if(j&&j.ok){ SURVEYS=j.rows||[]; if(rerender) render(); } }catch(e){} }
 function cloudToSurvey(v){ return {date:v.date||String(v.at||"").slice(0,10), job:v.site||"", w:Number(v.w), h:Number(v.h), wMin:Number(v.w_min??v.w), wMax:Number(v.w_max??v.w), hMin:Number(v.h_min??v.h), hMax:Number(v.h_max??v.h), nW:Number(v.n_w||0), nH:Number(v.n_h||0), clearances:v.clearances||null, by:v.by_name||"", cloud_id:v.id}; }
+window.viewSurvey=function(){ const v=SURVEYS.find(x=>x.id===$("laserPick").value); if(!v) return; let box=$("svBox"); if(!box){ box=document.createElement("div"); box.id="svBox"; box.style.cssText="position:fixed;inset:0;background:rgba(28,26,32,.6);z-index:70;display:flex;align-items:center;justify-content:center;padding:18px"; box.onclick=e=>{ if(e.target===box) box.remove(); }; document.body.appendChild(box); }
+  box.innerHTML=`<div style="background:#fff;border-radius:4px;padding:18px;max-width:620px;width:100%"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font:12px var(--sans);color:var(--soft)"><span>${esc(v.site||"")}${v.opening?" · "+esc(v.opening):""} · ${esc(v.date||"")} · ${esc(v.by_name||"")}</span><button class="ghost" style="padding:6px 10px" onclick="document.getElementById('svBox').remove()">✕</button></div>${surveySvg(v,{dark:false})}</div>`; };
+/* surveySvg(v) — one drawing of a laser survey. Used by laser.html, desk.html (Surveys), agree.html (picker).
+   v = a surveys row (w, h, w_min.., raw{widthReadings[{pos,total}], heightReadings[..], clearances{top,left,right}}) */
+function surveySvg(v, opt){
+  opt=opt||{}; const W=Number(v.w)||0, H=Number(v.h)||0; if(!W||!H) return '<div style="padding:20px;color:#8f8a82">no opening</div>';
+  const raw=v.raw||{}; const wr=(raw.widthReadings||[]).map(x=>({pos:String(x.pos||""),t:Number(x.total)||0})).filter(x=>x.t>0);
+  const hr=(raw.heightReadings||[]).map(x=>({pos:String(x.pos||""),t:Number(x.total)||0})).filter(x=>x.t>0);
+  const wmin=Number(v.w_min??(wr.length?Math.min(...wr.map(x=>x.t)):W)), wmax=Number(v.w_max??(wr.length?Math.max(...wr.map(x=>x.t)):W));
+  const hmin=Number(v.h_min??(hr.length?Math.min(...hr.map(x=>x.t)):H)), hmax=Number(v.h_max??(hr.length?Math.max(...hr.map(x=>x.t)):H));
+  const cl=v.clearances||raw.clearances||{}; const ct=Number(cl.top||0), cL=Number(cl.left||0), cR=Number(cl.right||0);
+  const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+wh+(F?"-"+F:"")+"″"; };
+  const dark=opt.dark!==false; const ink=dark?"#f4f2ee":"#1c1a20", mute=dark?"#8f8a82":"#6b6558", bronze="#c9ab7f", line=dark?"#3a3a3a":"#cfc8ba", bg=dark?"#141414":"#fbf9f6", warn="#d9a441";
+  const pw=560, ph=Math.round(pw*Math.min(1.15,Math.max(0.45,H/W))+110); const pad=78; const iw=pw-pad*2, ih=ph-pad-60; const sx=iw/wmax, sy=ih/hmax;
+  const cx=pad+iw/2, top=48;
+  // true opening (max readings) faint, governing (min) solid
+  const gx=cx-(W*sx)/2, gy=top+(hmax-H)*sy;   // governing sits on the floor
+  const tx=cx-(wmax*sx)/2;
+  let s=`<svg viewBox="0 0 ${pw} ${ph}" width="100%" style="max-width:${pw}px;display:block;background:${bg};border-radius:4px;font-family:JetBrains Mono,ui-monospace,Menlo,monospace">`;
+  s+=`<rect x="${tx}" y="${top}" width="${wmax*sx}" height="${hmax*sy}" fill="none" stroke="${line}" stroke-dasharray="5 4"/>`;
+  s+=`<rect x="${gx}" y="${gy}" width="${W*sx}" height="${H*sy}" fill="${dark?"#1f1f1f":"#fff"}" stroke="${bronze}" stroke-width="2"/>`;
+  if(ct||cL||cR){ s+=`<rect x="${gx+cL*sx}" y="${gy+ct*sy}" width="${(W-cL-cR)*sx}" height="${(H-ct)*sy}" fill="none" stroke="${warn}" stroke-width="1" stroke-dasharray="3 3"/>`; }
+  // width readings across (bottom / mid / top)
+  const rowY={Bottom:gy+H*sy-10,Mid:gy+H*sy/2,Top:gy+10};
+  for(const r of wr){ const y=rowY[r.pos]??gy+H*sy/2; const gov=Math.abs(r.t-wmin)<1e-6; s+=`<line x1="${gx+6}" y1="${y}" x2="${gx+W*sx-6}" y2="${y}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${cx}" y="${r.pos==="Top"?y+13:y-4}" text-anchor="middle" font-size="11" fill="${gov?bronze:mute}">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
+  const colX={Left:gx+14,Centre:cx,Center:cx,Right:gx+W*sx-14};
+  for(const r of hr){ const x=colX[r.pos]??cx; const gov=Math.abs(r.t-hmin)<1e-6; s+=`<line x1="${x}" y1="${gy+6}" x2="${x}" y2="${gy+H*sy-6}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${x+4}" y="${gy+H*sy/2+(r.pos==="Right"?0:0)}" font-size="11" fill="${gov?bronze:mute}" transform="rotate(-90 ${x+4} ${gy+H*sy/2})" text-anchor="middle">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
+  // dimensions
+  s+=`<text x="${cx}" y="${top-16}" text-anchor="middle" font-size="13" fill="${ink}" font-weight="600">${fi(W)} × ${fi(H)}</text>`;
+  s+=`<text x="${cx}" y="${top-2}" text-anchor="middle" font-size="10" fill="${mute}">governing · smallest reading each way</text>`;
+  const spW=wmax-wmin, spH=hmax-hmin; const sq=Math.max(spW,spH); const call=sq<0.125?"square within an eighth":sq<0.375?"slightly out of square":sq<0.75?"out of square":"well out of square";
+  s+=`<text x="${cx}" y="${ph-34}" text-anchor="middle" font-size="11" fill="${sq>=0.375?warn:mute}">${call} · width varies ${spW.toFixed(3)}″ · height ${spH.toFixed(3)}″</text>`;
+  if(ct||cL||cR) s+=`<text x="${cx}" y="${ph-18}" text-anchor="middle" font-size="10" fill="${warn}">clearance top ${fi(ct)} · left ${fi(cL)} · right ${fi(cR)} → door ${fi(W-cL-cR)} × ${fi(H-ct)}</text>`;
+  else s+=`<text x="${cx}" y="${ph-18}" text-anchor="middle" font-size="10" fill="${mute}">${(v.site||"")+(v.opening?" · "+v.opening:"")+(v.date?" · "+v.date:"")+(v.by_name?" · "+v.by_name:"")}</text>`;
+  return s+`</svg>`;
+}
+
 window.attachCloudSurvey=function(){ const pick=$("laserPick"), sel=$("laserTo"), msg=$("laserMsg"); const v=SURVEYS.find(x=>x.id===pick.value); if(!v){ msg.textContent="Pick a survey."; return; }
   const o=D.openings[+sel.value||0]; if(!o){ msg.textContent="No such opening."; return; } o.survey=cloudToSurvey(v); o.w=String(Math.round(o.survey.w*1000)/1000); o.h=String(Math.round(o.survey.h*1000)/1000); if((!o.nm||/^Opening \d+$/.test(o.nm))&&v.opening) o.nm=v.opening; render(); };
 async function fileSurvey(sv,o){ try{ const j=await deskCall({action:"survey_add",survey:{date:sv.date,site:sv.job||(D.site||""),opening:o.nm||"",w:sv.w,h:sv.h,wMin:sv.wMin,wMax:sv.wMax,hMin:sv.hMin,hMax:sv.hMax,nW:sv.nW,nH:sv.nH,clearances:sv.clearances,by:sv.by||"",source:"agreement",raw:sv.raw||null},quote_id:(D._db&&D._db.quote_id)||null,customer_id:(D._db&&D._db.customer_id)||null}); if(j&&j.ok){ sv.cloud_id=j.id; loadSurveys(false); } }catch(e){} }
