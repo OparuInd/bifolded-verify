@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tungsten Royce — Laser 2.4</title>
+  <title>Tungsten Royce — Laser 2.5</title>
   <!-- v1.7 — the true-opening outline is now a toggle, and any leg 1/2in or more
        outside the buildable box draws in red instead of grey. -->
   <style>
@@ -213,6 +213,17 @@
 
     .ft-pair .input-group { flex: 1; }
     .ft-pair .input-group { min-width: 0; flex: 1 1 0; }
+    .ops { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .ops button { min-height: 40px; border: 1.5px solid #e0e3ea; border-radius: 8px; background: #fff; font-size: 0.9rem; font-weight: 600; color: #444; padding: 0 12px; display: flex; align-items: center; gap: 8px; }
+    .ops button { border-color: var(--c, #e0e3ea); color: var(--c, #444); }
+    .ops button.on { background: var(--c, #4361ee); color: #fff; }
+    .ops button.on .k, .ops button.on .x { color: rgba(255,255,255,.8); }
+    .ops button.add { color: #4361ee; border: 1.5px dashed #b8c0e8; }
+    body[data-op] .card { border-left: 5px solid var(--op); }
+    body[data-op] .calc-btn { background: var(--op); }
+    #job-name { color: var(--op, #1a1a2e) !important; font-weight: 600; }
+    .ops button .x { color: #b8bcc6; font-weight: 400; font-size: 1rem; }
+    .ops button .k { font-size: 0.75rem; color: #8a8f9c; font-weight: 500; }
     .ft-pair .input-group input { min-width: 0; }
     .ft-pair .input-group.frac { flex: 0 0 auto; position: relative; }
     .ft-pair { flex-wrap: wrap; }
@@ -554,10 +565,17 @@
     <button class="export-btn" id="nc-btn" onclick="saveCustomer()" style="background:#26221b;margin:0">Save customer</button>
     <div id="nc-note" style="font-size:12px;color:#6b6558;margin-top:6px"></div>
   </div>
-  <div class="field" style="margin-bottom:0">
-    <label>Site / opening</label>
+  <div class="field">
+    <label>Site (address)</label>
     <div class="input-group" style="background:#f7f8fa">
-      <input type="text" id="job-name" placeholder="address · opening" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/>
+      <input type="text" id="job-site" placeholder="" autocomplete="street-address" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/>
+    </div>
+  </div>
+  <div class="field" style="margin-bottom:0">
+    <label>Opening</label>
+    <div class="ops" id="opChips"></div>
+    <div class="input-group" style="background:#f7f8fa">
+      <input type="text" id="job-name" placeholder="garage · side door · shed" oninput="opRename(this.value)" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/>
     </div>
   </div>
 </div>
@@ -853,13 +871,13 @@
     if(!j||!j.ok){ note.innerHTML='<b style="color:#a33327">'+esc((j&&j.error)||"offline")+'</b>'; return; }
     const sel=document.getElementById("job-target"); const grp=[...sel.querySelectorAll("optgroup")].find(g=>g.label==="Customers")||(()=>{ const g=document.createElement("optgroup"); g.label="Customers"; sel.insertBefore(g, sel.querySelector('option[value="_new"]')); return g; })();
     const o=document.createElement("option"); o.value="c:"+j.customer.id; o.textContent=j.label; grp.prepend(o); sel.value=o.value; TARGETS.customers=[{id:j.customer.id,label:j.label}].concat(TARGETS.customers||[]);
-    if(!document.getElementById("job-name").value.trim()&&address) document.getElementById("job-name").value=address;
+    if(!document.getElementById("job-site").value.trim()&&address) document.getElementById("job-site").value=address;
     document.getElementById("newCust").style.display="none"; note.textContent=""; onTarget(); }
   async function useExisting(id){ await loadTargets(); const sel=document.getElementById("job-target"); sel.value="c:"+id; document.getElementById("newCust").style.display="none"; onTarget(); }
   const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   async function guestGate(){ const j=await desk({action:"share_get"}); const sel=document.getElementById("job-target");
     if(!j.ok){ sel.innerHTML='<option value="">'+esc(j.error||"This link is closed")+'</option>'; sel.disabled=true; document.getElementById("send-btn").disabled=true; return; }
-    GUEST_LABEL=j.label; sel.innerHTML='<option value="g:">'+esc(j.label)+'</option>'; sel.disabled=true; document.getElementById("who").textContent=j.to||"";
+    GUEST_LABEL=j.label; sel.innerHTML='<option value="g:">'+esc(j.label)+'</option>'; if(!document.getElementById("job-site").value) document.getElementById("job-site").value=j.label.replace(/^[^·]*·\s*/,""); sel.disabled=true; document.getElementById("who").textContent=j.to||"";
     document.getElementById("send-note").textContent="Goes straight to Tungsten Royce for "+j.label+".";
     if(j.surveys&&j.surveys.length){ document.getElementById("survey-draw").innerHTML=surveySvg(j.surveys[0],{dark:false}); } }
   let GUEST_LABEL="";
@@ -1240,18 +1258,49 @@ function surveySvg(v, opt){
     document.getElementById('sendPanel').style.display = 'block';
     const jobName = (document.getElementById('job-name')?.value || '').trim();
     lastCalc = { widthIn: minWidth, heightIn: minHeight, jobName };
-    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+    OPS[OPI].calc = lastCalc; opChips();
+    if (!QUIET) document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
   }
 
   function reset() {
     document.getElementById('results').style.display = 'none';
     document.getElementById('sendPanel').style.display = 'none';
-    lastCalc = null;
-    renderFields();
+    lastCalc = null; OPS[OPI].calc = null; OPS[OPI].vals = {};
+    renderFields(); opChips();
     window.scrollTo({top:0,behavior:'smooth'});
   }
 
   // ── PDF export ───────────────────────────────────────────────────────────
+
+  /* 2.5 — MANY OPENINGS AT ONE SITE. Each opening keeps its own readings; the chips switch between them;
+     Send files one survey per opening (same site). */
+  const OPS = [{ name: '', vals: {}, calc: null }]; let OPI = 0; var QUIET = false;
+  const OP_FIELDS = () => allFieldIds().flatMap(id => [id+'-raw', id+'-ft', id+'-in', id+'-mm', id+'-fr']);
+  function opSnapshot() { const o = OPS[OPI]; o.vals = {}; OP_FIELDS().forEach(f => { const el = document.getElementById(f); if (el && el.value !== '' && el.value !== '0') o.vals[f] = el.value; }); o.unit = unit; o.calc = lastCalc; o.name = document.getElementById('job-name').value.trim(); }
+  function opLoad(i) { OPI = i; const o = OPS[i]; if (o.unit && o.unit !== unit) { unit = o.unit; ['in','ft','mm'].forEach(x => document.getElementById('btn-'+x).classList.toggle('active', x===unit)); }
+    renderFields(); OP_FIELDS().forEach(f => { const el = document.getElementById(f); if (!el) return; el.value = o.vals[f] ?? (f.endsWith('-fr') ? '0' : ''); if (f.endsWith('-fr')) el.classList.toggle('set', el.value !== '0'); });
+    document.getElementById('job-name').value = o.name || ''; lastCalc = o.calc || null;
+    document.getElementById('results').style.display = 'none'; document.getElementById('sendPanel').style.display = 'none'; document.getElementById('survey-draw').innerHTML = '';
+    onInput(); opChips(); if (o.calc) { QUIET = true; try { calculate(); } catch (e) { console.error('recalc', e); } QUIET = false; } }
+  const OP_COLORS = ['#4361ee', '#d97706', '#0f9d58', '#9333ea', '#dc2626', '#0891b2', '#7c5c2e', '#374151'];
+  const opColor = i => OP_COLORS[i % OP_COLORS.length];
+  function opLabel(o, i) { return o.name || ('Opening ' + (i + 1)); }
+  function opPaint() { document.body.dataset.op = OPI; document.documentElement.style.setProperty('--op', opColor(OPI)); }
+  function opChips() { const el = document.getElementById('opChips'); if (!el) return;
+    opPaint(); el.innerHTML = OPS.map((o, i) => `<button type="button" class="${i===OPI?'on':''}" style="--c:${opColor(i)}" onclick="opPick(${i})">${esc(opLabel(o, i))}${o.calc ? '<span class="k">' + fracStr(o.calc.widthIn) + ' × ' + fracStr(o.calc.heightIn) + '</span>' : ''}${OPS.length > 1 ? `<span class="x" onclick="event.stopPropagation();opDrop(${i})">✕</span>` : ''}</button>`).join('')
+      + `<button type="button" class="add" onclick="opAdd()">＋ opening</button>`; }
+  window.opPick = i => { if (i === OPI) return; opSnapshot(); opLoad(i); };
+  window.opAdd = () => { opSnapshot(); OPS.push({ name: '', vals: {}, calc: null, unit }); opLoad(OPS.length - 1); document.getElementById('job-name').focus(); };
+  window.opDrop = i => { if (OPS.length < 2) return; const o = OPS[i]; if ((Object.keys(o.vals).length || o.calc) && !confirm('Drop ' + opLabel(o, i) + '?')) return; OPS.splice(i, 1); opLoad(Math.min(i, OPS.length - 1)); };
+  window.opRename = v => { OPS[OPI].name = v.trim(); opChips(); };
+  /* the same numbers calculate() uses, with no alerts — for filing every opening at once */
+  function opCompute() {
+    const lefts = WIDTH_PAIRS.map(p => getIn(p.lf)).filter(v => v > 0), rights = WIDTH_PAIRS.map(p => getIn(p.rt)).filter(v => v > 0);
+    const ups = HEIGHT_PAIRS.map(p => getIn(p.up)).filter(v => v > 0), downs = HEIGHT_PAIRS.map(p => getIn(p.dn)).filter(v => v > 0);
+    if (!lefts.length || !rights.length || !ups.length || !downs.length) return null;
+    const w = Math.min(...lefts) + Math.min(...rights), h = Math.min(...ups) + Math.min(...downs);
+    return { widthIn: w, heightIn: h };
+  }
   function shopOpsPayload() {
     if (!lastCalc) return null;
     const rnd = v => Math.round(v * 10000) / 10000;
@@ -1259,7 +1308,8 @@ function surveySvg(v, opt){
     const hei = HEIGHT_PAIRS.map(p => ({ pos: p.label, total: rnd((getIn(p.up)||0) + (getIn(p.dn)||0)) })).filter(x => x.total > 0);
     return {
       app: 'bifolded-laser', version: 1,
-      job: document.getElementById('job-name').value || '',
+      job: document.getElementById('job-site').value.trim() || '',
+      opening: document.getElementById('job-name').value.trim() || '',
       date: new Date().toISOString().slice(0,10),
       unit: 'in',
       widthReadings: wid, heightReadings: hei,
@@ -1280,32 +1330,43 @@ function surveySvg(v, opt){
     t.textContent = open ? 'Shop use \u25b4' : 'Shop use \u25be';
   };
   async function sendMeasurements() {
-    const data = shopOpsPayload();
-    if (!data) { alert('Take the measurements and press Calculate first.'); return; }
+    opSnapshot();
     const btn  = document.getElementById('send-btn');
     const note = document.getElementById('send-note');
     const tsel = document.getElementById('job-target'); const tv = tsel.value;
     if (!GUEST && (!tv || tv === '_new')) { note.innerHTML = '<b style="color:#a33327">Pick the job, quote or customer first.</b>'; tsel.focus(); return; }
-    if (!data.job && GUEST) data.job = GUEST_LABEL;
-    if (!data.job) { const jn = prompt('Site / opening — how the shop will know this one', ''); if (jn === null) return; document.getElementById('job-name').value = (jn||'').trim(); data.job = (jn||'').trim(); }
-    const wr = data.widthReadings.map(x=>x.total), hr = data.heightReadings.map(x=>x.total);
-    const survey = { date: data.date, site: data.job, opening: '', w: data.maxDoor.widthIn, h: data.maxDoor.heightIn,
-      wMin: Math.min(...wr), wMax: Math.max(...wr), hMin: Math.min(...hr), hMax: Math.max(...hr), nW: wr.length, nH: hr.length,
-      clearances: data.clearances, source: 'laser-app', raw: data };
-    const body = { action: GUEST ? 'share_survey' : 'survey_add', survey };
-    if (GUEST) { body.name = ''; }
-    else if (tv.startsWith('j:')) { const jb = TARGETS.jobs.find(x=>x.id===tv.slice(2)); body.job_id = jb.id; body.quote_id = jb.quote_id||null; body.customer_id = jb.customer_id||null; }
-    else if (tv.startsWith('q:')) { const q = TARGETS.quotes.find(x=>x.id===tv.slice(2)); body.quote_id = q.id; body.customer_id = q.customer_id||null; }
-    else if (tv.startsWith('c:')) { body.customer_id = tv.slice(2); }
+    let site = document.getElementById('job-site').value.trim();
+    if (!site && GUEST) site = GUEST_LABEL;
+    if (!site) { const jn = prompt('Site (address)', ''); if (jn === null) return; site = (jn||'').trim(); document.getElementById('job-site').value = site; }
+    // every opening that has a full set of readings
+    const keep = OPI; const todo = [];
+    for (let i = 0; i < OPS.length; i++) { opLoad(i); const c = opCompute(); if (!c) continue; lastCalc = c; const data = shopOpsPayload(); data.job = site; data.opening = OPS[i].name || ('Opening ' + (i + 1)); todo.push({ i, data, c }); }
+    opLoad(keep);
+    if (!todo.length) { alert('Take the measurements first.'); return; }
+    const target = {};
+    if (!GUEST) {
+      if (tv.startsWith('j:')) { const jb = TARGETS.jobs.find(x=>x.id===tv.slice(2)); target.job_id = jb.id; target.quote_id = jb.quote_id||null; target.customer_id = jb.customer_id||null; }
+      else if (tv.startsWith('q:')) { const q = TARGETS.quotes.find(x=>x.id===tv.slice(2)); target.quote_id = q.id; target.customer_id = q.customer_id||null; }
+      else if (tv.startsWith('c:')) { target.customer_id = tv.slice(2); }
+    }
     btn.disabled = true; btn.textContent = 'Sending\u2026';
-    const j = await desk(body);
-    if (j && j.ok) {
-      btn.textContent = '\u2713 Filed'; btn.style.background = '#0f5c33';
-      note.innerHTML = (GUEST ? 'Sent to Tungsten Royce for <b>' + esc(GUEST_LABEL) + '</b>' : 'In the cloud against <b>' + esc(tsel.options[tsel.selectedIndex].textContent) + '</b>') + ' \u00b7 ' + data.date + '.';
-      document.getElementById('survey-draw').innerHTML = surveySvg(Object.assign({}, survey, {w_min:survey.wMin,w_max:survey.wMax,h_min:survey.hMin,h_max:survey.hMax,by_name:(localStorage.getItem('tr_who')||'')}), {dark:false});
+    const done = [], failed = []; let lastSurvey = null;
+    for (const t of todo) {
+      const data = t.data; const wr = data.widthReadings.map(x=>x.total), hr = data.heightReadings.map(x=>x.total);
+      const survey = { date: data.date, site, opening: data.opening, w: t.c.widthIn, h: t.c.heightIn,
+        wMin: Math.min(...wr), wMax: Math.max(...wr), hMin: Math.min(...hr), hMax: Math.max(...hr), nW: wr.length, nH: hr.length,
+        clearances: data.clearances, source: 'laser-app', raw: data };
+      const body = Object.assign({ action: GUEST ? 'share_survey' : 'survey_add', survey }, GUEST ? { name: '' } : target);
+      const j = await desk(body);
+      if (j && j.ok) { done.push(data.opening); lastSurvey = survey; } else failed.push(data.opening + (j && j.error ? ' (' + j.error + ')' : ''));
+    }
+    if (done.length && !failed.length) {
+      btn.textContent = '\u2713 Filed' + (done.length > 1 ? ' \u00b7 ' + done.length + ' openings' : ''); btn.style.background = '#0f5c33';
+      note.innerHTML = '<b>' + esc(done.join(', ')) + '</b> ' + (GUEST ? 'sent to Tungsten Royce for <b>' + esc(GUEST_LABEL) + '</b>' : 'in the cloud against <b>' + esc(tsel.options[tsel.selectedIndex].textContent) + '</b>') + ' \u00b7 ' + todo[0].data.date + '.';
+      document.getElementById('survey-draw').innerHTML = surveySvg(Object.assign({}, lastSurvey, {w_min:lastSurvey.wMin,w_max:lastSurvey.wMax,h_min:lastSurvey.hMin,h_max:lastSurvey.hMax,by_name:(localStorage.getItem('tr_who')||'')}), {dark:false});
     } else {
       btn.disabled = false; btn.textContent = 'Try sending again';
-      note.innerHTML = '<b style="color:#a33327">That did not go through</b> \u00b7 ' + esc((j&&j.error)||'offline') + '. Save the PDF below and send it on.';
+      note.innerHTML = (done.length ? 'Filed <b>' + esc(done.join(', ')) + '</b>. ' : '') + '<b style="color:#a33327">Did not go through:</b> ' + esc(failed.join(', ') || 'offline') + '. Save the PDF below and send it on.';
     }
   }
   async function exportPDF() {
@@ -1690,7 +1751,7 @@ function surveySvg(v, opt){
     URL.revokeObjectURL(url);
   }
 
-  renderFields();
+  renderFields(); opChips();
 </script>
 </body>
 </html>
