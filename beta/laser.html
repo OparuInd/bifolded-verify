@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tungsten Royce — Laser 2.2</title>
+  <title>Tungsten Royce — Laser 2.3</title>
   <!-- v1.7 — the true-opening outline is now a toggle, and any leg 1/2in or more
        outside the buildable box draws in red instead of grey. -->
   <style>
@@ -866,12 +866,16 @@
      a survey is one row in `surveys` (0090) via tr-desk survey_add, filed against a job or an open quote. */
   const SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co", APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN";
   const DESK_EP=SB_URL+"/functions/v1/tr-desk", CREW_EP=SB_URL+"/functions/v1/tr-crew"; const HERE="laser.html";
+  /* 2.3 — GUEST MODE: ?t=<share token> (a customer / contractor's own link from send.html). No sign-in, no target
+     list; the survey files through share_survey onto the one project the link belongs to. */
+  const GUEST=new URLSearchParams(location.search).get("t")||"";
   function getSess(){ try{ return JSON.parse(localStorage.getItem("tr_sess")||"null"); }catch(e){ return null; } }
   function signOut(){ try{ localStorage.removeItem("tr_sess"); }catch(e){} location.replace("./?next="+HERE); }
   async function sessJwt(){ let s=getSess(); if(!s||!s.access_token){ signOut(); return ""; }
     if((s.expires_at||0)*1000<Date.now()+90000){ try{ const r=await fetch(CREW_EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify({action:"refresh",refresh_token:s.refresh_token})}); const j=await r.json(); if(!j.ok){ signOut(); return ""; } s=j.session; localStorage.setItem("tr_sess",JSON.stringify(s)); }catch(e){} }
     return s.access_token; }
-  async function desk(body){ const jwt=await sessJwt(); if(!jwt) return {ok:false,error:"signed out"}; let tok=""; try{ tok=localStorage.getItem("tr_dk")||localStorage.getItem("tr_k")||localStorage.getItem("tr_station_k")||""; }catch(e){}
+  async function desk(body){ if(GUEST){ try{ const r=await fetch(DESK_EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({t:GUEST},body))}); return await r.json(); }catch(e){ return {ok:false,error:String(e)}; } }
+    const jwt=await sessJwt(); if(!jwt) return {ok:false,error:"signed out"}; let tok=""; try{ tok=localStorage.getItem("tr_dk")||localStorage.getItem("tr_k")||localStorage.getItem("tr_station_k")||""; }catch(e){}
     try{ const r=await fetch(DESK_EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({jwt,token:tok},body))}); const j=await r.json(); if(j&&j.error==="signed out") signOut(); return j; }catch(e){ return {ok:false,error:String(e)}; } }
   let TARGETS={jobs:[],quotes:[]};
   async function loadTargets(){ const j=await desk({action:"survey_targets"}); const sel=document.getElementById("job-target"); if(!j.ok){ sel.innerHTML='<option value="">— offline —</option>'; return; } TARGETS=j;
@@ -889,7 +893,13 @@
     document.getElementById("newCust").style.display="none"; note.textContent=""; onTarget(); }
   async function useExisting(id){ await loadTargets(); const sel=document.getElementById("job-target"); sel.value="c:"+id; document.getElementById("newCust").style.display="none"; onTarget(); }
   const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  (function gate(){ const s=getSess(); if(!s||!s.refresh_token){ location.replace("./?next="+HERE); return; } try{ document.getElementById("who").textContent=localStorage.getItem("tr_who")||""; }catch(e){} loadTargets(); })();
+  async function guestGate(){ const j=await desk({action:"share_get"}); const sel=document.getElementById("job-target");
+    if(!j.ok){ sel.innerHTML='<option value="">'+esc(j.error||"This link is closed")+'</option>'; sel.disabled=true; document.getElementById("send-btn").disabled=true; return; }
+    GUEST_LABEL=j.label; sel.innerHTML='<option value="g:">'+esc(j.label)+'</option>'; sel.disabled=true; document.getElementById("who").textContent=j.to||"";
+    document.getElementById("send-note").textContent="Goes straight to Tungsten Royce for "+j.label+".";
+    if(j.surveys&&j.surveys.length){ document.getElementById("survey-draw").innerHTML=surveySvg(j.surveys[0],{dark:false}); } }
+  let GUEST_LABEL="";
+  (function gate(){ if(GUEST){ document.getElementById("officeToggle").style.display="none"; guestGate(); return; } const s=getSess(); if(!s||!s.refresh_token){ location.replace("./?next="+HERE); return; } try{ document.getElementById("who").textContent=localStorage.getItem("tr_who")||""; }catch(e){} loadTargets(); })();
   /* surveySvg(v) — one drawing of a laser survey. Used by laser.html, desk.html (Surveys), agree.html (picker).
    v = a surveys row (w, h, w_min.., raw{widthReadings[{pos,total}], heightReadings[..], clearances{top,left,right}}) */
 function surveySvg(v, opt){
@@ -899,7 +909,7 @@ function surveySvg(v, opt){
   const wmin=Number(v.w_min??(wr.length?Math.min(...wr.map(x=>x.t)):W)), wmax=Number(v.w_max??(wr.length?Math.max(...wr.map(x=>x.t)):W));
   const hmin=Number(v.h_min??(hr.length?Math.min(...hr.map(x=>x.t)):H)), hmax=Number(v.h_max??(hr.length?Math.max(...hr.map(x=>x.t)):H));
   const cl=v.clearances||raw.clearances||{}; const ct=Number(cl.top||0), cL=Number(cl.left||0), cR=Number(cl.right||0);
-  const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+wh+(F?"-"+F:"")+"″"; };
+  const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+(wh||!F?wh:"")+(F?(wh?"-":"")+F:"")+"″"; };
   const dark=opt.dark!==false; const ink=dark?"#f4f2ee":"#1c1a20", mute=dark?"#8f8a82":"#6b6558", bronze="#c9ab7f", line=dark?"#3a3a3a":"#cfc8ba", bg=dark?"#141414":"#fbf9f6", warn="#d9a441";
   const pw=560, ph=Math.round(pw*Math.min(1.15,Math.max(0.45,H/W))+110); const pad=78; const iw=pw-pad*2, ih=ph-pad-60; const sx=iw/wmax, sy=ih/hmax;
   const cx=pad+iw/2, top=48;
@@ -1317,21 +1327,23 @@ function surveySvg(v, opt){
     const btn  = document.getElementById('send-btn');
     const note = document.getElementById('send-note');
     const tsel = document.getElementById('job-target'); const tv = tsel.value;
-    if (!tv || tv === '_new') { note.innerHTML = '<b style="color:#a33327">Pick the job, quote or customer first.</b>'; tsel.focus(); return; }
+    if (!GUEST && (!tv || tv === '_new')) { note.innerHTML = '<b style="color:#a33327">Pick the job, quote or customer first.</b>'; tsel.focus(); return; }
+    if (!data.job && GUEST) data.job = GUEST_LABEL;
     if (!data.job) { const jn = prompt('Site / opening — how the shop will know this one', ''); if (jn === null) return; document.getElementById('job-name').value = (jn||'').trim(); data.job = (jn||'').trim(); }
     const wr = data.widthReadings.map(x=>x.total), hr = data.heightReadings.map(x=>x.total);
     const survey = { date: data.date, site: data.job, opening: '', w: data.maxDoor.widthIn, h: data.maxDoor.heightIn,
       wMin: Math.min(...wr), wMax: Math.max(...wr), hMin: Math.min(...hr), hMax: Math.max(...hr), nW: wr.length, nH: hr.length,
       clearances: data.clearances, source: 'laser-app', raw: data };
-    const body = { action: 'survey_add', survey };
-    if (tv.startsWith('j:')) { const jb = TARGETS.jobs.find(x=>x.id===tv.slice(2)); body.job_id = jb.id; body.quote_id = jb.quote_id||null; body.customer_id = jb.customer_id||null; }
+    const body = { action: GUEST ? 'share_survey' : 'survey_add', survey };
+    if (GUEST) { body.name = ''; }
+    else if (tv.startsWith('j:')) { const jb = TARGETS.jobs.find(x=>x.id===tv.slice(2)); body.job_id = jb.id; body.quote_id = jb.quote_id||null; body.customer_id = jb.customer_id||null; }
     else if (tv.startsWith('q:')) { const q = TARGETS.quotes.find(x=>x.id===tv.slice(2)); body.quote_id = q.id; body.customer_id = q.customer_id||null; }
     else if (tv.startsWith('c:')) { body.customer_id = tv.slice(2); }
     btn.disabled = true; btn.textContent = 'Sending\u2026';
     const j = await desk(body);
     if (j && j.ok) {
       btn.textContent = '\u2713 Filed'; btn.style.background = '#0f5c33';
-      note.innerHTML = 'In the cloud against <b>' + esc(tsel.options[tsel.selectedIndex].textContent) + '</b> \u00b7 ' + data.date + '.';
+      note.innerHTML = (GUEST ? 'Sent to Tungsten Royce for <b>' + esc(GUEST_LABEL) + '</b>' : 'In the cloud against <b>' + esc(tsel.options[tsel.selectedIndex].textContent) + '</b>') + ' \u00b7 ' + data.date + '.';
       document.getElementById('survey-draw').innerHTML = surveySvg(Object.assign({}, survey, {w_min:survey.wMin,w_max:survey.wMax,h_min:survey.hMin,h_max:survey.hMax,by_name:(localStorage.getItem('tr_who')||'')}), {dark:false});
     } else {
       btn.disabled = false; btn.textContent = 'Try sending again';

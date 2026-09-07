@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tungsten Royce — Your project</title>
+<!--
+  TR FINAL SOLUTION — Send 1.0 (2026-09-07)  ·  PUBLIC PAGE, LINK-GATED, ONE PROJECT
+  The link (?t=) opens on one customer's project and nothing else. They can measure the opening (Laser, guest mode),
+  send photos / files, and leave a note. Everything lands in the office inbox (tr-desk 2.5, migration 0091).
+-->
+<style>
+:root{--sans:"Helvetica Neue",Helvetica,"Inter",Arial,sans-serif;--ink:#201829;--ink2:#3E344A;--soft:#6E6579;--plum:#41275C;--plum2:#6B4A8F;--plumSoft:#F4F0F7;--paper:#FBF9FB;--card:#FFFEFF;--line:#CFCAD3;--gold:#9C7A3E;--alert:#8C2B48;--ok:#2F6B4F}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans);font-variant-numeric:tabular-nums}
+header{background:linear-gradient(120deg,#1B1324 0%,#271A33 55%,#33223F 100%);color:#F4F0F7;padding:18px 0;border-bottom:3px solid var(--plum2)}
+.wrap{max-width:720px;margin:0 auto;padding:0 22px}
+.wm{font-weight:700;letter-spacing:.18em;font-size:13px}.wm span{color:#C9AB7F}.sub{font-size:10.5px;letter-spacing:.12em;color:#A497B4;text-transform:uppercase;margin-top:3px}
+footer{border-top:1px solid var(--line);margin-top:60px;padding:22px 0 40px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#968EA0;text-align:center}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em;margin:30px 0 2px}.to{color:var(--soft);margin:0 0 4px}
+h2{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--plum);font-weight:700;margin:28px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px;margin-bottom:10px;box-shadow:0 1px 2px rgba(32,24,41,.05)}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row .grow{flex:1}
+a.btn,button{font:600 15px var(--sans);background:var(--plum);color:#fff;border:0;border-radius:3px;padding:13px 18px;cursor:pointer;text-decoration:none;display:inline-block;min-height:46px}
+a.btn.ghost,button.ghost{background:transparent;color:var(--plum);border:1px solid var(--line)}button:disabled{opacity:.5}
+.big{width:100%;text-align:center;font-size:16px}
+textarea{font:15px var(--sans);color:var(--ink);width:100%;border:1px solid var(--line);border-radius:3px;padding:11px 12px;background:#fff;min-height:84px;resize:vertical}textarea:focus{outline:none;border-color:var(--plum2)}
+.mono{font-family:Menlo,ui-monospace,monospace;font-size:12px;color:var(--soft)}
+.list div.it{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #EEE9F0;font-size:14px}.list div.it:first-child{border-top:0}.list .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);min-width:58px}
+.flag{font-size:13px;color:var(--alert);min-height:18px;margin-top:8px}.ok{color:var(--ok)}
+.empty{color:var(--soft);font-size:14px}
+.bar{height:6px;background:#EEE9F0;border-radius:3px;overflow:hidden;margin-top:10px;display:none}.bar i{display:block;height:100%;background:var(--plum2);width:0;transition:width .2s}
+#svBox{position:fixed;inset:0;background:rgba(20,14,26,.86);display:none;align-items:center;justify-content:center;padding:16px;z-index:9}#svBox.on{display:flex}#svBox>div{background:#fbf9f6;border-radius:4px;padding:10px;max-width:600px;width:100%}
+@media(max-width:600px){h1{font-size:21px}.card{padding:14px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="wm">TUNGSTEN <span>ROYCE</span></div><div class="sub">Your project</div></div></header>
+<div class="wrap">
+  <div id="gate" style="display:none"><h1>This link is closed</h1><p class="to" id="gateMsg"></p></div>
+  <div id="app" style="display:none">
+    <h1 id="label"></h1><p class="to" id="to"></p>
+    <h2>Measure the opening</h2>
+    <div class="card"><a class="btn big" id="laser" href="#">Open the laser tool</a></div>
+    <h2>Photos &amp; files</h2>
+    <div class="card">
+      <button class="big" onclick="document.getElementById('up').click()">Send photos or files</button>
+      <input type="file" id="up" multiple style="display:none" accept="image/*,application/pdf,video/*,.dwg,.dxf,.skp,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip">
+      <div class="bar" id="bar"><i id="barI"></i></div>
+      <div class="flag" id="upFlag"></div>
+    </div>
+    <h2>A note for us</h2>
+    <div class="card"><textarea id="note"></textarea><div class="row" style="margin-top:8px"><span class="grow flag" id="noteFlag"></span><button class="ghost" onclick="sendNote()">Send</button></div></div>
+    <h2>What you've sent</h2>
+    <div class="card list" id="sent"></div>
+  </div>
+</div>
+<footer>Tungsten Royce · Bifolded</footer>
+<div id="svBox" onclick="this.classList.remove('on')"><div id="svIn"></div></div>
+<script>
+"use strict";
+const SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co"; const AK="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN";
+const DESK_EP=SB_URL+"/functions/v1/tr-desk";
+const $=id=>document.getElementById(id); const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const T=new URLSearchParams(location.search).get("t")||"";
+async function call(body){ const r=await fetch(DESK_EP,{method:"POST",headers:{"content-type":"application/json",apikey:AK,Authorization:"Bearer "+AK},body:JSON.stringify(Object.assign({t:T},body))}); return r.json().catch(()=>({ok:false,error:"no answer"})); }
+/* surveySvg(v) — one drawing of a laser survey. Used by laser.html, desk.html (Surveys), agree.html (picker).
+   v = a surveys row (w, h, w_min.., raw{widthReadings[{pos,total}], heightReadings[..], clearances{top,left,right}}) */
+function surveySvg(v, opt){
+  opt=opt||{}; const W=Number(v.w)||0, H=Number(v.h)||0; if(!W||!H) return '<div style="padding:20px;color:#8f8a82">no opening</div>';
+  const raw=v.raw||{}; const wr=(raw.widthReadings||[]).map(x=>({pos:String(x.pos||""),t:Number(x.total)||0})).filter(x=>x.t>0);
+  const hr=(raw.heightReadings||[]).map(x=>({pos:String(x.pos||""),t:Number(x.total)||0})).filter(x=>x.t>0);
+  const wmin=Number(v.w_min??(wr.length?Math.min(...wr.map(x=>x.t)):W)), wmax=Number(v.w_max??(wr.length?Math.max(...wr.map(x=>x.t)):W));
+  const hmin=Number(v.h_min??(hr.length?Math.min(...hr.map(x=>x.t)):H)), hmax=Number(v.h_max??(hr.length?Math.max(...hr.map(x=>x.t)):H));
+  const cl=v.clearances||raw.clearances||{}; const ct=Number(cl.top||0), cL=Number(cl.left||0), cR=Number(cl.right||0);
+  const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+(wh||!F?wh:"")+(F?(wh?"-":"")+F:"")+"″"; };
+  const dark=opt.dark!==false; const ink=dark?"#f4f2ee":"#1c1a20", mute=dark?"#8f8a82":"#6b6558", bronze="#c9ab7f", line=dark?"#3a3a3a":"#cfc8ba", bg=dark?"#141414":"#fbf9f6", warn="#d9a441";
+  const pw=560, ph=Math.round(pw*Math.min(1.15,Math.max(0.45,H/W))+110); const pad=78; const iw=pw-pad*2, ih=ph-pad-60; const sx=iw/wmax, sy=ih/hmax;
+  const cx=pad+iw/2, top=48;
+  // true opening (max readings) faint, governing (min) solid
+  const gx=cx-(W*sx)/2, gy=top+(hmax-H)*sy;   // governing sits on the floor
+  const tx=cx-(wmax*sx)/2;
+  let s=`<svg viewBox="0 0 ${pw} ${ph}" width="100%" style="max-width:${pw}px;display:block;background:${bg};border-radius:4px;font-family:JetBrains Mono,ui-monospace,Menlo,monospace">`;
+  s+=`<rect x="${tx}" y="${top}" width="${wmax*sx}" height="${hmax*sy}" fill="none" stroke="${line}" stroke-dasharray="5 4"/>`;
+  s+=`<rect x="${gx}" y="${gy}" width="${W*sx}" height="${H*sy}" fill="${dark?"#1f1f1f":"#fff"}" stroke="${bronze}" stroke-width="2"/>`;
+  if(ct||cL||cR){ s+=`<rect x="${gx+cL*sx}" y="${gy+ct*sy}" width="${(W-cL-cR)*sx}" height="${(H-ct)*sy}" fill="none" stroke="${warn}" stroke-width="1" stroke-dasharray="3 3"/>`; }
+  // width readings across (bottom / mid / top)
+  const rowY={Bottom:gy+H*sy-10,Mid:gy+H*sy/2,Top:gy+10};
+  for(const r of wr){ const y=rowY[r.pos]??gy+H*sy/2; const gov=Math.abs(r.t-wmin)<1e-6; s+=`<line x1="${gx+6}" y1="${y}" x2="${gx+W*sx-6}" y2="${y}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${cx}" y="${r.pos==="Top"?y+13:y-4}" text-anchor="middle" font-size="11" fill="${gov?bronze:mute}">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
+  const colX={Left:gx+14,Centre:cx,Center:cx,Right:gx+W*sx-14};
+  for(const r of hr){ const x=colX[r.pos]??cx; const gov=Math.abs(r.t-hmin)<1e-6; s+=`<line x1="${x}" y1="${gy+6}" x2="${x}" y2="${gy+H*sy-6}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${x+4}" y="${gy+H*sy/2+(r.pos==="Right"?0:0)}" font-size="11" fill="${gov?bronze:mute}" transform="rotate(-90 ${x+4} ${gy+H*sy/2})" text-anchor="middle">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
+  // dimensions
+  s+=`<text x="${cx}" y="${top-16}" text-anchor="middle" font-size="13" fill="${ink}" font-weight="600">${fi(W)} × ${fi(H)}</text>`;
+  s+=`<text x="${cx}" y="${top-2}" text-anchor="middle" font-size="10" fill="${mute}">governing · smallest reading each way</text>`;
+  const spW=wmax-wmin, spH=hmax-hmin; const sq=Math.max(spW,spH); const call=sq<0.125?"square within an eighth":sq<0.375?"slightly out of square":sq<0.75?"out of square":"well out of square";
+  s+=`<text x="${cx}" y="${ph-34}" text-anchor="middle" font-size="11" fill="${sq>=0.375?warn:mute}">${call} · width varies ${spW.toFixed(3)}″ · height ${spH.toFixed(3)}″</text>`;
+  if(ct||cL||cR) s+=`<text x="${cx}" y="${ph-18}" text-anchor="middle" font-size="10" fill="${warn}">clearance top ${fi(ct)} · left ${fi(cL)} · right ${fi(cR)} → door ${fi(W-cL-cR)} × ${fi(H-ct)}</text>`;
+  else s+=`<text x="${cx}" y="${ph-18}" text-anchor="middle" font-size="10" fill="${mute}">${(v.site||"")+(v.opening?" · "+v.opening:"")+(v.date?" · "+v.date:"")+(v.by_name?" · "+v.by_name:"")}</text>`;
+  return s+`</svg>`;
+}
+
+const fi=n=>{ n=Number(n)||0; const s16=Math.round(n*16), wh=Math.floor(s16/16), f=s16-wh*16; let d=16,nn=f; while(nn&&nn%2===0){nn/=2;d/=2;} return (wh||!f?wh:"")+(f?(wh?"-":"")+nn+"/"+d:"")+"″"; };
+let D=null;
+async function load(){
+  if(T.length<20){ $("gate").style.display="block"; $("gateMsg").textContent="Ask us for a fresh link."; return; }
+  const r=await call({action:"share_get"});
+  if(!r.ok){ $("gate").style.display="block"; $("gateMsg").textContent=r.error||"Ask us for a fresh link."; return; }
+  D=r; $("app").style.display="block"; $("label").textContent=r.label; $("to").textContent=r.to?("for "+r.to):"";
+  $("laser").href="laser.html?t="+encodeURIComponent(T);
+  renderSent();
+}
+function renderSent(){
+  const rows=[...(D.surveys||[]).map(s=>({at:s.at,k:"measured",t:(s.opening?s.opening+" · ":"")+fi(s.w)+" × "+fi(s.h),sv:s})),...(D.files||[]).map(f=>({at:f.at,k:f.kind==="note"?"note":"file",t:f.title}))].sort((a,b)=>b.at<a.at?-1:1);
+  $("sent").innerHTML=rows.map((r,i)=>`<div class="it"><span class="k">${r.k}</span><span class="grow">${esc(r.t)}</span><span class="mono">${new Date(r.at).toLocaleDateString()}</span>${r.sv?`<button class="ghost" style="padding:6px 10px;min-height:0;font-size:13px" onclick="view(${i})">View</button>`:""}</div>`).join("")||'<div class="empty">Nothing yet.</div>';
+  window._rows=rows;
+}
+window.view=i=>{ const s=window._rows[i].sv; $("svIn").innerHTML=surveySvg(s,{dark:false}); $("svBox").classList.add("on"); };
+$("up").onchange=async()=>{ const files=[...$("up").files]; $("up").value=""; if(!files.length)return; $("bar").style.display="block"; let n=0;
+  for(const f of files){ const ext=(f.name.split(".").pop()||"").toLowerCase();
+    const u=await call({action:"share_upload_url",ext}); if(!u.ok){ $("upFlag").textContent=u.error; continue; }
+    const put=await fetch(u.url,{method:"PUT",headers:{"content-type":f.type||"application/octet-stream"},body:f}); if(!put.ok){ $("upFlag").textContent="upload failed — "+f.name; continue; }
+    const r=await call({action:"share_upload_record",path:u.path,name:f.name}); if(r.ok){ n++; D.files.unshift({at:new Date().toISOString(),kind:"file",title:f.name}); }
+    $("barI").style.width=Math.round(100*n/files.length)+"%"; }
+  $("upFlag").innerHTML=`<span class="ok">${n} sent</span>`; setTimeout(()=>{$("bar").style.display="none";$("barI").style.width="0";},1200); renderSent(); };
+window.sendNote=async()=>{ const text=$("note").value.trim(); if(!text)return; const r=await call({action:"share_note",text}); if(!r.ok){ $("noteFlag").textContent=r.error; return; } $("note").value=""; $("noteFlag").innerHTML='<span class="ok">sent</span>'; D.files.unshift({at:new Date().toISOString(),kind:"note",title:text.slice(0,140)}); renderSent(); };
+load();
+</script>
+</body>
+</html>
