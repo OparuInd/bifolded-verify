@@ -222,6 +222,7 @@
     body[data-op] .card { border-left: 5px solid var(--op); }
     body[data-op] .calc-btn { background: var(--op); }
     #job-name { color: var(--op, #1a1a2e) !important; font-weight: 600; }
+    .opname { float: right; font-size: 0.7rem; letter-spacing: .04em; color: #fff; border-radius: 10px; padding: 2px 9px; font-weight: 700; text-transform: none; }
     .ops button .x { color: #b8bcc6; font-weight: 400; font-size: 1rem; }
     .ops button .k { font-size: 0.75rem; color: #8a8f9c; font-weight: 500; }
     .ft-pair .input-group input { min-width: 0; }
@@ -572,10 +573,10 @@
     </div>
   </div>
   <div class="field" style="margin-bottom:0">
-    <label>Opening</label>
+    <label>Opening · name</label>
     <div class="ops" id="opChips"></div>
     <div class="input-group" style="background:#f7f8fa">
-      <input type="text" id="job-name" placeholder="garage · side door · shed" oninput="opRename(this.value)" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/>
+      <input type="text" id="job-name" placeholder="garage · ADU space · entry door" oninput="opRename(this.value)" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/>
     </div>
   </div>
 </div>
@@ -924,10 +925,14 @@ function surveySvg(v, opt){
     { bg: '#eef3ff', inputBg: '#f5f8ff', accent: '#4361ee' }, // Height Left   — blue
     { bg: '#f7f0fd', inputBg: '#faf5fe', accent: '#9b59b6' }, // Height Centre — purple
     { bg: '#edfaf3', inputBg: '#f4fdf8', accent: '#1aab5f' }, // Height Right  — green
-    { bg: '#fff4e6', inputBg: '#fffaf2', accent: '#e67e22' }, // Width Bottom  — orange
+    { bg: '#fdeef4', inputBg: '#fff5f9', accent: '#c2185b' }, // Width Bottom  — magenta (was orange — Ryan 7 Sep)
     { bg: '#fef0f0', inputBg: '#fff6f6', accent: '#e74c3c' }, // Width Mid     — red
     { bg: '#e6f7f9', inputBg: '#f2fcfd', accent: '#0097a7' }, // Width Top     — teal
   ];
+  /* 2.5 — each opening wears the six position colours in a different order, so the second opening's
+     Top/Mid/Bottom and Left/Centre/Right entry never look like the first one's. */
+  const OP_SHIFT = [0, 3, 1, 4, 2, 5];
+  const colorFor = ci => COLORS[(ci + OP_SHIFT[(typeof OPI === 'number' ? OPI : 0) % 6]) % COLORS.length];
 
   const HEIGHT_PAIRS = [
     { up:'ul', dn:'dl', tot:'hl-total', label:'Left',   ci: 0 },
@@ -1022,7 +1027,7 @@ function surveySvg(v, opt){
 
   function applyColors() {
     [...HEIGHT_PAIRS, ...WIDTH_PAIRS].forEach(p => {
-      const c = COLORS[p.ci];
+      const c = colorFor(p.ci);
       const mg = document.getElementById('mg-' + p.ci);
       if (!mg) return;
       mg.style.background = c.bg;
@@ -1235,7 +1240,7 @@ function surveySvg(v, opt){
 
       allDirs.forEach(d => {
         d.rows.forEach(r => {
-          const c = COLORS[r.ci];
+          const c = colorFor(r.ci);
           const isMin = r.val === d.min && d.rows.length > 1;
           const isMax = r.val === Math.max(...d.rows.map(x=>x.val)) && d.rows.length > 1 && r.val !== d.min;
           const swatch = `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${c.accent};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>`;
@@ -1282,10 +1287,11 @@ function surveySvg(v, opt){
     document.getElementById('job-name').value = o.name || ''; lastCalc = o.calc || null;
     document.getElementById('results').style.display = 'none'; document.getElementById('sendPanel').style.display = 'none'; document.getElementById('survey-draw').innerHTML = '';
     onInput(); opChips(); if (o.calc) { QUIET = true; try { calculate(); } catch (e) { console.error('recalc', e); } QUIET = false; } }
-  const OP_COLORS = ['#4361ee', '#d97706', '#0f9d58', '#9333ea', '#dc2626', '#0891b2', '#7c5c2e', '#374151'];
+  const OP_COLORS = ['#4361ee', '#c2185b', '#0f9d58', '#9333ea', '#0097a7', '#374151', '#7c5c2e', '#dc2626'];
   const opColor = i => OP_COLORS[i % OP_COLORS.length];
   function opLabel(o, i) { return o.name || ('Opening ' + (i + 1)); }
-  function opPaint() { document.body.dataset.op = OPI; document.documentElement.style.setProperty('--op', opColor(OPI)); }
+  function opPaint() { document.body.dataset.op = OPI; document.documentElement.style.setProperty('--op', opColor(OPI));
+    const nm = opLabel(OPS[OPI], OPI); document.querySelectorAll('.mgroup-title').forEach(t => { let b = t.querySelector('.opname'); if (!b) { b = document.createElement('span'); b.className = 'opname'; t.appendChild(b); } b.textContent = nm; b.style.background = opColor(OPI); }); }
   function opChips() { const el = document.getElementById('opChips'); if (!el) return;
     opPaint(); el.innerHTML = OPS.map((o, i) => `<button type="button" class="${i===OPI?'on':''}" style="--c:${opColor(i)}" onclick="opPick(${i})">${esc(opLabel(o, i))}${o.calc ? '<span class="k">' + fracStr(o.calc.widthIn) + ' × ' + fracStr(o.calc.heightIn) + '</span>' : ''}${OPS.length > 1 ? `<span class="x" onclick="event.stopPropagation();opDrop(${i})">✕</span>` : ''}</button>`).join('')
       + `<button type="button" class="add" onclick="opAdd()">＋ opening</button>`; }
