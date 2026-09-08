@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.13</title>
+<title>Tungsten Royce — Input Desk 2.14</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -134,14 +134,15 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.13</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.14</span>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
   <div id="v_assist" style="display:none"></div>
   <div id="v_rcpt" style="display:none"></div>
   <div id="v_shelf" style="display:none"></div>
+  <div id="v_vend" style="display:none"></div>
   <div id="v_scans" style="display:none"></div>
   <div id="v_surveys" style="display:none"></div>
   <div id="v_rcvd" style="display:none"></div>
@@ -177,7 +178,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","vend","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="vend")loadVend(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } if(!VENDORS.length&&Q.vendors) VENDORS=Q.vendors.slice(); renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); loadPeople(); loadCats(); }
 async function loadCats(){ try{ const j=await desk({action:"items"}); if(j.categories&&j.categories.length) CATS=j.categories; if(CUR&&TAB==="deck") renderSide(); }catch(e){} }
 async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],shop:j.shop||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){ toast("who to ask: "+e.message,true); } }
@@ -515,7 +516,7 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
 let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="";
@@ -560,6 +561,129 @@ async function shelfSave(){ const fields=collect("#shWork");
   try{ const j=await desk({action:"answer",table:"inventory_items",id:SHSEL,fields,image:SHPHOTO||undefined});
     SHPHOTO=null; toast("Saved ✓"); const i=SH.findIndex(x=>x.id===SHSEL); if(i>=0&&j.row) SH[i]=Object.assign(SH[i],{name:j.row.name,inv_code:j.row.inv_code,part_no:j.row.part_no,category:j.row.category,qty:j.row.qty,unit:j.row.unit,photo_path:j.row.photo_path});
     renderShelf(); shelfPick(SHSEL,true); }
+  catch(e){ toast(e.message,true); } }
+/* ===== VENDORS (2.14) — the book, and who we could call.
+   Ryan: "nowhere as a tab where you can view and edit all the pertinent information … business name,
+   physical address, email, sales email, web address, phone #, sales person, direct line/extension" ·
+   "if we flag something for look for new vendor we also need a list of potential vendors … who to call,
+   or who has been called" · "like a potential new vendor list". 0102 + tr-desk 2.19. */
+let VB=[], NEEDS=[], LEADS=[], VSEL=null, VQ="", VFOR=null;
+const LEADST=["to call","called","waiting","quoted","no","chosen"];
+async function loadVend(){
+  if(!$("vbList")) $("v_vend").innerHTML='<div class="empty">Loading…</div>';
+  try{ const j=await desk({action:"vendors"}); VB=j.rows||[]; NEEDS=j.needs||[]; LEADS=j.leads||[];
+       VENDORS=VB.filter(v=>v.active).map(v=>({id:v.id,name:v.name})); Q.vendors=VENDORS; }
+  catch(e){ $("v_vend").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  const open=LEADS.filter(l=>l.status==="to call").length; const pip=$("vendN");
+  pip.textContent=open; pip.style.display=open?"inline":"none";
+  if(!$("vbList")) $("v_vend").innerHTML="";
+  renderVend(); if(VSEL) vendPick(VSEL,true);
+}
+function vbList(){ const q=VQ.toLowerCase().trim();
+  return !q?VB:VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].some(x=>String(x||"").toLowerCase().includes(q))); }
+function renderVend(){
+  if(!$("vbList")) $("v_vend").innerHTML=`<div class="rc"><div>
+    <input id="vbq" placeholder="name, town, person" value="${esc(VQ)}" oninput="VQ=this.value;renderVbList()">
+    <div style="display:flex;gap:6px;margin:6px 0"><button class="sm" style="flex:1" onclick="vendAdd()">＋ vendor</button><button class="sm" style="flex:1" onclick="vendSource()">⚑ Needs a vendor</button></div>
+    <div class="list" id="vbList"></div>
+  </div><div id="vbWork"><div class="empty">Pick a vendor.</div></div></div>`;
+  renderVbList();
+}
+function renderVbList(){
+  const L=vbList();
+  $("vbList").innerHTML=L.map(v=>`<div class="rr ${VSEL===v.id?"on":""}" data-id="${v.id}" onclick="vendPick('${v.id}')">
+    <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${v.active?esc((v.kind||"—").slice(0,6)):"off"}</div>
+    <div><b>${esc(v.name)}</b><div class="m">${esc(v.sales_name||v.contact||"—")}${v.sales_phone||v.phone?" · "+esc(v.sales_phone||v.phone):""}${v.city?" · "+esc(v.city):""}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>';
+}
+async function vendAdd(){ const name=(prompt("Vendor name")||"").trim(); if(!name) return;
+  try{ const j=await desk({action:"vendor_new",name}); await loadVend(); vendPick(j.id); toast(j.existed?"already on the list":"vendor added"); }
+  catch(e){ toast(e.message,true); } }
+async function vendPick(id,quiet){ VSEL=id; VFOR=null;
+  document.querySelectorAll("#vbList .rr").forEach(e=>e.classList.toggle("on",e.dataset.id===id));
+  const v=VB.find(x=>x.id===id); if(!v){ $("vbWork").innerHTML='<div class="empty">Gone.</div>'; return; }
+  const mine=LEADS.filter(l=>l.vendor_id===id);
+  $("vbWork").innerHTML=`<div class="panel">
+    <div class="f"><label>Business name</label><input id="g_name" value="${esc(v.name||"")}"></div>
+    <div class="f3"><div class="f"><label>Kind</label><input id="g_kind" value="${esc(v.kind||"")}"></div>
+      <div class="f"><label>Lead time (days)</label><input id="g_lead_days" inputmode="numeric" value="${v.lead_days??""}"></div>
+      <div class="f"><label>Terms</label><input id="g_terms" value="${esc(v.terms||"")}"></div></div>
+    <div class="f"><label>Street</label><input id="g_address" value="${esc(v.address||"")}"></div>
+    <div class="f3"><div class="f"><label>Town</label><input id="g_city" value="${esc(v.city||"")}"></div>
+      <div class="f"><label>State</label><input id="g_state" value="${esc(v.state||"")}"></div>
+      <div class="f"><label>Zip</label><input id="g_zip" value="${esc(v.zip||"")}"></div></div>
+    <div class="f3"><div class="f"><label>Main phone</label><input id="g_phone" value="${esc(v.phone||"")}"></div>
+      <div class="f"><label>E-mail</label><input id="g_email" value="${esc(v.email||"")}"></div>
+      <div class="f"><label>Website</label><input id="g_url" value="${esc(v.url||"")}"></div></div>
+    <div class="eyebrow" style="margin:12px 0 6px;color:var(--bronze)">Our sales person</div>
+    <div class="f3"><div class="f"><label>Name</label><input id="g_sales_name" value="${esc(v.sales_name||v.contact||"")}"></div>
+      <div class="f"><label>Direct line</label><input id="g_sales_phone" value="${esc(v.sales_phone||"")}"></div>
+      <div class="f"><label>Ext</label><input id="g_sales_ext" value="${esc(v.sales_ext||"")}"></div></div>
+    <div class="f2"><div class="f"><label>Sales / orders e-mail</label><input id="g_sales_email" value="${esc(v.sales_email||"")}"></div>
+      <div class="f"><label>Buy through</label><input id="g_buy_through" value="${esc(v.buy_through||"")}"></div></div>
+    <div class="f"><label>Note</label><input id="g_note" value="${esc(v.note||"")}"></div>
+    <label class="chk" style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:13.5px;margin:10px 0 0"><input type="checkbox" id="g_active" ${v.active?"checked":""} style="width:auto;margin:0">on the list</label>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="go" style="flex:1;padding:12px" onclick="vendSave()">Save the vendor</button>
+      ${v.url?`<a class="sm btn" href="${esc(v.url.startsWith("http")?v.url:"https://"+v.url)}" target="_blank" rel="noopener">Site ↗</a>`:""}
+      ${v.sales_phone||v.phone?`<a class="sm btn" href="tel:${esc((v.sales_phone||v.phone).replace(/[^0-9+]/g,""))}">Call</a>`:""}
+      ${v.sales_email||v.email?`<a class="sm btn" href="mailto:${esc(v.sales_email||v.email)}">E-mail</a>`:""}</div>
+    <div class="hint">${v.updated_by?"last edited "+esc(v.updated_by)+" · "+String(v.updated_at||"").slice(0,10):""}</div>
+    ${mine.length?`<div class="eyebrow" style="margin:14px 0 6px;color:var(--bronze)">Came off the potential list</div>${mine.map(l=>`<div class="hint">${esc(l.for_what||l.for_part_key||"")} · ${esc(l.found_via||"")}</div>`).join("")}`:""}
+  </div>`;
+}
+async function vendSave(){ const fields={};
+  document.querySelectorAll("#vbWork [id^=g_]").forEach(el=>{ fields[el.id.slice(2)]=el.type==="checkbox"?el.checked:el.value; });
+  try{ const j=await desk({action:"vendor_set",id:VSEL,fields}); const i=VB.findIndex(x=>x.id===VSEL); if(i>=0) VB[i]=j.row;
+    VENDORS=VB.filter(v=>v.active).map(v=>({id:v.id,name:v.name})); Q.vendors=VENDORS;
+    toast("Saved ✓"); renderVbList(); vendPick(VSEL,true); }
+  catch(e){ toast(e.message,true); } }
+/* ---- who to call ---- */
+function vendSource(){ VSEL=null; VFOR=null;
+  document.querySelectorAll("#vbList .rr").forEach(e=>e.classList.remove("on"));
+  const keyOf=n=>n.part_key||n.title;
+  $("vbWork").innerHTML=`<div class="panel"><div class="eyebrow" style="margin-bottom:8px;color:var(--warn)">⚑ Needs a vendor · ${NEEDS.length}</div>
+    ${NEEDS.map(n=>{ const k=keyOf(n), got=LEADS.filter(l=>(l.for_part_key||l.for_what)===k);
+      return `<div class="rr" style="cursor:pointer" onclick="leadsFor('${esc(k).replace(/'/g,"&#39;")}')"><div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${got.length||"⚑"}</div>
+        <div><b>${esc(n.title||k)}</b><div class="m">${esc(n.code||"")}${n.code?" · ":""}${esc(n.source)}${got.length?" · "+got.length+" to call":""}</div></div></div>`; }).join("")||'<div class="empty">Nothing flagged.</div>'}
+    <div style="margin-top:12px"><button class="sm" onclick="leadsFor('')">Potential vendors — the whole list</button></div></div>`;
+}
+function leadsFor(k){ VFOR=k;
+  const L=k?LEADS.filter(l=>(l.for_part_key||l.for_what)===k):LEADS;
+  $("vbWork").innerHTML=`<div class="panel">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="eyebrow" style="color:var(--bronze)">Who to call${k?" · "+esc(k):""}</span>
+      <button class="sm" style="margin-left:auto" onclick="vendSource()">← flagged</button></div>
+    ${L.map(l=>`<div class="assist ${l.status==="to call"?"mine":""}" style="grid-template-columns:1fr">
+      <div><div class="who">${esc(l.status)}${l.called_at?" · "+esc(l.called_by||"")+" "+String(l.called_at).slice(0,10):""}${l.city?" · "+esc(l.city):""}${l.found_via?" · "+esc(l.found_via):""}</div>
+      <div class="ttl">${esc(l.company)}${l.vendor_id?" ✓ on the list":""}</div>
+      <div class="m">${esc(l.contact||"—")}${l.phone?" · "+esc(l.phone):""}${l.ext?" x"+esc(l.ext):""}${l.email?" · "+esc(l.email):""}${l.quoted_price!=null?" · "+money(l.quoted_price):""}</div>
+      ${l.note?`<div class="ans" style="white-space:pre-wrap">${esc(l.note)}</div>`:""}
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        ${l.phone?`<a class="sm btn" href="tel:${esc(String(l.phone).replace(/[^0-9+]/g,""))}">Call</a>`:""}
+        ${l.email?`<a class="sm btn" href="mailto:${esc(l.email)}">E-mail</a>`:""}
+        ${l.url?`<a class="sm btn" href="${esc(String(l.url).startsWith("http")?l.url:"https://"+l.url)}" target="_blank" rel="noopener">Site ↗</a>`:""}
+        <button class="sm" onclick="leadCalled('${l.id}')">Called…</button>
+        <select class="sm" onchange="leadStatus('${l.id}',this.value)">${LEADST.map(x=>`<option ${x===l.status?"selected":""}>${x}</option>`).join("")}</select>
+        ${l.vendor_id?"":`<button class="ok sm" onclick="leadWin('${l.id}')">Use them ✓</button>`}</div></div></div>`).join("")||'<div class="empty">Nobody on the list yet.</div>'}
+    <div class="eyebrow" style="margin:14px 0 6px;color:var(--bronze)">Add someone to call</div>
+    <div class="f3"><div class="f"><label>Company</label><input id="l_company"></div><div class="f"><label>Person</label><input id="l_contact"></div><div class="f"><label>Where from</label><input id="l_found_via" placeholder="who mentioned them"></div></div>
+    <div class="f3"><div class="f"><label>Phone</label><input id="l_phone"></div><div class="f"><label>Ext</label><input id="l_ext"></div><div class="f"><label>Town</label><input id="l_city"></div></div>
+    <div class="f2"><div class="f"><label>E-mail</label><input id="l_email"></div><div class="f"><label>Website</label><input id="l_url"></div></div>
+    <div class="f"><label>Note</label><input id="l_note"></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="go" style="flex:1" onclick="leadAdd()">Add to the list</button></div></div>`;
+}
+async function leadAdd(){ const f={};
+  document.querySelectorAll("#vbWork [id^=l_]").forEach(el=>{ if(el.value.trim()) f[el.id.slice(2)]=el.value.trim(); });
+  if(!f.company){ toast("who are we calling?",true); $("l_company")?.focus(); return; }
+  if(VFOR){ const n=NEEDS.find(x=>(x.part_key||x.title)===VFOR); if(n&&n.part_key) f.for_part_key=n.part_key; else f.for_what=VFOR; }
+  try{ const j=await desk({action:"lead_set",fields:f}); LEADS.unshift(j.row); toast("on the list"); leadsFor(VFOR); }
+  catch(e){ toast(e.message,true); } }
+async function leadCalled(id){ const note=(prompt("What did they say?")||"").trim();
+  try{ const j=await desk({action:"lead_called",id,note:note||undefined}); const i=LEADS.findIndex(l=>l.id===id); if(i>=0) LEADS[i]=j.row; leadsFor(VFOR); }
+  catch(e){ toast(e.message,true); } }
+async function leadStatus(id,status){
+  try{ const j=await desk({action:"lead_set",id,fields:{status}}); const i=LEADS.findIndex(l=>l.id===id); if(i>=0) LEADS[i]=j.row; leadsFor(VFOR); }
+  catch(e){ toast(e.message,true); } }
+async function leadWin(id){
+  try{ await desk({action:"lead_to_vendor",id}); toast("added to the book ✓"); await loadVend(); leadsFor(VFOR); }
   catch(e){ toast(e.message,true); } }
 /* ===== RECEIVED (1.9) — what customers / contractors sent through their link (tr-desk 2.5 inbox), and the links themselves. */
 let IB=[], IBSEL=null, LK=[], SHT=null, LASTURL="";
