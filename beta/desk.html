@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.7</title>
+<title>Tungsten Royce — Input Desk 2.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -134,7 +134,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.7</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.8</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -557,7 +557,14 @@ function parseFtIn(s){ s=String(s||"").trim().toLowerCase().replace(/″/g,'"').
 function fmtFt(ft){ return fmtInch(Math.round(ft*12*16)/16).replace(/′ 0″$/,"′"); }
 function pcsTotal(l){ return Math.round((l||[]).reduce((a,x)=>a+(Number(x.n)||1)*(Number(x.ft)||0),0)*100)/100; }
 function stTakeBtn(which,p,f,ft){ const at=f[which+"_taken_at"], by=f[which+"_taken_by"]; if(at) return `<div class="m" style="font-size:11px;color:var(--mute)">taken · ${esc(by||"")} · ${esc(String(at).slice(0,10))}</div>`; if(!p||!p.stock||p.stock.qty==null||!ft||!p.part_key) return ""; return `<div style="margin-top:4px"><button class="sm" onclick="stTake('${which}','${esc(p.part_key)}')">Take from the shelf</button></div>`; }
-async function stTake(which,key){ const f=stForm(); const pcs=(which==="btm"?f.btm_pieces:f.track_pieces)||[]; const t=steelTgt(); if(!t) return; try{ const r=await desk(Object.assign({action:"track_take",part_key:key,which,pieces:pcs},t)); toast((r.short&&r.short.length?"⚑ short "+r.short.map(x=>fmtFt(x)).join(", ")+" · ":"")+"shelf now "+fmtFt(r.stock.qty)); await steelPull(); }catch(e){ toast(e.message,true); } }
+async function stTake(which,key){ const f=stForm(); const pcs=(which==="btm"?f.btm_pieces:f.track_pieces)||[]; const t=steelTgt(); if(!t) return;
+  try{ const r=await desk(Object.assign({action:"track_take",part_key:key,which,pieces:pcs},t)); const L=[];
+    if(r.short&&r.short.length) L.push("⚑ short "+r.short.map(x=>fmtFt(x)).join(", "));
+    if(r.took&&r.took.length) L.push("out "+r.took.map(x=>fmtFt(x)).join(", "));
+    if(r.keep&&r.keep.length) L.push("set aside "+r.keep.map(x=>fmtFt(x)).join(", "));
+    if(r.scrap&&r.scrap.length) L.push("scrap "+r.scrap.map(x=>fmtFt(x)).join(", "));
+    L.push("shelf now "+fmtFt(r.stock.qty)); toast(L.join(" · ")); await steelPull();
+  }catch(e){ toast(e.message,true); } }
 function pcsText(l,qty){ l=(l||[]).filter(x=>Number(x.ft)>0); return l.length?l.map(x=>(Number(x.n)||1)+" × "+fmtFt(Number(x.ft))).join(" · "):(qty!=null?fmtFt(Number(qty)):""); }
 /* enough? every needed piece must fit inside some stick on hand (longest-first), else fall back to total feet */
 function pcsCover(have,need,haveFt,needFt){ have=(have||[]).filter(x=>x.ft>0); need=(need||[]).filter(x=>x.ft>0); if(!have.length||!need.length) return haveFt>=needFt; const sticks=[]; have.forEach(x=>{ for(let i=0;i<(Number(x.n)||1);i++) sticks.push(Number(x.ft)); }); sticks.sort((a,b)=>b-a); const want=[]; need.forEach(x=>{ for(let i=0;i<(Number(x.n)||1);i++) want.push(Number(x.ft)); }); want.sort((a,b)=>b-a); for(const w of want){ const i=sticks.findIndex(s=>s>=w); if(i<0) return false; sticks[i]-=w; } return true; }
