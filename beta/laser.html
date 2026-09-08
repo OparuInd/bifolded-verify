@@ -895,20 +895,52 @@ function surveySvg(v, opt){
   const cl=v.clearances||raw.clearances||{}; const ct=Number(cl.top||0), cL=Number(cl.left||0), cR=Number(cl.right||0);
   const fi=n=>{ n=Number(n)||0; const ft=Math.floor(n/12), r=n-ft*12; const fr=Math.round(r*16)/16; const wh=Math.floor(fr), f=fr-wh; const F={0:"",0.0625:"1/16",0.125:"1/8",0.1875:"3/16",0.25:"1/4",0.3125:"5/16",0.375:"3/8",0.4375:"7/16",0.5:"1/2",0.5625:"9/16",0.625:"5/8",0.6875:"11/16",0.75:"3/4",0.8125:"13/16",0.875:"7/8",0.9375:"15/16"}[Math.round(f*10000)/10000]||""; return (ft?ft+"′ ":"")+(wh||!F?wh:"")+(F?(wh?"-":"")+F:"")+"″"; };
   const dark=opt.dark!==false; const ink=dark?"#f4f2ee":"#1c1a20", mute=dark?"#8f8a82":"#6b6558", bronze="#c9ab7f", line=dark?"#3a3a3a":"#cfc8ba", bg=dark?"#141414":"#fbf9f6", warn="#d9a441";
+  const inner=dark?"#1f1f1f":"#fff";
   const pw=560, ph=Math.round(pw*Math.min(1.15,Math.max(0.45,H/W))+110); const pad=78; const iw=pw-pad*2, ih=ph-pad-60; const sx=iw/wmax, sy=ih/hmax;
   const cx=pad+iw/2, top=48;
   // true opening (max readings) faint, governing (min) solid
   const gx=cx-(W*sx)/2, gy=top+(hmax-H)*sy;   // governing sits on the floor
   const tx=cx-(wmax*sx)/2;
+  // A value sits in its own gap in its line, in a box no line can cross. The line says which reading it is
+  // (bottom / mid / top, left / centre / right), so the box carries the number alone. Anything that cannot
+  // be placed clear of another value drops to a row under the opening with its position spelled out.
+  const FS=11, CHW=FS*0.62, BH=FS+7;
+  const tw=t=>t.length*CHW+10;
+  const box=(x,y,t,col,rot)=>{ const w=tw(t), g=rot?` transform="rotate(-90 ${x.toFixed(1)} ${y.toFixed(1)})"`:"";
+    return `<g${g}><rect x="${(x-w/2).toFixed(1)}" y="${(y-BH/2).toFixed(1)}" width="${w.toFixed(1)}" height="${BH}" rx="2" fill="${inner}" stroke="${col}" stroke-opacity=".45"/>`
+         + `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${FS}" fill="${col}">${t}</text></g>`; };
+  const seg=(x1,y1,x2,y2,col,w)=>(Math.abs(x2-x1)+Math.abs(y2-y1)>3?`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${w}"/>`:"");
   let s=`<svg viewBox="0 0 ${pw} ${ph}" width="100%" style="max-width:${pw}px;display:block;background:${bg};border-radius:4px;font-family:JetBrains Mono,ui-monospace,Menlo,monospace">`;
   s+=`<rect x="${tx}" y="${top}" width="${wmax*sx}" height="${hmax*sy}" fill="none" stroke="${line}" stroke-dasharray="5 4"/>`;
-  s+=`<rect x="${gx}" y="${gy}" width="${W*sx}" height="${H*sy}" fill="${dark?"#1f1f1f":"#fff"}" stroke="${bronze}" stroke-width="2"/>`;
+  s+=`<rect x="${gx}" y="${gy}" width="${W*sx}" height="${H*sy}" fill="${inner}" stroke="${bronze}" stroke-width="2"/>`;
   if(ct||cL||cR){ s+=`<rect x="${gx+cL*sx}" y="${gy+ct*sy}" width="${(W-cL-cR)*sx}" height="${(H-ct)*sy}" fill="none" stroke="${warn}" stroke-width="1" stroke-dasharray="3 3"/>`; }
+  const placed=[], out=[];
+  const clash=(a,b)=>!(a.x2<=b.x1||b.x2<=a.x1||a.y2<=b.y1||b.y2<=a.y1);
+  const fits=(x,y,w,h)=>{ const r={x1:x-w/2-3,y1:y-h/2-3,x2:x+w/2+3,y2:y+h/2+3};
+    if(r.x1<gx+2||r.x2>gx+W*sx-2||r.y1<gy+2||r.y2>gy+H*sy-2) return null;
+    return placed.some(p=>clash(r,p))?null:r; };
+  let ln="", lb="";
   // width readings across (bottom / mid / top)
-  const rowY={Bottom:gy+H*sy-10,Mid:gy+H*sy/2,Top:gy+10};
-  for(const r of wr){ const y=rowY[r.pos]??gy+H*sy/2; const gov=Math.abs(r.t-wmin)<1e-6; s+=`<line x1="${gx+6}" y1="${y}" x2="${gx+W*sx-6}" y2="${y}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${cx}" y="${r.pos==="Top"?y+13:y-4}" text-anchor="middle" font-size="11" fill="${gov?bronze:mute}">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
-  const colX={Left:gx+14,Centre:cx,Center:cx,Right:gx+W*sx-14};
-  for(const r of hr){ const x=colX[r.pos]??cx; const gov=Math.abs(r.t-hmin)<1e-6; s+=`<line x1="${x}" y1="${gy+6}" x2="${x}" y2="${gy+H*sy-6}" stroke="${gov?bronze:mute}" stroke-width="${gov?1.5:0.8}"/><text x="${x+4}" y="${gy+H*sy/2+(r.pos==="Right"?0:0)}" font-size="11" fill="${gov?bronze:mute}" transform="rotate(-90 ${x+4} ${gy+H*sy/2})" text-anchor="middle">${r.pos.toLowerCase()} ${fi(r.t)}${gov?" ◂":""}</text>`; }
+  const rowY={Bottom:gy+H*sy-15,Mid:gy+H*sy/2,Top:gy+15};
+  for(const r of wr){
+    const y=rowY[r.pos]??gy+H*sy/2, gov=Math.abs(r.t-wmin)<1e-6, col=gov?bronze:mute, lw=gov?1.5:0.8;
+    const t=`${fi(r.t)}${gov?" \u25c2":""}`, w=tw(t), hit=fits(cx,y,w,BH);
+    if(hit){ placed.push(hit); ln+=seg(gx+6,y,cx-w/2-5,y,col,lw)+seg(cx+w/2+5,y,gx+W*sx-6,y,col,lw); lb+=box(cx,y,t,col,false); }
+    else { ln+=seg(gx+6,y,gx+W*sx-6,y,col,lw); out.push({t:`${r.pos.toLowerCase()} ${t}`,col}); }
+  }
+  // height readings down (left / centre / right)
+  const colX={Left:gx+15,Centre:cx,Center:cx,Right:gx+W*sx-15};
+  for(const r of hr){
+    const x=colX[r.pos]??cx, my=gy+H*sy/2, gov=Math.abs(r.t-hmin)<1e-6, col=gov?bronze:mute, lw=gov?1.5:0.8;
+    const t=`${fi(r.t)}${gov?" \u25c2":""}`, w=tw(t), hit=fits(x,my,BH,w);
+    if(hit){ placed.push(hit); ln+=seg(x,gy+6,x,my-w/2-5,col,lw)+seg(x,my+w/2+5,x,gy+H*sy-6,col,lw); lb+=box(x,my,t,col,true); }
+    else { ln+=seg(x,gy+6,x,gy+H*sy-6,col,lw); out.push({t:`${r.pos.toLowerCase()} ${t}`,col}); }
+  }
+  s+=ln+lb;
+  // whatever would not sit clear goes under the opening, spelled out
+  if(out.length){ const gap=10, tot=out.reduce((a,o)=>a+tw(o.t),0)+gap*(out.length-1);
+    let x=cx-tot/2, y=gy+H*sy+15;
+    for(const o of out){ const w=tw(o.t); s+=box(x+w/2,y,o.t,o.col,false); x+=w+gap; } }
   // dimensions
   s+=`<text x="${cx}" y="${top-16}" text-anchor="middle" font-size="13" fill="${ink}" font-weight="600">${fi(W)} × ${fi(H)}</text>`;
   s+=`<text x="${cx}" y="${top-2}" text-anchor="middle" font-size="10" fill="${mute}">governing · smallest reading each way</text>`;
