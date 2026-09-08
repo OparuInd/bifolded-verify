@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.16</title>
+<title>Tungsten Royce — Input Desk 2.17</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -144,14 +144,15 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.16</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.17</span>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
   <div id="v_assist" style="display:none"></div>
   <div id="v_rcpt" style="display:none"></div>
   <div id="v_shelf" style="display:none"></div>
+  <div id="v_parts" style="display:none"></div>
   <div id="v_vend" style="display:none"></div>
   <div id="v_scans" style="display:none"></div>
   <div id="v_surveys" style="display:none"></div>
@@ -163,6 +164,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <div class="toast" id="toast"></div>
 <input type="file" id="camFile" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="shFile" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="ptFile" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="rcFile" accept="image/*" style="display:none">
 <input type="file" id="scanFile" accept="image/*" capture="environment" style="display:none">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -188,7 +190,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","vend","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="vend")loadVend(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","parts","vend","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="parts")loadParts(); if(t==="vend")loadVend(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } if(!VENDORS.length&&Q.vendors) VENDORS=Q.vendors.slice(); renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); loadPeople(); loadCats(); }
 async function loadCats(){ try{ const j=await desk({action:"items"}); if(j.categories&&j.categories.length) CATS=j.categories; if(CUR&&TAB==="deck") renderSide(); }catch(e){} }
 async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],shop:j.shop||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){ toast("who to ask: "+e.message,true); } }
@@ -282,9 +284,11 @@ function renderSide(gaps){ /* keyboard: 1 focus · 2 later · 3 research · 4 as
 }
 $("camFile").onchange=()=>{ const f=$("camFile").files[0]; if(!f)return; const img=new Image(); img.onload=()=>{ const M=1600,sc=Math.min(1,M/Math.max(img.width,img.height)); const cv=document.createElement("canvas"); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc); cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); PHOTO=cv.toDataURL("image/jpeg",.85); const im=document.querySelector(".dc.top .photo"); im.innerHTML=`<img src="${PHOTO}"><div class="cap"><button class="go sm" onclick="$('camFile').click()">📷 retake</button></div>`; $("photoHint").textContent="📷 new photo attached — saves with the answer"; }; img.src=URL.createObjectURL(f); $("camFile").value=""; };
 $("shFile").onchange=()=>{ const f=$("shFile").files[0]; if(!f)return; shrink(f,d=>{ SHPHOTO=d; renderShelfCard(null); }); $("shFile").value=""; };
+$("ptFile").onchange=()=>{ const f=$("ptFile").files[0]; if(!f)return; shrink(f,d=>{ PTPHOTO=d; renderPartCard(null); }); $("ptFile").value=""; };
 function shrink(f,cb){ const img=new Image(); img.onload=()=>{ const M=1600,sc=Math.min(1,M/Math.max(img.width,img.height)); const cv=document.createElement("canvas"); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc); cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height); cb(cv.toDataURL("image/jpeg",.85)); }; img.src=URL.createObjectURL(f); }
 document.addEventListener("paste",e=>{ const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/")); if(!it)return;
   if(TAB==="shelf"&&SHSEL){ shrink(it.getAsFile(),d=>{ SHPHOTO=d; renderShelfCard(null); }); return; }
+  if(TAB==="parts"&&PTSEL){ shrink(it.getAsFile(),d=>{ PTPHOTO=d; renderPartCard(null); }); return; }
   if(TAB!=="deck")return; const f=it.getAsFile(); const dt=new DataTransfer(); dt.items.add(f); $("camFile").files=dt.files; $("camFile").onchange(); });
 function collect(scope){ const f={}; document.querySelectorAll((scope||"#side")+" [id^=f_]").forEach(el=>{ f[el.id.slice(2)]=el.type==="checkbox"?(el.checked?"true":"false"):el.value; }); for(const k of Object.keys(f)) if(f[k]==="") delete f[k]; return f; }
 async function answer(){ const fields=collect(); if(CUR.table_name==="open_items"&&!(fields.answer||"").trim()){toast("⚑ type the answer",true);return;} if(!Object.keys(fields).length&&!PHOTO){toast("Fill something in, or take the photo.",true);return;} try{ const j=await desk({action:"answer",table:CUR.table_name,id:CUR.row_id,fields,image:PHOTO||undefined,note:$("optNote")?.value}); toBack(); await flyTop("fly-d"); toast(CUR.table_name==="open_items"?"Answered · the office accepts it ✓":j.missing.length?`Saved · still needs ${j.missing.map(m=>LBL[m]||m).join(", ")}`:"Saved · record complete ✓"); PHOTO=null; load(); }catch(e){toast(e.message,true);} }
@@ -526,7 +530,7 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
 let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="", SHF="";
@@ -598,7 +602,131 @@ async function shelfSave(){ const fields=collect("#shWork");
     SHPHOTO=null; toast("Saved ✓"); const i=SH.findIndex(x=>x.id===SHSEL); if(i>=0&&j.row) SH[i]=Object.assign(SH[i],{name:j.row.name,inv_code:j.row.inv_code,part_no:j.row.part_no,category:j.row.category,qty:j.row.qty,unit:j.row.unit,photo_path:j.row.photo_path});
     renderShList(); shelfPick(SHSEL,true); }
   catch(e){ toast(e.message,true); } }
-/* ===== VENDORS (2.14) — the book, and who we could call.
+/* ===== PARTS (2.17) — the LAST record type that could only be reached through the deck.
+   Ryan, 8 Sep: "Please build the parts". A part is `vendor_parts` grouped by part_key + one `part_stock` row;
+   the card and the save already existed (tr-desk 1.5) — what was missing was any way to FIND one. */
+let PT=[], PTSEL=null, PTROW=null, PTPHOTO=null, PTQ="", PTF="", PTCATS=[], PTITEMS=[];
+const PTCHIP={ noqty:{t:"no count", f:r=>r.qty===null||r.qty===undefined}, novend:{t:"no vendor", f:r=>!r.preferred_vendor_id},
+               look:{t:"\u2691 look for a vendor", f:r=>r.look_for_vendor}, nophoto:{t:"no photo", f:r=>!r.photo_path},
+               nocost:{t:"no cost", f:r=>r.best_cost===null||r.best_cost===undefined}, noplace:{t:"no place", f:r=>!r.location},
+               nocat:{t:"no category", f:r=>!r.category}, noitem:{t:"not on the shelf", f:r=>!(r.items&&r.items.length)},
+               inkit:{t:"in a kit", f:r=>r.kits&&r.kits.length} };
+async function loadParts(){ if(!PT.length&&!$("ptList")) $("v_parts").innerHTML='<div class="empty">Loading\u2026</div>';
+  try{ const j=await desk({action:"parts_list"}); PT=j.rows||[]; PTITEMS=j.items||[];
+       if(j.categories&&j.categories.length) PTCATS=j.categories;
+       if(j.vendors&&j.vendors.length){ VENDORS=j.vendors; Q.vendors=VENDORS; } }
+  catch(e){ $("v_parts").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
+  if(!$("ptList")) $("v_parts").innerHTML=""; renderParts(); if(PTSEL) partPick(PTSEL,true); }
+function ptList(){ const q=PTQ.toLowerCase().trim();
+  let L=q?PT.filter(r=>[r.title,r.code,r.part_key,r.brand,r.location,r.category].some(v=>String(v||"").toLowerCase().includes(q))):PT;
+  return PTF&&PTCHIP[PTF]?L.filter(PTCHIP[PTF].f):L; }
+function ptChips(){ const q=PTQ.toLowerCase().trim();
+  const base=q?PT.filter(r=>[r.title,r.code,r.part_key,r.brand,r.location,r.category].some(v=>String(v||"").toLowerCase().includes(q))):PT;
+  return Object.keys(PTCHIP).map(k=>{ const n=base.filter(PTCHIP[k].f).length;
+    return `<button class="${PTF===k?"on":(n?"":"off")}" onclick="ptFilter('${k}')">${PTCHIP[k].t}<b>${n}</b></button>`; }).join(""); }
+function ptFilter(k){ PTF=(PTF===k?"":k); renderPtList(); }
+function renderParts(){
+  if(!$("ptList")) $("v_parts").innerHTML=`<div class="rc"><div>
+    <input id="ptq" placeholder="name, code, part key, brand" value="${esc(PTQ)}" oninput="PTQ=this.value;renderPtList()">
+    <div class="chips" id="ptChips"></div>
+    <div class="hint" style="margin:6px 0" id="ptN"></div>
+    <div class="list" id="ptList"></div>
+  </div><div id="ptWork"><div class="empty">Pick a part.</div></div></div>`;
+  renderPtList();
+}
+function renderPtList(){   // only the list is rebuilt \u2014 never the box he is typing in
+  const L=ptList(); $("ptN").textContent=`${L.length} of ${PT.length}`;
+  $("ptChips").innerHTML=ptChips();
+  $("ptList").innerHTML=L.map(r=>`<div class="rr ${PTSEL===r.part_key?"on":""}" data-id="${esc(r.part_key)}" onclick="partPick('${esc(r.part_key)}')">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${r.photo_path?"photo":(r.look_for_vendor?"\u2691":"\u2014")}</div>
+      <div><b>${esc(r.title||r.part_key)}</b><div class="m">${esc(r.code||r.part_key)}${r.brand?" \u00b7 "+esc(r.brand):""} \u00b7 ${r.qty===null||r.qty===undefined?'<i style="color:var(--warn);font-style:normal">no count</i>':r.qty+" "+esc(r.unit||"")}${r.location?" \u00b7 "+esc(r.location):""}</div>
+      <div class="m">${esc(r.category||"\u2014")} \u00b7 ${r.vendor_n?r.vendor_n+(r.vendor_n===1?" vendor":" vendors"):"no vendor line"}${r.best_cost!==null&&r.best_cost!==undefined?" \u00b7 "+money(r.best_cost)+(r.best_vendor?" "+esc(r.best_vendor):""):""}${r.items&&r.items.length?" \u00b7 shelf":""}${r.kits&&r.kits.length?" \u00b7 "+r.kits.length+" kit"+(r.kits.length===1?"":"s"):""}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>';
+}
+async function partPick(id,quiet){ PTSEL=id; PTPHOTO=null;
+  document.querySelectorAll("#ptList .rr").forEach(e=>e.classList.toggle("on",e.dataset.id===id));
+  $("ptWork").innerHTML='<div class="empty">Loading\u2026</div>';
+  try{ const c=await desk({action:"card",table:"parts",id}); PTROW=c.row; renderPartCard(c.photo_url); }
+  catch(e){ $("ptWork").innerHTML=`<div class="empty">${esc(e.message)}</div>`; } }
+function renderPartCard(url){
+  const r=PTROW||{}, ph=PTPHOTO||url, vs=Array.isArray(r.vendors)?r.vendors:[];
+  const seen={}; const lines=vs.filter(v=>{ const k=(v.vendor_id||"")+"|"+(v.code||""); if(seen[k])return false; seen[k]=1; return true; });
+  $("ptWork").innerHTML=`<div class="panel">
+    <div class="eyebrow" style="color:var(--bronze)">${esc(r.descr||r.code||r.part_key||"")}</div>
+    <div class="hint" style="margin:2px 0 12px">${esc(r.part_key||"")}${r.brand?" \u00b7 "+esc(r.brand):""}</div>
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start">
+      <div><div style="height:165px;border-radius:3px;background:#0f0f0f url('${ph||""}') center/cover no-repeat;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--mute2);font-size:11px;cursor:${ph?"zoom-in":"default"}" ${ph?`onclick="lbImg('${ph}','${esc(r.descr||r.part_key||"")}')"`:""}>${ph?"":"no picture yet"}</div>
+        <button class="go sm" style="width:100%;margin-top:6px" onclick="$('ptFile').click()">\ud83d\udcf7 ${ph?"Replace the photo":"Add a photo"}</button>
+        ${PTPHOTO?'<div class="hint">new photo \u2014 saves with the count</div>':""}
+        <div class="f" style="margin-top:8px"><label>From the vendor's page</label>
+          <input id="ptUrl" placeholder="https://\u2026 the picture's address" onkeydown="if(event.key==='Enter')partGrab()"></div>
+        <button class="sm" style="width:100%;margin-top:5px" id="ptGrab" onclick="partGrab()">\u2193 Pull it from the web</button></div>
+      <div>
+        <div class="f3"><div class="f"><label>On hand${r.qty===null||r.qty===undefined?' <i style="color:var(--warn);font-style:normal">\u2691</i>':""}</label><input id="p_qty" inputmode="decimal" value="${r.qty??""}"></div>
+          <div class="f"><label>Unit</label><input id="p_unit" value="${esc(r.unit||r.uom||"ea")}"></div>
+          <div class="f"><label>Where</label><input id="p_location" value="${esc(r.location||"")}" placeholder="shelf, bin, rack"></div></div>
+        <div class="f2"><div class="f"><label>Category</label><select id="p_category" onchange="if(this.value==='__new')ptCatAdd(this)">${r.category?"":'<option value="">\u2014</option>'}${ptCatOpts(r.category||"")}</select></div>
+          <div class="f"><label>Part key</label><input value="${esc(r.part_key||"")}" disabled style="opacity:.6"></div></div>
+        <div class="f2"><div class="f"><label>Order from</label><select id="p_preferred_vendor_id"><option value="">\u2014</option>${vendorOpts(r.preferred_vendor_id)}</select></div>
+          <div class="f"><label>&nbsp;</label><label class="chk" style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--warn);margin:0;padding:9px 0"><input type="checkbox" id="p_look_for_vendor" ${r.look_for_vendor?"checked":""} style="width:auto;margin:0">\u2691 look for a new vendor</label></div></div>
+        <div class="f"><label>Note</label><input id="p_note" value="${esc(r.note||"")}"></div>
+        ${r.counted_by?`<div class="hint">counted by ${esc(r.counted_by)} \u00b7 ${String(r.counted_at||"").slice(0,10)}</div>`:""}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="go" style="flex:1;padding:12px" onclick="partSave()">Save to the record</button></div>
+    ${lines.length?`<div class="eyebrow" style="margin:16px 0 6px;color:var(--bronze)">Who sells it</div>
+      <table class="t"><tr><th>Vendor</th><th>Their code</th><th>Finish</th><th class="n">Each</th><th>As of</th><th>From</th></tr>
+      ${lines.map(v=>`<tr><td>${esc(v.vendor||"\u2014")}</td><td class="mono">${esc(v.code||"\u2014")}</td><td>${esc(v.finish||"\u2014")}</td><td class="n">${v.unit_cost!==null&&v.unit_cost!==undefined?money(v.unit_cost)+" / "+esc(v.uom||"ea"):'<i style="color:var(--warn);font-style:normal">\u2691 none</i>'}</td><td>${esc(String(v.quote_date||"\u2014").slice(0,10))}</td><td>${esc(v.source||"\u2014")}${v.doc_verified?" \u2713":""}</td></tr>`).join("")}</table>`:'<div class="hint" style="margin-top:14px">\u2691 no vendor line on this part yet</div>'}
+    ${kitRows(r.part_key)}
+    ${shelfRows(r.part_key)}
+  </div>`;
+}
+function ptCatOpts(sel){ return PTCATS.map(c=>`<option value="${esc(c)}" ${sel===c?"selected":""}>${esc(c)}</option>`).join("")+`<option value="__new">\uff0b new category\u2026</option>`; }
+async function ptCatAdd(sel){ const n=(prompt("New part category")||"").trim();
+  if(!n){ sel.value=""; return; }
+  try{ const j=await desk({action:"part_category_add",name:n}); PTCATS=j.categories||PTCATS;
+    sel.innerHTML=ptCatOpts(n.toLowerCase()); }
+  catch(e){ toast(e.message,true); sel.value=""; } }
+/* the part <-> shelf link: `inventory_parts`, which has existed since the part-roles work */
+function ptRow(k){ return PT.find(x=>x.part_key===k)||{}; }
+function shelfRows(k){ const r=ptRow(k), ls=r.items||[];
+  return `<div class="eyebrow" style="margin:16px 0 6px;color:var(--bronze)">On the shelf as</div>
+    ${ls.length?ls.map(l=>`<div class="assist" style="grid-template-columns:1fr auto"><div><div class="ttl">${esc(l.name||"\u2014")}</div><div class="m">${esc(l.inv_code||"")}${l.finish?" \u00b7 "+esc(l.finish):""}</div></div>
+      <button class="sm" onclick="partUnlink('${l.id}')">Not this one</button></div>`).join(""):'<div class="hint">\u2691 not linked to a shelf item</div>'}
+    <div class="f2" style="margin-top:8px"><div class="f"><label>Link a shelf item</label><select id="p_item"><option value="">\u2014</option>${PTITEMS.map(i=>`<option value="${i.id}">${esc(i.name)}${i.inv_code?" \u00b7 "+esc(i.inv_code):""}</option>`).join("")}</select></div>
+      <div class="f"><label>&nbsp;</label><button class="sm" style="padding:9px" onclick="partLink()">Link it</button></div></div>`; }
+function kitRows(k){ const r=ptRow(k), ks=r.kits||[];
+  if(!ks.length) return '<div class="eyebrow" style="margin:16px 0 6px;color:var(--bronze)">Kits</div><div class="hint">not in any kit</div>';
+  return `<div class="eyebrow" style="margin:16px 0 6px;color:var(--bronze)">Kits it goes into</div>
+    <table class="t"><tr><th>Kit</th><th>As</th><th>Role</th><th class="n">Qty</th><th>Per</th></tr>
+    ${ks.map(x=>`<tr><td>${esc(x.kit||x.kit_id)}</td><td>${esc(x.line||"\u2014")}</td><td class="mono">${esc(x.role||"\u2014")}</td><td class="n">${x.qty??"\u2014"}</td><td>${esc(x.per||"\u2014")}</td></tr>`).join("")}</table>`; }
+async function partLink(){ const id=$("p_item").value; if(!id){ toast("pick the shelf item",true); return; }
+  try{ const j=await desk({action:"part_link",part_key:PTSEL,item_id:id});
+    toast(j.existed?"already linked":"Linked \u2713"); await loadParts(); }
+  catch(e){ toast(e.message,true); } }
+async function partUnlink(id){ try{ await desk({action:"part_unlink",id}); toast("Unlinked"); await loadParts(); }
+  catch(e){ toast(e.message,true); } }
+async function partGrab(){ const u=($("ptUrl").value||"").trim(); if(!u) return;
+  if(!/^https:\/\//.test(u)){ toast("the address has to start with https://",true); return; }
+  const b=$("ptGrab"); b.disabled=true; b.textContent="fetching\u2026";
+  try{ const j=await desk({action:"photo_from_url",table:"parts",id:PTSEL,url:u});
+    PTPHOTO=null; toast("Photo saved \u2713");
+    const i=PT.findIndex(x=>x.part_key===PTSEL); if(i>=0) PT[i].photo_path=j.path;
+    if(PTROW) PTROW.photo_path=j.path;
+    renderPtList(); renderPartCard(j.url); }
+  catch(e){ toast(e.message,true); b.disabled=false; b.textContent="\u2193 Pull it from the web"; } }
+async function partSave(){
+  const fields={ qty:$("p_qty").value, unit:$("p_unit").value, location:$("p_location").value,
+                 preferred_vendor_id:$("p_preferred_vendor_id").value, look_for_vendor:$("p_look_for_vendor").checked, note:$("p_note").value,
+                 category:($("p_category").value==="__new"?"":$("p_category").value) };
+  try{ const j=await desk({action:"answer",table:"parts",id:PTSEL,fields,image:PTPHOTO||undefined});
+    PTPHOTO=null; toast("Saved \u2713");
+    const i=PT.findIndex(x=>x.part_key===PTSEL);
+    if(i>=0&&j.row) PT[i]=Object.assign(PT[i],{qty:j.row.qty??null,unit:j.row.unit??PT[i].unit,location:j.row.location??null,
+      preferred_vendor_id:j.row.preferred_vendor_id??null,look_for_vendor:j.row.look_for_vendor===true,photo_path:j.row.photo_path??PT[i].photo_path,
+      counted_by:j.row.counted_by??PT[i].counted_by,counted_at:j.row.counted_at??PT[i].counted_at,note:j.row.note??null,category:j.row.category??null});
+    renderPtList(); partPick(PTSEL,true); }
+  catch(e){ toast(e.message,true); } }
+/* ===== VENDORS (2.14) \u2014 the book, and who we could call.
    Ryan: "nowhere as a tab where you can view and edit all the pertinent information … business name,
    physical address, email, sales email, web address, phone #, sales person, direct line/extension" ·
    "if we flag something for look for new vendor we also need a list of potential vendors … who to call,
@@ -808,9 +936,26 @@ function stCostLine(label, role, qty, unit){ const p=stPart(role); const R=stRol
   return `<div class="cost"><span>${q}</span><span class="na">${p.price_basis&&/quote/i.test(p.price_basis)?"quote per job":"cost unknown — "+esc(p.cost_source||"ask")}</span></div>`; }
 function stForm(){ return ST&&ST.steel?ST.steel:{}; }
 function stVal(id){ const e=$(id); return e?e.value:""; }
+/* 2.17 — `steel_parts` has been in tr-desk since 2.6 with no caller; it answers "what part does each
+   steel/track role actually resolve to", which is the question this tab raises. */
+let STROLES=null;
+async function stRoles(){
+  if(STROLES){ STROLES=null; renderSteel(); return; }
+  try{ const j=await desk({action:"steel_parts"}); STROLES=j.roles||[]; renderSteel(); }
+  catch(e){ toast(e.message,true); } }
+function stRolesPanel(){
+  if(!STROLES) return "";
+  const R=STROLES;
+  return `<div class="panel" style="margin-top:12px"><div class="eyebrow" style="color:var(--bronze)">What each role resolves to \u00b7 ${R.length}</div>
+    <table class="t"><tr><th>Role</th><th>Part</th><th>Code</th><th class="n">Each</th><th>Vendor</th></tr>
+    ${R.map(r=>`<tr><td class="mono">${esc(r.role||"")}</td><td>${esc(r.name||r.descr||"\u2014")}</td><td class="mono">${esc(r.code||r.part_code||"\u2014")}</td>
+      <td class="n">${r.unit_cost!==null&&r.unit_cost!==undefined?money(r.unit_cost):'<i style="color:var(--warn);font-style:normal">\u2691 none</i>'}</td>
+      <td>${esc(r.vendor||"\u2014")}${r.accepted?" \u2713":""}</td></tr>`).join("")}</table></div>`;
+}
 function renderSteel(){ const el=$("v_steel"); const f=stForm(); stLists();
   const top=`<div class="linkbox"><div class="r"><select id="stTarget" onchange="stPick(this.value)"><option value="">— job · quote · customer —</option>${stSel()}</select><button class="sm ghost" onclick="steelPull()">Refresh</button></div></div>`;
-  if(!STT){ el.innerHTML=top+'<div class="empty">Pick the job the steel belongs to.</div>'; return; }
+  const rolesBtn=`<div style="margin-top:10px"><button class="sm" onclick="stRoles()">${STROLES?"\u2715 hide the role list":"\u2261 What each role resolves to"}</button></div>`;
+  if(!STT){ el.innerHTML=top+rolesBtn+stRolesPanel()+'<div class="empty" style="margin-top:12px">Pick the job the steel belongs to.</div>'; return; }
   if(!ST){ el.innerHTML=top+'<div class="empty">Loading…</div>'; return; }
   const need=(ST.need||[]); const opts=ST.options||[]; const sup=opts.filter(o=>o.group_key==="trk_sup");
   const trk=f.track||""; const tft=f.track_ft!=null?f.track_ft:""; const supT=f.sup_type||""; const arm=f.arm||(ST.auto==="mot_ht"?"ht":"std");
@@ -918,9 +1063,26 @@ async function jobPull(){ const t=jbTgt(); if(!t) return; try{ JB=await desk(Obj
 function jbPick(v){ JBT=v; try{ localStorage.setItem("tr_steel_t",v); }catch(e){} JB=null; renderJob(); if(v) jobPull(); }
 function jbSel(){ const on=v=>JBT===v?"selected":""; return `<optgroup label="Jobs">${(SHT.jobs||[]).map(j=>`<option value="j:${j.id}" ${on("j:"+j.id)}>${esc(j.label)}</option>`).join("")}</optgroup><optgroup label="Open quotes">${(SHT.quotes||[]).map(q=>`<option value="q:${q.id}" ${on("q:"+q.id)}>${esc(q.label)}</option>`).join("")}</optgroup><optgroup label="Customers">${(SHT.customers||[]).map(c=>`<option value="c:${c.id}" ${on("c:"+c.id)}>${esc(c.label)}</option>`).join("")}</optgroup>`; }
 const CH_KINDS=[["rush","Rush"],["expedite","Expedited"],["part","Part"],["install","Install"],["other","Other"]], CH_TO=[["customer","customer"],["install","the installer"],["tr","TR absorbs"]];
+/* 2.17 — `installer_bills` (every bill across every job) had no caller either; install_get only ever
+   returned the bills for ONE target, so a bill on a job he was not looking at was invisible. */
+let JBALL=null;
+async function jbAllBills(){
+  if(JBALL){ JBALL=null; renderJob(); return; }
+  try{ const j=await desk({action:"installer_bills"}); JBALL=j.rows||[]; renderJob(); }
+  catch(e){ toast(e.message,true); } }
+function jbAllPanel(){
+  if(!JBALL) return "";
+  const B=JBALL, tot=B.filter(x=>x.status!=="void").reduce((t,x)=>t+(Number(x.total)||0),0);
+  return `<div class="panel" style="margin-top:12px"><div class="eyebrow" style="color:var(--bronze)">Every installer bill \u00b7 ${B.length} \u00b7 ${money(tot)} not void</div>
+    ${B.length?`<table class="t"><tr><th>Bill</th><th>Installer</th><th>Status</th><th class="n">Total</th><th>Raised</th></tr>
+    ${B.map(x=>`<tr><td class="mono">${esc(x.bill_no||"")}</td><td>${esc((x.installers&&x.installers.name)||"\u2014")}</td>
+      <td>${esc(x.status||"")}</td><td class="n">${money(x.total)}</td><td>${esc(String(x.created_at||"").slice(0,10))}</td></tr>`).join("")}</table>`
+    :'<div class="hint">no bills raised yet</div>'}</div>`;
+}
 function renderJob(){ const el=$("v_job");
   const top=`<div class="linkbox"><div class="r"><select id="jbTarget" onchange="jbPick(this.value)"><option value="">— job · quote · customer —</option>${jbSel()}</select><button class="sm ghost" onclick="jobPull()">Refresh</button></div></div>`;
-  if(!JBT){ el.innerHTML=top+'<div class="empty">Pick the job.</div>'; return; }
+  const allBtn=`<div style="margin-top:10px"><button class="sm" onclick="jbAllBills()">${JBALL?"\u2715 hide every bill":"\u2261 Every installer bill"}</button></div>`;
+  if(!JBT){ el.innerHTML=top+allBtn+jbAllPanel()+'<div class="empty" style="margin-top:12px">Pick the job.</div>'; return; }
   if(!JB){ el.innerHTML=top+'<div class="empty">Loading…</div>'; return; }
   const inst=(JB.installers||[]).filter(i=>i.active); const cur=JB.install||{}; const curI=inst.find(i=>i.id===cur.installer_id); const isOther=curI&&curI.kind==="other";
   const instSeg=inst.map(i=>`<button class="sm ${cur.installer_id===i.id?"on":""}" onclick="jbInst('${i.id}')">${esc(i.name)}</button>`).join("");
