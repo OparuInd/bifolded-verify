@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.15</title>
+<title>Tungsten Royce — Input Desk 2.16</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -80,6 +80,10 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 .chips button b{font-family:var(--fm);font-weight:700;margin-left:4px;color:var(--bronze2)}
 .chips button.on b{color:#231a09}
 .chips button.off{opacity:.35}
+.kinds{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 0}
+.kinds label{font-family:var(--fm);font-size:11px;padding:4px 9px;border-radius:11px;border:1px solid var(--line2);background:var(--card);color:var(--mute);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0}
+.kinds label.on{background:var(--bronze);border-color:var(--bronze);color:#231a09}
+.kinds label input{width:auto;margin:0;accent-color:#231a09}
 .assist{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;background:var(--card);display:grid;grid-template-columns:120px 1fr;gap:14px}
 .assist img{width:120px;height:90px;object-fit:cover;border-radius:3px;background:#000}
 .assist .who{font-size:12px;color:var(--mute)}.assist .ttl{font-size:17px}
@@ -140,7 +144,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.15</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.16</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -522,7 +526,7 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
 let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="", SHF="";
@@ -599,15 +603,28 @@ async function shelfSave(){ const fields=collect("#shWork");
    physical address, email, sales email, web address, phone #, sales person, direct line/extension" ·
    "if we flag something for look for new vendor we also need a list of potential vendors … who to call,
    or who has been called" · "like a potential new vendor list". 0102 + tr-desk 2.19. */
-let VB=[], NEEDS=[], LEADS=[], VSEL=null, VQ="", VFOR=null, VF="";
+let VB=[], NEEDS=[], LEADS=[], VSEL=null, VQ="", VFOR=null, VF="", KINDS=[];
+/* 2.16 — Ryan: "you can check more than 1". The list is the shop's (shop_settings.vendor_kinds), so
+   ＋ new kind… adds one for good; a vendor that sells three things says so. */
+function kindBoxes(sel){ const on=(sel||[]).map(x=>String(x).toLowerCase());
+  return `<div class="kinds" id="g_kinds">${KINDS.map(k=>`<label class="${on.includes(k)?"on":""}"><input type="checkbox" value="${esc(k)}" ${on.includes(k)?"checked":""} onchange="this.parentNode.classList.toggle('on',this.checked)">${esc(k)}</label>`).join("")}`
+    +`<button class="sm" style="font-size:11px;padding:4px 9px;border-radius:11px" onclick="kindAdd()">＋ new kind…</button></div>`; }
+async function kindAdd(){ const n=(prompt("New kind")||"").trim(); if(!n) return;
+  try{ const j=await desk({action:"vendor_kind_add",name:n}); KINDS=j.kind_list||KINDS;
+    const cur=[...document.querySelectorAll("#g_kinds input:checked")].map(e=>e.value);
+    if(!cur.includes(n.toLowerCase())) cur.push(n.toLowerCase());
+    $("g_kinds").outerHTML=kindBoxes(cur); }
+  catch(e){ toast(e.message,true); } }
 const VCHIP={ noemail:{t:"no e-mail", f:v=>!v.email&&!v.sales_email}, nophone:{t:"no phone", f:v=>!v.phone&&!v.sales_phone},
               noperson:{t:"no person", f:v=>!v.contact&&!v.sales_name}, noaddr:{t:"no address", f:v=>!v.address&&!v.city},
+              nokind:{t:"kind not set", f:v=>{const k=(v.kinds&&v.kinds.length?v.kinds:[v.kind]).filter(Boolean); return !k.length||k.every(x=>x==="other");}},
               off:{t:"not in use", f:v=>!v.active} };
 const LEADST=["to call","called","waiting","quoted","no","chosen"];
 async function loadVend(){
   if(!$("vbList")) $("v_vend").innerHTML='<div class="empty">Loading…</div>';
   try{ const j=await desk({action:"vendors"}); VB=j.rows||[]; NEEDS=j.needs||[]; LEADS=j.leads||[];
-       VENDORS=VB.filter(v=>v.active).map(v=>({id:v.id,name:v.name})); Q.vendors=VENDORS; }
+       VENDORS=VB.filter(v=>v.active).map(v=>({id:v.id,name:v.name})); Q.vendors=VENDORS;
+       if(j.kind_list&&j.kind_list.length) KINDS=j.kind_list; }
   catch(e){ $("v_vend").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   const open=LEADS.filter(l=>l.status==="to call").length; const pip=$("vendN");
   pip.textContent=open; pip.style.display=open?"inline":"none";
@@ -615,10 +632,10 @@ async function loadVend(){
   renderVend(); if(VSEL) vendPick(VSEL,true);
 }
 function vbList(){ const q=VQ.toLowerCase().trim();
-  let L=q?VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].some(x=>String(x||"").toLowerCase().includes(q))):VB;
+  let L=q?VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].concat(v.kinds||[]).some(x=>String(x||"").toLowerCase().includes(q))):VB;
   return VF&&VCHIP[VF]?L.filter(VCHIP[VF].f):L; }
 function vbChips(){ const q=VQ.toLowerCase().trim();
-  const base=q?VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].some(x=>String(x||"").toLowerCase().includes(q))):VB;
+  const base=q?VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].concat(v.kinds||[]).some(x=>String(x||"").toLowerCase().includes(q))):VB;
   return Object.keys(VCHIP).map(k=>{ const n=base.filter(VCHIP[k].f).length;
     return `<button class="${VF===k?"on":(n?"":"off")}" onclick="vbFilter('${k}')">${VCHIP[k].t}<b>${n}</b></button>`; }).join(""); }
 function vbFilter(k){ VF=(VF===k?"":k); renderVbList(); }
@@ -636,8 +653,8 @@ function renderVbList(){
   const L=vbList();
   $("vbChips").innerHTML=vbChips(); $("vbN").textContent=`${L.length} of ${VB.length}`;
   $("vbList").innerHTML=L.map(v=>`<div class="rr ${VSEL===v.id?"on":""}" data-id="${v.id}" onclick="vendPick('${v.id}')">
-    <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${v.active?esc((v.kind||"—").slice(0,6)):"off"}</div>
-    <div><b>${esc(v.name)}</b><div class="m">${esc(v.sales_name||v.contact||"—")}${v.sales_phone||v.phone?" · "+esc(v.sales_phone||v.phone):""}${v.city?" · "+esc(v.city):""}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>';
+    <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${v.active?esc(((v.kinds&&v.kinds[0])||v.kind||"—").slice(0,6)):"off"}</div>
+    <div><b>${esc(v.name)}</b><div class="m">${esc((v.kinds&&v.kinds.length?v.kinds:[v.kind||"—"]).join(" · "))}</div><div class="m">${esc(v.sales_name||v.contact||"—")}${v.sales_phone||v.phone?" · "+esc(v.sales_phone||v.phone):""}${v.city?" · "+esc(v.city):""}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>';
 }
 async function vendAdd(){ const name=(prompt("Vendor name")||"").trim(); if(!name) return;
   try{ const j=await desk({action:"vendor_new",name}); await loadVend(); vendPick(j.id); toast(j.existed?"already on the list":"vendor added"); }
@@ -648,8 +665,8 @@ async function vendPick(id,quiet){ VSEL=id; VFOR=null;
   const mine=LEADS.filter(l=>l.vendor_id===id);
   $("vbWork").innerHTML=`<div class="panel">
     <div class="f"><label>Business name</label><input id="g_name" value="${esc(v.name||"")}"></div>
-    <div class="f3"><div class="f"><label>Kind</label><input id="g_kind" value="${esc(v.kind||"")}"></div>
-      <div class="f"><label>Lead time (days)</label><input id="g_lead_days" inputmode="numeric" value="${v.lead_days??""}"></div>
+    <div class="f"><label>What they sell us</label>${kindBoxes(v.kinds&&v.kinds.length?v.kinds:(v.kind?[v.kind]:[]))}</div>
+    <div class="f2"><div class="f"><label>Lead time (days)</label><input id="g_lead_days" inputmode="numeric" value="${v.lead_days??""}"></div>
       <div class="f"><label>Terms</label><input id="g_terms" value="${esc(v.terms||"")}"></div></div>
     <div class="f"><label>Street</label><input id="g_address" value="${esc(v.address||"")}"></div>
     <div class="f3"><div class="f"><label>Town</label><input id="g_city" value="${esc(v.city||"")}"></div>
@@ -675,7 +692,8 @@ async function vendPick(id,quiet){ VSEL=id; VFOR=null;
   </div>`;
 }
 async function vendSave(){ const fields={};
-  document.querySelectorAll("#vbWork [id^=g_]").forEach(el=>{ fields[el.id.slice(2)]=el.type==="checkbox"?el.checked:el.value; });
+  document.querySelectorAll("#vbWork [id^=g_]").forEach(el=>{ if(el.id==="g_kinds") return; fields[el.id.slice(2)]=el.type==="checkbox"?el.checked:el.value; });
+  fields.kinds=[...document.querySelectorAll("#g_kinds input:checked")].map(e=>e.value);
   try{ const j=await desk({action:"vendor_set",id:VSEL,fields}); const i=VB.findIndex(x=>x.id===VSEL); if(i>=0) VB[i]=j.row;
     VENDORS=VB.filter(v=>v.active).map(v=>({id:v.id,name:v.name})); Q.vendors=VENDORS;
     toast("Saved ✓"); renderVbList(); vendPick(VSEL,true); }
