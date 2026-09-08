@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.10</title>
+<title>Tungsten Royce — Input Desk 2.11</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -134,7 +134,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.10</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.11</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -161,7 +161,7 @@ const HASH0=location.hash; let TOKEN=""; try{ const u=new URL(location.href); co
 const SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co", BASE=SB_URL+"/functions/v1/";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let NAME=""; const BY=()=>NAME; let VENDORS=[]; let PEOPLE={office:[],crew:[]};   // 2.9: who to ask / who to assign is DATA (workers), never a constant
+let NAME=""; const BY=()=>NAME; let VENDORS=[]; let PEOPLE={office:[],shop:[],crew:[]};   // 2.9: who to ask / who to assign is DATA (workers), never a constant
 const CREW=BASE+"tr-crew";
 /* 0083 — session. The home page signs in (name + password) and leaves {access_token, refresh_token, expires_at} here;
    every call carries it as jwt, refreshed through tr-crew when it is about to expire. ⏻ clears it. */
@@ -177,7 +177,9 @@ const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"v
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
 function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); loadPeople(); }
-async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){} }
+async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],shop:j.shop||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){ toast("who to ask: "+e.message,true); } }
+function askList(){ return (PEOPLE.office||[]).map(n=>({n,s:"their phone + the list"})).concat((PEOPLE.shop||[]).map(n=>({n,s:"the shop tablet + the list"}))); }
+function askBtns(a,b){ return askList().slice(a,b).map((p,i)=>`<button class="ok" onclick="assist('${esc(p.n)}')">${a===0&&i===0?"4 \u00b7 ":""}Ask ${esc(p.n)}<small>${p.s}</small></button>`).join(""); }
 function rows(){ const rs=(Q.rows||[]).filter(r=>CAT==="all"||r.category===CAT); const key=r=>r.table_name+"|"+r.row_id; const idx=new Map(ORDER.map((k,i)=>[k,i])); return rs.slice().sort((a,b)=>(idx.has(key(a))?idx.get(key(a)):1e9)-(idx.has(key(b))?idx.get(key(b)):1e9)); }
 function keyOf(r){ return r.table_name+"|"+r.row_id; }
 function toBack(){ if(!CUR)return; const k=keyOf(CUR); ORDER=ORDER.filter(x=>x!==k); ORDER.push(k); DONE_N++; }
@@ -202,7 +204,7 @@ document.addEventListener("keydown",e=>{
   if(typing) return;
   if(e.key==="ArrowRight"||e.key===" "){ e.preventDefault(); deckNext(); }
   else if(e.key==="ArrowLeft"){ e.preventDefault(); deckPrev(); }
-  else if(e.key==="2"){ later(); } else if(e.key==="3"){ research(); } else if(e.key==="4"){ assist("Ryan"); } else if(e.key.toLowerCase()==="s"){ shuffle(); }
+  else if(e.key==="2"){ later(); } else if(e.key==="3"){ research(); } else if(e.key==="4"){ const a=askList()[0]; if(a) assist(a.n); } else if(e.key.toLowerCase()==="s"){ shuffle(); }
   else if(e.key.toLowerCase()==="p"){ $("camFile").click(); }
   else if(e.key==="1"){ const f=document.querySelector("#side input,#side select"); if(f) f.focus(); }
 });
@@ -254,8 +256,8 @@ function renderSide(gaps){ /* keyboard: 1 focus · 2 later · 3 research · 4 as
     <div class="panel"><h2>Or</h2><div class="four">
       <button class="warn" onclick="later()">2 · Enter later<small>back of the deck for a week</small></button>
       ${r.table_name==="open_items"?`<button disabled style="opacity:.35">3 · Needs research<small>already on the list</small></button>`:`<button onclick="research()">3 · Needs research<small>flag it, it goes on the list</small></button>`}
-      ${(PEOPLE.office||[]).slice(0,2).map(p=>`<button class="ok" onclick="assist('${esc(p)}')">4 · Ask ${esc(p)}<small>their phone + the list</small></button>`).join("")}</div>
-      ${(PEOPLE.office||[]).length>2?`<div class="four" style="margin-top:6px">${PEOPLE.office.slice(2).map(p=>`<button class="ok" onclick="assist('${esc(p)}')">Ask ${esc(p)}<small>their phone + the list</small></button>`).join("")}</div>`:""}
+      ${askBtns(0,2)}</div>
+      ${askList().length>2?`<div class="four" style="margin-top:6px">${askBtns(2)}</div>`:""}
       <div class="f" style="margin-top:10px"><label>Note with it (optional)</label><input id="optNote" placeholder="what you know so far"></div>
       ${(PEOPLE.crew||[]).length?`<div style="margin-top:8px"><button class="sm" onclick="crewAsk()">👷 Assign to crew</button></div>`:""}
       ${r.status==="assist"&&r.assist_answer?`<div style="display:flex;gap:8px"><button class="ok" style="flex:1" onclick="assistClose()">Applied ${esc(r.assist_to)}'s answer ✓</button></div>`:""}
