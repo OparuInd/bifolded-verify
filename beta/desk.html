@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.14</title>
+<title>Tungsten Royce — Input Desk 2.15</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -74,6 +74,12 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .four{display:grid;grid-template-columns:1fr 1fr;gap:8px}.four button{padding:14px 10px;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:3px}.four button small{font-weight:400;font-size:11px;color:var(--mute)}.four button.go small{color:#3a2c14}
 .hint{font-size:12px;color:var(--mute2)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.chips button{font-family:var(--fm);font-size:11px;padding:4px 9px;border-radius:11px;border:1px solid var(--line2);background:var(--card);color:var(--mute);font-weight:600}
+.chips button.on{background:var(--bronze);border-color:var(--bronze);color:#231a09}
+.chips button b{font-family:var(--fm);font-weight:700;margin-left:4px;color:var(--bronze2)}
+.chips button.on b{color:#231a09}
+.chips button.off{opacity:.35}
 .assist{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;background:var(--card);display:grid;grid-template-columns:120px 1fr;gap:14px}
 .assist img{width:120px;height:90px;object-fit:cover;border-radius:3px;background:#000}
 .assist .who{font-size:12px;color:var(--mute)}.assist .ttl{font-size:17px}
@@ -134,7 +140,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.14</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.15</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -516,19 +522,30 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
-let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="";
+let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="", SHF="";
+/* 2.15 — the counts he could only get from me become work lists. A chip is a filter, never a wall:
+   press it again and the whole shelf comes back. */
+const SHCHIP={ nophoto:{t:"no photo", f:r=>!r.photo_path}, nopart:{t:"no part #", f:r=>!r.part_no},
+               novend:{t:"no vendor", f:r=>!r.vendor_id}, nocost:{t:"no cost", f:r=>r.last_cost==null} };
 async function loadShelf(){ if(!SH.length&&!$("shList")) $("v_shelf").innerHTML='<div class="empty">Loading…</div>';
   try{ const j=await desk({action:"items"}); SH=j.rows||[]; if(j.categories&&j.categories.length) CATS=j.categories; }
   catch(e){ $("v_shelf").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; }
   if(!$("shList")) $("v_shelf").innerHTML=""; renderShelf(); if(SHSEL) shelfPick(SHSEL,true); }
 function shList(){ const q=SHQ.toLowerCase().trim();
-  return !q?SH:SH.filter(r=>[r.name,r.inv_code,r.part_no,r.category].some(v=>String(v||"").toLowerCase().includes(q))); }
+  let L=q?SH.filter(r=>[r.name,r.inv_code,r.part_no,r.category].some(v=>String(v||"").toLowerCase().includes(q))):SH;
+  return SHF&&SHCHIP[SHF]?L.filter(SHCHIP[SHF].f):L; }
+function shChips(){ const q=SHQ.toLowerCase().trim();
+  const base=q?SH.filter(r=>[r.name,r.inv_code,r.part_no,r.category].some(v=>String(v||"").toLowerCase().includes(q))):SH;
+  return Object.keys(SHCHIP).map(k=>{ const n=base.filter(SHCHIP[k].f).length;
+    return `<button class="${SHF===k?"on":(n?"":"off")}" onclick="shFilter('${k}')">${SHCHIP[k].t}<b>${n}</b></button>`; }).join(""); }
+function shFilter(k){ SHF=(SHF===k?"":k); renderShList(); }
 function renderShelf(){
   if(!$("shList")) $("v_shelf").innerHTML=`<div class="rc"><div>
     <input id="shq" placeholder="name, inventory id, part #" value="${esc(SHQ)}" oninput="SHQ=this.value;renderShList()">
+    <div class="chips" id="shChips"></div>
     <div class="hint" style="margin:6px 0" id="shN"></div>
     <div class="list" id="shList"></div>
   </div><div id="shWork"><div class="empty">Pick an item.</div></div></div>`;
@@ -536,6 +553,7 @@ function renderShelf(){
 }
 function renderShList(){   // only the list is rebuilt — never the box he is typing in
   const L=shList(); $("shN").textContent=`${L.length} of ${SH.length}`;
+  $("shChips").innerHTML=shChips();
   $("shList").innerHTML=L.map(r=>`<div class="rr ${SHSEL===r.id?"on":""}" data-id="${r.id}" onclick="shelfPick('${r.id}')">
       <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${r.photo_path?"photo":"⚑"}</div>
       <div><b>${esc(r.name||"—")}</b><div class="m">${esc(r.inv_code||"—")}${r.part_no?" · "+esc(r.part_no):""} · ${esc(r.category||"—")} · ${r.qty??"—"} ${esc(r.unit||"")}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>';
@@ -551,23 +569,40 @@ function renderShelfCard(url){
     <div style="display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start">
       <div><div style="height:165px;border-radius:3px;background:#0f0f0f url('${ph||""}') center/cover no-repeat;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--mute2);font-size:11px;cursor:${ph?"zoom-in":"default"}" ${ph?`onclick="lbImg('${ph}','${esc(r.name||"")}')"`:""}>${ph?"":"no picture yet"}</div>
         <button class="go sm" style="width:100%;margin-top:6px" onclick="$('shFile').click()">📷 ${ph?"Replace the photo":"Add a photo"}</button>
-        ${SHPHOTO?'<div class="hint">new photo — saves with the changes</div>':""}</div>
+        ${SHPHOTO?'<div class="hint">new photo — saves with the changes</div>':""}
+        <div class="f" style="margin-top:8px"><label>From the vendor's page</label>
+          <input id="shUrl" placeholder="https://… the picture's address" onkeydown="if(event.key==='Enter')shelfGrab()"></div>
+        <button class="sm" style="width:100%;margin-top:5px" id="shGrab" onclick="shelfGrab()">↓ Pull it from the web</button></div>
       <div>${fieldsFor({row:r,table_name:"inventory_items",missing:[]})}</div>
     </div>
     <div style="display:flex;gap:8px;margin-top:12px"><button class="go" style="flex:1;padding:12px" onclick="shelfSave()">Save to the record</button></div></div>`;
 }
+/* 2.15 — tr-desk has carried photo_from_url since 1.x with no button anywhere. This is its home:
+   paste the address of the picture on the vendor's own page and it lands on the record. */
+async function shelfGrab(){ const u=($("shUrl").value||"").trim(); if(!u) return;
+  if(!/^https:\/\//.test(u)){ toast("the address has to start with https://",true); return; }
+  const b=$("shGrab"); b.disabled=true; b.textContent="fetching…";
+  try{ const j=await desk({action:"photo_from_url",table:"inventory_items",id:SHSEL,url:u});
+    SHPHOTO=null; toast("Photo saved ✓");
+    const i=SH.findIndex(x=>x.id===SHSEL); if(i>=0) SH[i].photo_path=j.path;
+    if(SHROW) SHROW.photo_path=j.path;
+    renderShList(); renderShelfCard(j.url); }
+  catch(e){ toast(e.message,true); b.disabled=false; b.textContent="↓ Pull it from the web"; } }
 async function shelfSave(){ const fields=collect("#shWork");
   if(!Object.keys(fields).length&&!SHPHOTO){ toast("Nothing changed.",true); return; }
   try{ const j=await desk({action:"answer",table:"inventory_items",id:SHSEL,fields,image:SHPHOTO||undefined});
     SHPHOTO=null; toast("Saved ✓"); const i=SH.findIndex(x=>x.id===SHSEL); if(i>=0&&j.row) SH[i]=Object.assign(SH[i],{name:j.row.name,inv_code:j.row.inv_code,part_no:j.row.part_no,category:j.row.category,qty:j.row.qty,unit:j.row.unit,photo_path:j.row.photo_path});
-    renderShelf(); shelfPick(SHSEL,true); }
+    renderShList(); shelfPick(SHSEL,true); }
   catch(e){ toast(e.message,true); } }
 /* ===== VENDORS (2.14) — the book, and who we could call.
    Ryan: "nowhere as a tab where you can view and edit all the pertinent information … business name,
    physical address, email, sales email, web address, phone #, sales person, direct line/extension" ·
    "if we flag something for look for new vendor we also need a list of potential vendors … who to call,
    or who has been called" · "like a potential new vendor list". 0102 + tr-desk 2.19. */
-let VB=[], NEEDS=[], LEADS=[], VSEL=null, VQ="", VFOR=null;
+let VB=[], NEEDS=[], LEADS=[], VSEL=null, VQ="", VFOR=null, VF="";
+const VCHIP={ noemail:{t:"no e-mail", f:v=>!v.email&&!v.sales_email}, nophone:{t:"no phone", f:v=>!v.phone&&!v.sales_phone},
+              noperson:{t:"no person", f:v=>!v.contact&&!v.sales_name}, noaddr:{t:"no address", f:v=>!v.address&&!v.city},
+              off:{t:"not in use", f:v=>!v.active} };
 const LEADST=["to call","called","waiting","quoted","no","chosen"];
 async function loadVend(){
   if(!$("vbList")) $("v_vend").innerHTML='<div class="empty">Loading…</div>';
@@ -580,17 +615,26 @@ async function loadVend(){
   renderVend(); if(VSEL) vendPick(VSEL,true);
 }
 function vbList(){ const q=VQ.toLowerCase().trim();
-  return !q?VB:VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].some(x=>String(x||"").toLowerCase().includes(q))); }
+  let L=q?VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].some(x=>String(x||"").toLowerCase().includes(q))):VB;
+  return VF&&VCHIP[VF]?L.filter(VCHIP[VF].f):L; }
+function vbChips(){ const q=VQ.toLowerCase().trim();
+  const base=q?VB.filter(v=>[v.name,v.city,v.contact,v.sales_name,v.kind].some(x=>String(x||"").toLowerCase().includes(q))):VB;
+  return Object.keys(VCHIP).map(k=>{ const n=base.filter(VCHIP[k].f).length;
+    return `<button class="${VF===k?"on":(n?"":"off")}" onclick="vbFilter('${k}')">${VCHIP[k].t}<b>${n}</b></button>`; }).join(""); }
+function vbFilter(k){ VF=(VF===k?"":k); renderVbList(); }
 function renderVend(){
   if(!$("vbList")) $("v_vend").innerHTML=`<div class="rc"><div>
     <input id="vbq" placeholder="name, town, person" value="${esc(VQ)}" oninput="VQ=this.value;renderVbList()">
     <div style="display:flex;gap:6px;margin:6px 0"><button class="sm" style="flex:1" onclick="vendAdd()">＋ vendor</button><button class="sm" style="flex:1" onclick="vendSource()">⚑ Needs a vendor</button></div>
+    <div class="chips" id="vbChips"></div>
+    <div class="hint" style="margin:0 0 6px" id="vbN"></div>
     <div class="list" id="vbList"></div>
   </div><div id="vbWork"><div class="empty">Pick a vendor.</div></div></div>`;
   renderVbList();
 }
 function renderVbList(){
   const L=vbList();
+  $("vbChips").innerHTML=vbChips(); $("vbN").textContent=`${L.length} of ${VB.length}`;
   $("vbList").innerHTML=L.map(v=>`<div class="rr ${VSEL===v.id?"on":""}" data-id="${v.id}" onclick="vendPick('${v.id}')">
     <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${v.active?esc((v.kind||"—").slice(0,6)):"off"}</div>
     <div><b>${esc(v.name)}</b><div class="m">${esc(v.sales_name||v.contact||"—")}${v.sales_phone||v.phone?" · "+esc(v.sales_phone||v.phone):""}${v.city?" · "+esc(v.city):""}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>';
