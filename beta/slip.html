@@ -130,7 +130,7 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
 </head>
 <body>
 <header>
-  <div><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><div class="eyebrow" id="who">The Slip</div></div>
+  <div><div class="wm">TUNGSTEN <b>ROYCE</b></div><div class="eyebrow" id="who">The Slip</div></div>
   <div class="r"><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span class="livedot" id="liveDot" title="live"></span><button class="sm ghost" id="bell" onclick="enablePush()" style="display:none">🔔 Notify me</button></div>
 </header>
 <main>
@@ -346,12 +346,32 @@ function renderMsgs(j){
     ${m.reply?`<div class="ans"><b>you</b> ${esc(m.reply)}${m.lat!=null?` · 📍 ${esc(m.loc_label||"location shared")}`:""}</div>`:""}
     ${m.ack_required&&!m.ack_at?`<div class="ackbar">${esc(m.from_name)} asked you to confirm you read this.<button class="go sm" onclick="ack('${m.id}','message')">✓ Got it</button></div>`:m.ack_at?'<div class="note">✓ you confirmed at '+new Date(m.ack_at).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+'</div>':""}
     <div class="row"><input id="mr_${m.id}" placeholder="reply…"><button class="go sm" onclick="msgReply('${m.id}')">Send</button></div>
+    ${m.ask==="photo"?`<div class="row"><input type="file" accept="image/*" capture="environment" id="tf_${m.id}" style="display:none" onchange="taskPhoto('${m.id}')"><button class="go sm" onclick="$('tf_${m.id}').click()">📷 ${m.photo_at?"Another photo":"Take the photo"}</button><span class="note ${m.photo_at?"":"flag"}" id="tm_${m.id}">${m.photo_at?"✓ sent":"⚑ not sent yet"}</span></div>`:""}
+    ${m.ask==="count"?`<div class="row"><input id="tc_${m.id}" inputmode="decimal" placeholder="how many${m.part_key?" · "+esc(m.part_key):""}" value="${m.count_qty!=null?m.count_qty:""}"><button class="go sm" onclick="taskCount('${m.id}')">Send the count</button></div>${m.count_qty!=null?`<div class="note">✓ counted ${esc(String(m.count_qty))}</div>`:""}`:""}
     <div class="btns">${m.kind==="kudos"?"":`<button class="sm" onclick="shareLoc('${m.id}')">📍 Share where I am</button>`}${m.kind==="request"?`<button class="ok sm" onclick="msgReply('${m.id}',true)">✓ Done</button>`:""}</div>
   </div>`).join("");
   const ids=ms.filter(m=>!m.read_at).map(m=>m.id); if(ids.length) crew({action:"msg_read",ids});
 }
 async function ack(id,kind){ const j=await crew({action:"ack",id,kind}); if(!j.ok){$("msg").textContent=j.error;return;} boot(); }
 async function msgReply(id,done){ const el=$("mr_"+id); const r=el?el.value.trim():""; if(!r&&!done){el&&el.focus();return;} const j=await crew({action:"msg_reply",id,reply:r||undefined,done:done===true}); if(!j.ok){$("msg").textContent=j.error;return;} boot(); }
+async function taskPhoto(id){
+  const f=$("tf_"+id).files[0]; if(!f) return; const msg=$("tm_"+id); msg.classList.remove("flag"); msg.textContent="Uploading…";
+  const img=new Image();
+  img.onload=async function(){
+    const Mx=1600,sc=Math.min(1,Mx/Math.max(img.width,img.height)); const cv=document.createElement("canvas");
+    cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc); cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+    const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",.85));
+    const u=await crew({action:"msg_photo_url",id,ext:"jpg"}); if(!u.ok){ msg.textContent=u.error; return; }
+    const put=await fetch(u.url,{method:"PUT",headers:{"content-type":"image/jpeg"},body:blob}); if(!put.ok){ msg.textContent="upload failed"; return; }
+    const r=await crew({action:"msg_photo_record",id,path:u.path}); if(!r.ok){ msg.textContent=r.error; return; }
+    msg.textContent="✓ sent"; boot();
+  };
+  img.src=URL.createObjectURL(f); $("tf_"+id).value="";
+}
+async function taskCount(id){
+  const el=$("tc_"+id); const v=(el.value||"").trim(); if(!v){ el.focus(); return; }
+  const j=await crew({action:"msg_count",id,qty:Number(v)}); if(!j.ok){ $("msg").textContent=j.error; return; } boot();
+}
 function shareLoc(id){
   if(!navigator.geolocation){ $("msg").textContent="This phone will not share location."; return; }
   $("msg").style.color=""; $("msg").textContent="Getting your position…";

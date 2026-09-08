@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.8</title>
+<title>Tungsten Royce — Input Desk 2.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -134,7 +134,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.8</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.9</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -161,7 +161,7 @@ const HASH0=location.hash; let TOKEN=""; try{ const u=new URL(location.href); co
 const SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co", BASE=SB_URL+"/functions/v1/";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let NAME=""; const BY=()=>NAME; let VENDORS=[];
+let NAME=""; const BY=()=>NAME; let VENDORS=[]; let PEOPLE={office:[],crew:[]};   // 2.9: who to ask / who to assign is DATA (workers), never a constant
 const CREW=BASE+"tr-crew";
 /* 0083 — session. The home page signs in (name + password) and leaves {access_token, refresh_token, expires_at} here;
    every call carries it as jwt, refreshed through tr-crew when it is about to expire. ⏻ clears it. */
@@ -176,7 +176,8 @@ const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minim
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
 function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
-async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); }
+async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); loadPeople(); }
+async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){} }
 function rows(){ const rs=(Q.rows||[]).filter(r=>CAT==="all"||r.category===CAT); const key=r=>r.table_name+"|"+r.row_id; const idx=new Map(ORDER.map((k,i)=>[k,i])); return rs.slice().sort((a,b)=>(idx.has(key(a))?idx.get(key(a)):1e9)-(idx.has(key(b))?idx.get(key(b)):1e9)); }
 function keyOf(r){ return r.table_name+"|"+r.row_id; }
 function toBack(){ if(!CUR)return; const k=keyOf(CUR); ORDER=ORDER.filter(x=>x!==k); ORDER.push(k); DONE_N++; }
@@ -253,9 +254,10 @@ function renderSide(gaps){ /* keyboard: 1 focus · 2 later · 3 research · 4 as
     <div class="panel"><h2>Or</h2><div class="four">
       <button class="warn" onclick="later()">2 · Enter later<small>back of the deck for a week</small></button>
       ${r.table_name==="open_items"?`<button disabled style="opacity:.35">3 · Needs research<small>already on the list</small></button>`:`<button onclick="research()">3 · Needs research<small>flag it, it goes on the list</small></button>`}
-      <button class="ok" onclick="assist('Ryan')">4 · Ask Ryan<small>his phone + the list</small></button>
-      <button class="ok" onclick="assist('Chase')">4 · Ask Chase<small>his phone + the list</small></button></div>
+      ${(PEOPLE.office||[]).slice(0,2).map(p=>`<button class="ok" onclick="assist('${esc(p)}')">4 · Ask ${esc(p)}<small>their phone + the list</small></button>`).join("")}</div>
+      ${(PEOPLE.office||[]).length>2?`<div class="four" style="margin-top:6px">${PEOPLE.office.slice(2).map(p=>`<button class="ok" onclick="assist('${esc(p)}')">Ask ${esc(p)}<small>their phone + the list</small></button>`).join("")}</div>`:""}
       <div class="f" style="margin-top:10px"><label>Note with it (optional)</label><input id="optNote" placeholder="what you know so far"></div>
+      ${(PEOPLE.crew||[]).length?`<div style="margin-top:8px"><button class="sm" onclick="crewAsk()">👷 Assign to crew</button></div>`:""}
       ${r.status==="assist"&&r.assist_answer?`<div style="display:flex;gap:8px"><button class="ok" style="flex:1" onclick="assistClose()">Applied ${esc(r.assist_to)}'s answer ✓</button></div>`:""}
     </div>
     <div class="hint">${rows().length-1} more in ${CAT==="all"?"the deck":CAT}</div>`;
@@ -280,8 +282,50 @@ async function loadAssist(){
       <div style="font-size:13.5px">${esc(r.note||"")}</div>
       ${r.assist_answer?`<div class="ans"><b style="font-family:var(--fm);font-size:11px;color:var(--ok)">${esc(r.assist_answered_by)} · ${new Date(r.assist_answered_at).toLocaleString([],{weekday:"short",hour:"numeric",minute:"2-digit"})}</b><br>${esc(r.assist_answer)}</div>`
         :`<div style="display:flex;gap:8px;margin-top:8px"><input id="aa_${r.row_id}" placeholder="${mine?"your answer — a cost, a vendor, a part code, or where to look":"waiting on "+esc(r.assist_to)}" ${mine?"":"disabled"}><button class="go" ${mine?"":"disabled"} onclick="assistAnswer('${r.table_name}','${r.row_id}')">Answer</button></div>`}
-    </div></div>`;}).join("")||'<div class="empty">No assist requests.</div>');
+    </div></div>`;}).join("")||'<div class="empty">No assist requests.</div>')+`<div id="v_tasks"></div>`;
+  loadTasks();
 }
+/* ---- crew tasks raised from this desk (2.9, 0101) ---- */
+let TASKS=[];
+async function loadTasks(){
+  let j; try{ j=await desk({action:"tasks"}); }catch(e){ return; }
+  TASKS=j.rows||[]; const el=$("v_tasks"); if(!el) return;
+  const open=TASKS.filter(t=>!t.done_at);
+  el.innerHTML=`<div class="eyebrow" style="margin:18px 0 10px;color:var(--bronze)">Crew · ${open.length} open <a href="shop.html" style="margin-left:10px;color:var(--mute);font-weight:600">Shop Floor ↗</a></div>`
+    +(TASKS.map(t=>`<div class="assist ${t.done_at?"":"mine"}">${t.photo_url?`<img src="${t.photo_url}" style="cursor:zoom-in" onclick="lbImg('${t.photo_url}','${esc(t.worker)} · ${esc(t.text||"")}')">`:`<div style="width:120px;height:90px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--mute2);font-size:11px">${t.ask==="count"?"count":"no photo yet"}</div>`}<div>
+      <div class="who">${esc(t.from_name)} → <b>${esc(t.worker)}</b> · ${esc(t.ask||"note")}${t.part_key?" · "+esc(t.part_key):""} · ${new Date(t.created_at).toLocaleString([],{weekday:"short",hour:"numeric",minute:"2-digit"})}${t.priority&&t.priority!=="normal"?` · <span class="flag" style="display:inline">${esc(t.priority)}</span>`:""}</div>
+      <div class="ttl">${esc(t.text||"")}</div>
+      ${t.count_qty!=null?`<div class="ans"><b style="font-family:var(--fm);font-size:11px;color:var(--ok)">${esc(t.worker)} counted</b><br>${t.count_pieces&&t.count_pieces.length?pcsText(t.count_pieces,t.count_qty):esc(String(t.count_qty))}</div>`:""}
+      ${t.reply&&t.count_qty==null?`<div class="ans"><b style="font-family:var(--fm);font-size:11px;color:var(--ok)">${esc(t.worker)}</b><br>${esc(t.reply)}</div>`:""}
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        ${t.photo_path&&!t.receipt_id?`<input id="tk_${t.id}" placeholder="store / vendor" style="max-width:200px"><button class="sm" onclick="taskReceipt('${t.id}')">Save as a receipt</button>`:""}
+        ${t.receipt_id?`<span class="m" style="color:var(--ok)">✓ in the receipts</span>`:""}
+        ${t.done_at?`<span class="m">done · ${esc(t.done_by||"")}</span>`:`<button class="sm ghost" onclick="taskDone('${t.id}')">Close</button>`}
+      </div>
+    </div></div>`).join("")||'<div class="empty">Nothing out with the crew.</div>');
+}
+async function taskDone(id){ try{ await desk({action:"task_done",id}); loadTasks(); }catch(e){ toast(e.message,true); } }
+async function taskReceipt(id){ const store=($("tk_"+id)?.value||"").trim(); if(!store){ toast("⚑ a receipt needs a store/vendor",true); $("tk_"+id)?.focus(); return; }
+  try{ await desk({action:"task_receipt",id,store}); toast("Filed in the receipts ✓"); loadTasks(); }catch(e){ toast(e.message,true); } }
+function crewAsk(){
+  const old=$("crewbox"); if(old) old.remove();
+  const box=document.createElement("div"); box.className="panel"; box.id="crewbox"; box.style.marginTop="10px";
+  box.innerHTML=`<h2>Assign to crew</h2>
+    <div class="f2"><div class="f"><label>Who</label><select id="ck_who">${(PEOPLE.crew||[]).map(p=>`<option>${esc(p)}</option>`).join("")}</select></div>
+      <div class="f"><label>Bring back</label><select id="ck_ask" onchange="crewAskKind()"><option value="photo">a photo</option><option value="count">a count</option><option value="note">an answer</option></select></div></div>
+    <div class="f"><label>What</label><input id="ck_text" placeholder="– where – what – "></div>
+    <div class="f2"><div class="f" id="ck_pkwrap"><label>Part to count</label><input id="ck_part" placeholder="part key"></div>
+      <div class="f"><label>Priority</label><select id="ck_prio"><option value="normal">normal</option><option value="rush">rush</option><option value="urgent">urgent</option></select></div></div>
+    <div style="display:flex;gap:8px"><button class="ghost" onclick="$('crewbox').remove()">Cancel</button><button class="go" style="flex:1" onclick="crewSend()">Send it</button></div>`;
+  $("side").appendChild(box); crewAskKind(); $("ck_text").focus();
+}
+function crewAskKind(){ const k=$("ck_ask")?.value; const w=$("ck_pkwrap"); if(w) w.style.display=k==="count"?"":"none"; }
+async function crewSend(){
+  const worker=$("ck_who").value, ask=$("ck_ask").value, text=$("ck_text").value.trim(), priority=$("ck_prio").value;
+  const part_key=ask==="count"?($("ck_part").value||"").trim():"";
+  try{ const j=await desk({action:"task_new",worker,ask,text:text||undefined,priority,part_key:part_key||undefined});
+    $("crewbox").remove(); toast(`${worker} asked for ${ask==="photo"?"a photo":ask==="count"?"a count":"an answer"}${j.push&&j.push.sent?" · notified":""}`);
+  }catch(e){ toast(e.message,true); } }
 async function assistAnswer(table,id){ const v=$("aa_"+id).value.trim(); if(v.length<2){$("aa_"+id).focus();return;} try{ await desk({action:"assist_answer",table,id,answer:v}); toast("Answered · Dru is notified"); loadAssist(); loadAssistCount(); }catch(e){toast(e.message,true);} }
 /* ---- receipts → inventory (OCR here, on this machine) ---- */
 let RC=null,ITEMS=[],RSEL=null,OCR="",KIND="receipt",AUTO_OCR=false;
