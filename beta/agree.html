@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TR Agreement 2.4</title>
+<title>TR Agreement 2.5</title>
 <!--
   TR AGREEMENT 1.1 · Tungsten Royce · BY BIFOLDED
   Copyright Tungsten Royce. Proprietary.
@@ -1687,7 +1687,16 @@ function surveySvg(v, opt){
 
 window.attachCloudSurvey=function(){ const pick=$("laserPick"), sel=$("laserTo"), msg=$("laserMsg"); const v=SURVEYS.find(x=>x.id===pick.value); if(!v){ msg.textContent="Pick a survey."; return; }
   const o=D.openings[+sel.value||0]; if(!o){ msg.textContent="No such opening."; return; } o.survey=cloudToSurvey(v); o.w=String(Math.round(o.survey.w*1000)/1000); o.h=String(Math.round(o.survey.h*1000)/1000); if((!o.nm||/^Opening \d+$/.test(o.nm))&&v.opening) o.nm=v.opening; render(); };
-async function fileSurvey(sv,o){ try{ const j=await deskCall({action:"survey_add",survey:{date:sv.date,site:sv.job||(D.site||""),opening:o.nm||"",w:sv.w,h:sv.h,wMin:sv.wMin,wMax:sv.wMax,hMin:sv.hMin,hMax:sv.hMax,nW:sv.nW,nH:sv.nH,clearances:sv.clearances,by:sv.by||"",source:"agreement",raw:sv.raw||null},quote_id:(D._db&&D._db.quote_id)||null,customer_id:(D._db&&D._db.customer_id)||null}); if(j&&j.ok){ sv.cloud_id=j.id; loadSurveys(false); } }catch(e){} }
+async function fileSurvey(sv,o){
+  /* 2.5 — this used to swallow every failure. A survey that did not reach the
+     book looked exactly like one that did, which is the worst outcome of the
+     three. Now it says so on the same line the reading is attached to. */
+  try{
+    const j=await deskCall({action:"survey_add",survey:{date:sv.date,site:sv.job||(D.site||""),opening:o.nm||"",w:sv.w,h:sv.h,wMin:sv.wMin,wMax:sv.wMax,hMin:sv.hMin,hMax:sv.hMax,nW:sv.nW,nH:sv.nH,clearances:sv.clearances,by:sv.by||"",source:"agreement",raw:sv.raw||null},quote_id:(D._db&&D._db.quote_id)||null,customer_id:(D._db&&D._db.customer_id)||null});
+    if(j&&j.ok){ sv.cloud_id=j.id; sv.file_err=""; loadSurveys(false); }
+    else { sv.file_err=(j&&j.error)||"could not file"; render(); }
+  }catch(e){ sv.file_err=String(e&&e.message||e); render(); }
+}
 function attachSurvey(i,txt,msgEl){
   const r=readLaser(txt);
   const say=t=>{ if(msgEl)msgEl.textContent=t; else if(r.err)alert(t) };
@@ -1841,6 +1850,20 @@ async function dbPick(id,name,cno){
   dbStamp(); render();
   dbSay("");
 }
+/* 2.5 — WHAT GETS PUBLISHED.
+   The document always knew its invitations, its draws and its two totals; it
+   just never sent them, so every priced line and the tax decision lived in a
+   blob no query could reach (0107 gave them columns). This adds them to the
+   payload. It computes nothing new — these are the same functions the page
+   has been printing from all along. */
+function pubData(){
+  return Object.assign({}, D, {
+    invites: INVITE.map(v=>({k:v.k,n:v.n,pct:v.pct})),
+    draws: schedule(total()),
+    subtotal: subtotal(),
+    tax_amount: taxAmount()
+  });
+}
 const SIGN_BASE="https://verify.bifolded.com/beta/sign.html"; /* MOUNTED — live e-sign links */
 async function dbPublish(){
   if(!D._db){ alert("Link a customer first — Load from database."); return }
@@ -1848,7 +1871,7 @@ async function dbPublish(){
   if(m.length){ alert("Not ready to publish — still needed:\n\n· "+m.slice(0,8).join("\n· ")+(m.length>8?"\n· …":"")); return }
   renderDoc(); const html=(document.getElementById("doc")||{}).innerHTML||"";
   if(!html){ alert("Could not render the document — open 'Read it as they will see it' once, then publish."); return }
-  const j=await dbCall({action:"agree_publish",quote_id:D._db.quote_id,doc:{html,data:D},by:D.rep||"office"});
+  const j=await dbCall({action:"agree_publish",quote_id:D._db.quote_id,doc:{html,data:pubData()},by:D.rep||"office"});
   if(!j.ok){ alert("Not published: "+j.error); return }
   D._db.status="sent"; dbStamp();
   // 1.9 (0084): the signer's account is minted with the publish. Password shows ONCE — read it to them or text it.
@@ -1856,12 +1879,14 @@ async function dbPublish(){
   if(j.login&&j.login.password) msg+="\n\nSIGN-IN (give this to the customer once):\ne-mail  "+j.login.email+"\npassword  "+j.login.password+"\nportal  https://verify.bifolded.com/beta/portal.html";
   else if(j.login) msg+="\n\nSigns in as "+j.login.email+" (existing account — Publish with 'reset password' if they lost it)";
   if(j.account_error) msg+="\n\n⚑ NO ACCOUNT: "+j.account_error;
+  if(j.trouble&&j.trouble.length) msg+="\n\n⚑ NOT FILED: "+j.trouble.join("; ");
   prompt(msg, link);
 }
 async function dbPublishReset(){ if(!D._db){ alert("Link a customer first."); return } if(!confirm("Mint a NEW password for this customer's account and republish?")) return;
-  renderDoc(); const html=(document.getElementById("doc")||{}).innerHTML||""; const j=await dbCall({action:"agree_publish",quote_id:D._db.quote_id,doc:{html,data:D},by:D.rep||"office",reset_password:true}); if(!j.ok){ alert("Not published: "+j.error); return }
+  renderDoc(); const html=(document.getElementById("doc")||{}).innerHTML||""; const j=await dbCall({action:"agree_publish",quote_id:D._db.quote_id,doc:{html,data:pubData()},by:D.rep||"office",reset_password:true}); if(!j.ok){ alert("Not published: "+j.error); return }
   prompt("New sign-in for "+(j.login&&j.login.email)+" (shown once):", (j.login&&j.login.password)||""); }
 window.dbPublishReset=dbPublishReset;
+window.pubData=pubData;   /* the publish payload, exported so it can be checked */
 async function dbSent(){
   if(!D._db){ alert("Link a customer first — Load from database."); return }
   const j=await dbCall({action:"agree_status",quote_id:D._db.quote_id,status:"sent",value:total()||null,

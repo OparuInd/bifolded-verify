@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.19</title>
+<title>Tungsten Royce — Input Desk 2.20</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -144,8 +144,8 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.19</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_pd" onclick="tab('pd')">Pipedrive<span class="pip" id="pdN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.20</span>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_pd" onclick="tab('pd')">Pipedrive<span class="pip" id="pdN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_open" onclick="tab('open')">Openings<span class="pip" id="opN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
@@ -155,6 +155,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
   <div id="v_parts" style="display:none"></div>
   <div id="v_vend" style="display:none"></div>
   <div id="v_pd" style="display:none"></div>
+  <div id="v_open" style="display:none"></div>
   <div id="v_scans" style="display:none"></div>
   <div id="v_surveys" style="display:none"></div>
   <div id="v_rcvd" style="display:none"></div>
@@ -191,7 +192,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","parts","vend","pd","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="parts")loadParts(); if(t==="vend")loadVend(); if(t==="pd")loadPd(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","parts","vend","pd","open","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="parts")loadParts(); if(t==="vend")loadVend(); if(t==="pd")loadPd(); if(t==="open")loadOpen(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } if(!VENDORS.length&&Q.vendors) VENDORS=Q.vendors.slice(); renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); loadPeople(); loadCats(); }
 async function loadCats(){ try{ const j=await desk({action:"items"}); if(j.categories&&j.categories.length) CATS=j.categories; if(CUR&&TAB==="deck") renderSide(); }catch(e){} }
 async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],shop:j.shop||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){ toast("who to ask: "+e.message,true); } }
@@ -532,6 +533,7 @@ async function saveLines(id){
   }catch(e){toast(e.message,true);}
 }
 window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.opFilter=opFilter;window.opDebounce=opDebounce;window.opPick=opPick;window.opSet=opSet;window.opTakeSteel=opTakeSteel;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
 let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="", SHF="";
@@ -867,6 +869,204 @@ async function pdTake(what,cid){
     if(/^exists/.test(e.message)){ if(confirm("A customer with that name is already in the book. Add anyway?")){ body.force=true;
       try{ const j=await desk(body); toast("added "+(j.label||"")); await loadPd(); }catch(x){ toast(x.message,true); } } return; }
     toast(e.message,true); }
+}
+/* =====================================================================
+   2.20 (0107) — OPENINGS.
+   Every figure the Concept Desk draws and the Agreement signs used to live
+   in one JSON blob. Now each is a row, and this is where the office sees it.
+   The mount decides which steel is SUGGESTED — rear flush usually L-steel,
+   front flush usually flat bar — and a press is what makes it real.
+===================================================================== */
+var OP=[], OPQ="", OPF="all", OPSEL=null, OPT=null, OPTMR=null;
+const OPCHIP={ all:{t:"all"}, need:{t:"needs an answer"}, flush:{t:"flush mounts"},
+               job:{t:"on a job"}, quote:{t:"on a quote"}, loose:{t:"no job yet"} };
+const OPMOUNT=[["inset","inset"],["rear_flush","rear flush"],["front_flush","front flush"]];
+function opFilter(k){ OPF=(OPF===k?"all":k); opPull(); }
+function opDebounce(){ clearTimeout(OPTMR); OPTMR=setTimeout(opPull,350); }
+async function loadOpen(){
+  if(!$("opList")) $("v_open").innerHTML='<div class="empty">Loading…</div>';
+  await opPull();
+}
+async function opPull(){
+  /* NEVER rebuild the grid under his typing — only the list refills. */
+  try{ const j=await desk({action:"openings_list",show:OPF==="need"?"all":OPF,q:OPQ});
+       OP=j.rows||[];
+       if(OPF==="need") OP=OP.filter(r=>(r.missing||[]).length);
+       const pip=$("opN"); const n=j.need||0; pip.textContent=n; pip.style.display=n?"inline":"none"; }
+  catch(e){ // AN EMPTY LIST IS A LIE
+    if($("opList")) $("opList").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`;
+    else $("v_open").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`;
+    return; }
+  renderOpen();
+}
+function opSize(r){
+  const w=r.w_in||r.w_txt, h=r.h_in||r.h_txt;
+  return (w&&h)?`${w}″ × ${h}″`:"—";
+}
+function renderOpen(){
+  if(!$("opList")) $("v_open").innerHTML=`<div class="rc"><div>
+    <div class="eyebrow">Openings · concept, agreement and office</div>
+    <input id="opq" placeholder="opening, customer, finish" value="${esc(OPQ)}" oninput="OPQ=this.value;opDebounce()">
+    <div class="chips" id="opChips"></div>
+    <div class="hint" style="margin:0 0 6px" id="opN2"></div>
+    <div class="list" id="opList"></div>
+  </div><div id="opWork"><div class="empty">Pick one.</div></div></div>`;
+  renderOpenList();
+}
+function renderOpenList(){
+  $("opChips").innerHTML=Object.keys(OPCHIP).map(k=>
+    `<button class="${OPF===k?"on":""}" onclick="opFilter('${k}')">${OPCHIP[k].t}</button>`).join("");
+  $("opN2").textContent=`${OP.length} shown`;
+  $("opList").innerHTML=OP.map(r=>{
+    const where=r.job_no?("job "+r.job_no):r.quote_no?("quote "+r.quote_no):"no job yet";
+    const miss=(r.missing||[]).length;
+    const flag=miss?`<span class="need">⚑ ${miss} to answer</span>`:`<span class="use">✓ complete</span>`;
+    const mt=r.mount_label?`<span class="${r.mount==="inset"?"m":"use"}">${esc(r.mount_label)}</span>`:`<span class="need">⚑ no mount</span>`;
+    return `<div class="rr ${OPSEL===r.id?"on":""}" data-id="${r.id}" onclick="opPick('${r.id}')">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mute2)">${esc(r.suffix||"?")}</div>
+      <div><b>${esc(r.label||"—")}</b><div class="m">${esc(r.cust_name||"—")} · ${esc(where)}</div>
+      <div class="m">${[opSize(r)==="—"?null:opSize(r),r.leaves?r.leaves+" leaves":null,r.split?esc(r.split):null,mt,flag].filter(Boolean).join(" · ")}</div></div></div>`;
+  }).join("")||'<div class="empty">Nothing here.</div>';
+}
+async function opPick(id){
+  OPSEL=id;
+  document.querySelectorAll("#opList .rr").forEach(e=>e.classList.toggle("on",e.dataset.id===OPSEL));
+  $("opWork").innerHTML='<div class="empty">Loading…</div>';
+  let j; try{ j=await desk({action:"opening_get",id:id}); }
+  catch(e){ $("opWork").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
+  OPT=j; OPQF=null; renderOpWork();
+  /* the document's own facts for whatever quote this opening belongs to —
+     a separate read, so a quote with nothing filed never blanks the door */
+  const o=j.opening||{};
+  if(o.quote_id||o.job_id){
+    try{ OPQF=await desk({action:"quote_facts",quote_id:o.quote_id||null,job_id:o.job_id||null}); }
+    catch(e){ OPQF={err:e.message}; }
+    if(OPSEL===o.id) renderOpWork();
+  }
+}
+var OPQF=null;
+function opQuoteBox(){
+  if(!OPQF) return "";
+  if(OPQF.err) return `<div class="box" style="margin-top:10px"><h3>The agreement</h3><div class="need">⚑ ${esc(OPQF.err)}</div></div>`;
+  const q=OPQF.quote; if(!q) return "";
+  const lines=(OPQF.lines||[]).map(l=>{
+    const badge=l.kind==="invite"?(l.accepted?`<span class="use">taken</span>`:`<span class="m">declined</span>`):"";
+    const pct=l.pct?` · ${Math.round(l.pct*1000)/10}%`:"";
+    return `<div class="f2"><div>${esc(l.label)} <span class="m">· ${esc(l.kind)}${pct}</span></div><div>${money(l.amount)} ${badge}</div></div>`;
+  }).join("")||`<div class="m">no lines filed</div>`;
+  const draws=(OPQF.draws||[]).map(d=>
+    `<div class="f2"><div>${esc(d.name)} <span class="m">· ${esc(d.trigger||"")}</span></div><div>${money(d.amount)}</div></div>`
+  ).join("")||`<div class="m">no schedule filed</div>`;
+  const tax = q.tax_off
+    ? `<div class="f2"><div class="need">⚑ tax off</div><div>${esc(q.tax_off_why||"no reason")} · ${esc(q.tax_off_by||"no name")}</div></div>`
+    : `<div class="f2"><div class="m">tax</div><div>${q.tax_rate!=null?(Math.round(q.tax_rate*10000)/100)+"%":"—"} · ${money(q.tax_amount)}</div></div>`;
+  const spec=(OPQF.spec||[]).map(x=>`<span class="pip">${esc(x.k)} · ${esc(x.name)}</span>`).join(" ")||`<span class="m">no answers filed</span>`;
+  const people=(OPQF.contacts||[]).map(c=>
+    `<div class="f2"><div class="m">${esc(c.role)}</div><div>${esc(c.name)}${c.email?" · "+esc(c.email):""}${c.phone?" · "+esc(c.phone):""}</div></div>`
+  ).join("")||`<div class="m">no contractor or architect on file</div>`;
+  return `<div class="box" style="margin-top:10px">
+      <h3>Quote ${esc(String(q.quote_no))} · ${esc(q.status||"")}</h3>
+      <div class="f3">
+        <div class="f2"><div class="m">subtotal</div><div>${money(q.subtotal)}</div></div>
+        ${tax}
+        <div class="f2"><div class="m">total</div><div>${money(q.value)}</div></div></div>
+      <div class="f3">
+        <div class="f2"><div class="m">lead</div><div>${q.lead_weeks?q.lead_weeks+" weeks":"—"}${q.rush?" · ⚑ rush "+(q.rush_weeks||"")+" ("+esc(q.rush_approved_by||"unapproved")+")":""}</div></div>
+        <div class="f2"><div class="m">ships</div><div>${esc(q.ship_state||"—")}${q.delivery_miles?" · "+q.delivery_miles+" mi":""}</div></div>
+        <div class="f2"><div class="m">drawn by</div><div>${esc(q.drawing_by||"—")}</div></div></div>
+      ${q.color?`<div class="f2"><div class="m">colour</div><div>${esc(q.color)}${q.color_depth?" · "+esc(q.color_depth):""}${q.faces?" · "+esc(q.faces):""}</div></div>`:""}
+      <div style="margin:8px 0 4px" class="chips">${spec}</div>
+      <h3 style="margin-top:10px">Priced lines</h3>${lines}
+      <h3 style="margin-top:10px">Draws</h3>${draws}
+      <h3 style="margin-top:10px">On the job</h3>${people}
+    </div>`;
+}
+function opField(k,label,val,ph){
+  return `<div class="f2"><div class="m">${label}</div>
+    <input class="opf" data-k="${k}" value="${val==null?"":esc(String(val))}" placeholder="${ph||""}" onchange="opSet('${k}',this.value)"></div>`;
+}
+function renderOpWork(){
+  const o=OPT.opening||{}, miss=OPT.missing||[], of=OPT.offer, st=OPT.steel||{};
+  const need=new Set(miss);
+  const mline=OPMOUNT.map(([v,t])=>
+    `<button class="sm ${o.mount===v?"on":""}" onclick="opSet('mount','${v}')">${t}</button>`).join(" ");
+  const offer = of&&of.differs
+    ? `<div class="f2"><div class="need">⚑ ${esc(of.ours)} on the record · the mount suggests ${esc(of.theirs)}</div>
+       <button class="sm" onclick="opTakeSteel(true)">Take ${esc(of.theirs)}</button></div>
+       <div class="hint">${esc(of.why||"")}</div>`
+    : of
+    ? `<div class="f2"><div class="need">⚑ suggests ${esc(of.sup_type)}</div>
+       <button class="sm" onclick="opTakeSteel(false)">Take it</button></div>
+       <div class="hint">${esc(of.why||"")}</div>`
+    : st.sup_type ? `<div class="f2"><div class="use">✓ ${esc(st.sup_type)}</div><div class="m">${esc(st.updated_by||"")}</div></div>`
+    : `<div class="m">nothing suggested by this mount</div>`;
+  $("opWork").innerHTML=`<div class="panel">
+    <h3>${esc(o.label||"—")}</h3>
+    <div class="f2"><div class="m">Customer</div><div>${esc(o.cust_name||"—")}${o.customer_no?" · C-"+esc(String(o.customer_no)):""}</div></div>
+    <div class="f2"><div class="m">Where</div><div>${o.job_no?"job "+esc(String(o.job_no)):o.quote_no?"quote "+esc(String(o.quote_no)):"no job yet"} · ${esc(o.source||"")}</div></div>
+    ${o.concept_title?`<div class="f2"><div class="m">Concept</div><div>${esc(o.concept_title)} · rev ${o.concept_rev}</div></div>`:""}
+    ${miss.length?`<div class="box" style="margin-top:8px"><div class="need">⚑ still to answer: ${miss.map(esc).join(" · ")}</div></div>`:""}
+    <div class="box" style="margin-top:10px">
+      <h3>Mount</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${mline}</div>
+      ${o.mount==="rear_flush"?`<div class="f3" style="margin-top:8px">
+        ${opField("overlap_side","side lap",o.overlap_side,"2")}
+        ${opField("overlap_head","head lap",o.overlap_head,"2")}
+        ${opField("reveal_min","min reveal",o.reveal_min,"0.25")}</div>`:""}
+      ${o.mount==="front_flush"?`<div class="f2" style="margin-top:8px">
+        ${opField("standoff_in","stands off",o.standoff_in,"2")}</div>`:""}
+    </div>
+    <div class="box" style="margin-top:10px">
+      <h3>Track &amp; steel</h3>
+      <div class="f2"><div class="m">Track</div><div>${st.track?esc(String(st.track).toUpperCase()):"—"}</div></div>
+      ${offer}
+    </div>
+    <div class="box" style="margin-top:10px">
+      <h3>The door</h3>
+      <div class="f3">
+        ${opField("w_in","width",o.w_in,"192")}
+        ${opField("h_in","height",o.h_in,"96")}
+        ${opField("leaves","leaves",o.leaves,"4")}</div>
+      <div class="f3">
+        ${opField("split","split",o.split,"2L2R")}
+        ${opField("swing","swing",o.swing,"out")}
+        ${opField("thickness","thickness",o.thickness,"2.5")}</div>
+      <div class="f3">
+        ${opField("glass","glass",o.glass,"divided")}
+        ${opField("lites_w","lites w",o.lites_w,"3")}
+        ${opField("lites_h","lites h",o.lites_h,"4")}</div>
+      <div class="f2">
+        ${opField("finish","finish",o.finish,"")}
+        ${opField("threshold","threshold",o.threshold,"")}</div>
+      <div class="f3">
+        ${opField("gap_side","gap side",o.gap_side,"0.5")}
+        ${opField("gap_head","gap head",o.gap_head,"0.5")}
+        ${opField("gap_center","gap centre",o.gap_center,"")}</div>
+      <div class="f2">
+        ${opField("cladding","cladding",o.cladding,"none / tr / owner")}
+        ${opField("pour","pour",o.pour,"")}</div>
+    </div>
+    ${opQuoteBox()}
+    <div class="hint" id="opMsg"></div>
+  </div>`;
+}
+async function opSet(k,v){
+  if(!OPT||!OPT.opening) return;
+  const body={action:"opening_set",id:OPT.opening.id}; body[k]=v;
+  try{ await desk(body); $("opMsg").textContent=""; }
+  catch(e){ $("opMsg").textContent="⚑ "+e.message; return; }
+  await opPick(OPT.opening.id);
+  const row=OP.find(r=>r.id===OPT.opening.id);
+  if(row){ Object.assign(row,OPT.opening); row.missing=OPT.missing||[]; renderOpenList(); }
+}
+async function opTakeSteel(force){
+  if(!OPT||!OPT.opening) return;
+  try{ const j=await desk({action:"opening_take_steel",id:OPT.opening.id,force:!!force});
+       toast("supports "+j.sup_type); }
+  catch(e){
+    if(/^exists/.test(e.message)){ if(confirm("The record already carries a support type. Replace it?")) return opTakeSteel(true); return; }
+    $("opMsg").textContent="⚑ "+e.message; return; }
+  await opPick(OPT.opening.id);
 }
 function renderVend(){
   if(!$("vbList")) $("v_vend").innerHTML=`<div class="rc"><div>
