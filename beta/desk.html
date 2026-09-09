@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.17</title>
+<title>Tungsten Royce — Input Desk 2.18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -144,7 +144,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.17</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.18</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -530,7 +530,7 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
 let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="", SHF="";
@@ -952,6 +952,37 @@ function stRolesPanel(){
       <td class="n">${r.unit_cost!==null&&r.unit_cost!==undefined?money(r.unit_cost):'<i style="color:var(--warn);font-style:normal">\u2691 none</i>'}</td>
       <td>${esc(r.vendor||"\u2014")}${r.accepted?" \u2713":""}</td></tr>`).join("")}</table></div>`;
 }
+/* 2.18 — the concept's steel, on the record it belongs to (0105).
+   The Concept Desk already picks the track off real leaf weight and already knows a
+   rear-flush mount needs the 3x3" angle steel. It writes that here as a SUGGESTION.
+   It never overwrites a figure an office person typed — where the two disagree this
+   flags it and he decides. */
+function stConceptPanel(){
+  const c=(ST&&ST.concept)||null; if(!c) return "";
+  const f=stForm();
+  const nm=(k,v)=>k==="track"?String(v||"").toUpperCase():v==="l"?"L-steel":v==="bar"?"Bar":v==="none"?"None":String(v||"");
+  const rows=[];
+  const line=(label,mine,theirs,offered,differs,what)=>{
+    if(!theirs) return "";
+    if(offered) return `<div class="need"><b>${label}</b><span class="m">${esc(nm(what,theirs))}</span><span style="margin-left:auto"></span><button class="sm use" onclick="stTakeConcept('${what}')">Take it</button></div>`;
+    if(differs) return `<div class="need"><b>${label}</b><span class="flag">\u2691 ${esc(nm(what,mine))} here · ${esc(nm(what,theirs))} on the concept</span><span style="margin-left:auto"></span><button class="sm use" onclick="stTakeConcept('${what}')">Take the concept's</button></div>`;
+    return `<div class="need"><b>${label}</b><span class="m">${esc(nm(what,theirs))} \u2713</span></div>`;
+  };
+  rows.push(line("Track", f.track, c.concept_track, c.track_offered, c.track_differs, "track"));
+  rows.push(line("Support", f.sup_type, c.concept_sup_type, c.sup_offered, c.sup_differs, "sup_type"));
+  const body=rows.filter(Boolean).join("");
+  if(!body) return "";
+  const both=(c.track_offered||c.track_differs)&&(c.sup_offered||c.sup_differs);
+  return `<div class="box" style="margin-top:14px"><h3>From the concept \u00b7 ${esc(c.concept_title||"")}${c.concept_rev!=null?" rev "+c.concept_rev:""}</h3>
+    ${body}
+    ${c.concept_why?`<div class="m" style="padding:8px 2px 2px;line-height:1.5">${esc(c.concept_why)}</div>`:""}
+    ${both?`<div style="padding:6px 2px"><button class="sm" onclick="stTakeConcept('all')">Take both</button></div>`:""}</div>`;
+}
+async function stTakeConcept(what){
+  const t=steelTgt(); if(!t) return;
+  try{ const j=await desk(Object.assign({action:"steel_take_concept",what},t));
+    toast((j.took||[]).join(" \u00b7 ")||"taken"); await steelPull(); }
+  catch(e){ toast(e.message,true); } }
 function renderSteel(){ const el=$("v_steel"); const f=stForm(); stLists();
   const top=`<div class="linkbox"><div class="r"><select id="stTarget" onchange="stPick(this.value)"><option value="">— job · quote · customer —</option>${stSel()}</select><button class="sm ghost" onclick="steelPull()">Refresh</button></div></div>`;
   const rolesBtn=`<div style="margin-top:10px"><button class="sm" onclick="stRoles()">${STROLES?"\u2715 hide the role list":"\u2261 What each role resolves to"}</button></div>`;
@@ -986,6 +1017,7 @@ function renderSteel(){ const el=$("v_steel"); const f=stForm(); stLists();
   el.innerHTML=top+`<div class="stl">
    <div>
     <div class="box"><h3>Track · from the laser</h3>${needRows}</div>
+    ${stConceptPanel()}
     <div class="box" style="margin-top:14px"><h3>Track on hand</h3>${stockRows}<h3 style="margin-top:12px">Bottom track on hand</h3>${btmRows}</div>
    </div>
    <div>
