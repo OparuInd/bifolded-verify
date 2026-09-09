@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TR Agreement 2.3</title>
+<title>TR Agreement 2.4</title>
 <!--
   TR AGREEMENT 1.1 · Tungsten Royce · BY BIFOLDED
   Copyright Tungsten Royce. Proprietary.
@@ -330,7 +330,7 @@ function schedule(total){
    which is the number that decides whether this is an ordinary install or an
    afternoon of scribing.
 ============================================================================ */
-var SURVEYS=[];
+var SURVEYS=[], SVERR="";   /* SVERR must exist before the first render() — see loadSurveys */
 function surveyOf(o){ return o && o.survey ? o.survey : null }
 function anySurvey(){ return (D.openings||[]).some(o=>surveyOf(o)) }
 function readLaser(txt){
@@ -709,12 +709,12 @@ function cladPrep(){
         <option value="1" ${(+c.sides||1)===1?"selected":""}>Outside only</option>
         <option value="2" ${(+c.sides||1)===2?"selected":""}>Both faces</option></select></div>
     <div class="field" style="margin:0"><label>Thickness</label>
-      <input value="${esc(c.thick)}" oninput="setClad('thick',this.value)" placeholder="e.g. 1/2″" style="width:8rem"></div>
+      <input value="${esc(c.thick)}" oninput="setClad('thick',this.value,1)" onchange="setClad('thick',this.value)" placeholder="e.g. 1/2″" style="width:8rem"></div>
     <div class="field" style="margin:0"><label>Fixed by</label>
-      <input value="${esc(c.fixedBy)}" oninput="setClad('fixedBy',this.value)" placeholder="us / their contractor" style="width:12rem"></div>
+      <input value="${esc(c.fixedBy)}" oninput="setClad('fixedBy',this.value,1)" onchange="setClad('fixedBy',this.value)" placeholder="us / their contractor" style="width:12rem"></div>
   </div>
   <div class="field"><label>Anything else about the cladding</label>
-    <textarea rows="2" oninput="setClad('note',this.value)" placeholder="the detail, the reveal, who supplies what">${esc(c.note)}</textarea></div>`;
+    <textarea rows="2" oninput="setClad('note',this.value,1)" onchange="setClad('note',this.value)" placeholder="the detail, the reveal, who supplies what">${esc(c.note)}</textarea></div>`;
 
   /* the weight, and what it means for the hardware */
   if(w.leaves.length){
@@ -738,10 +738,10 @@ function cladPrep(){
   h+=routePrep();
   return h;
 }
-window.setClad=function(k,v){
+window.setClad=function(k,v,q){
   const c=clad();
   c[k]=(k==="on")?!!v:(k==="sides")?(+v||1):v;
-  render();
+  touch(q);
 };
 
 /* ---- customer face: the cladding page ---- */
@@ -837,7 +837,7 @@ function cladOutstanding(){
   return cladDocs().filter(d=>!((c.docs||{})[d.k]||{}).have);
 }
 function docState(k){ const c=clad(); c.docs=c.docs||{}; c.docs[k]=c.docs[k]||{have:false,from:"",by:""}; return c.docs[k] }
-window.setDoc=function(k,f,v){ const d=docState(k); d[f]=(f==="have")?!!v:v; render() };
+window.setDoc=function(k,f,v,q){ const d=docState(k); d[f]=(f==="have")?!!v:v; touch(q) };
 window.addCladDoc=function(){
   const n=prompt("What else do we need for the cladding?","");
   if(!n||!n.trim())return;
@@ -863,9 +863,9 @@ function cladDocsPrep(){
       <td class="v">${esc(d.n)}${d.custom?` <button class="ghost" style="padding:3px 8px;font-size:var(--s0)" onclick="delCladDoc(${d.i})">×</button>`:""}
         ${d.w?`<span class="n">${esc(d.w)}</span>`:""}
         ${st.have?"":`<span class="n" style="margin-top:7px;display:flex;gap:9px;flex-wrap:wrap;align-items:center">
-          <span>from</span><input value="${esc(st.from)}" oninput="setDoc('${d.k}','from',this.value)" placeholder="who owes it"
+          <span>from</span><input value="${esc(st.from)}" oninput="setDoc('${d.k}','from',this.value,1)" onchange="setDoc('${d.k}','from',this.value)" placeholder="who owes it"
             style="border:none;border-bottom:1px solid var(--rule);background:transparent;width:10rem;font:var(--s1) var(--sans);padding:2px">
-          <span>by</span><input type="date" value="${esc(st.by)}" oninput="setDoc('${d.k}','by',this.value)"
+          <span>by</span><input type="date" value="${esc(st.by)}" oninput="setDoc('${d.k}','by',this.value,1)" onchange="setDoc('${d.k}','by',this.value)"
             style="border:none;border-bottom:1px solid var(--rule);background:transparent;width:9.5rem;font:var(--s1) var(--sans);padding:2px"></span>`}
       </td><td></td></tr>`}).join("")}
   </table>
@@ -972,7 +972,7 @@ function routePrep(){
       <div class="c">Everything routes to ${esc(D.rep||"you")} and you relay it. Only where a contractor will not use a portal.</div></div>
   </div>
   ${r==="portal"?`<div class="field" style="margin-top:16px"><label>Portal address</label>
-    <input value="${esc(D.portal||PORTAL_DEFAULT)}" oninput="setF('portal',this.value)">
+    <input value="${esc(D.portal||PORTAL_DEFAULT)}" oninput="setF('portal',this.value,1)" onchange="setF('portal',this.value)">
     <div class="help">Printed on their copy. Check it goes somewhere before you send an agreement with it on.</div></div>`:""}
   ${out.length?`<div class="note" style="margin-top:14px"><p>Either way, <b>you own this contract</b> — your name at the top,
     your signature at the bottom.</p></div>`:""}
@@ -1015,30 +1015,30 @@ function renderPrep(){
   <hr><p class="eyebrow">Who and where</p>
   <div class="inline" style="gap:26px">
     <div class="field" style="flex:1;min-width:16rem"><label>Buyer</label>
-      <input value="${esc(D.buyer)}" oninput="setF('buyer',this.value)" placeholder="as it should read on the agreement"></div>
+      <input value="${esc(D.buyer)}" oninput="setF('buyer',this.value,1)" onchange="setF('buyer',this.value)" placeholder="as it should read on the agreement"></div>
     <div class="field" style="flex:1;min-width:16rem"><label>And / or</label>
-      <input value="${esc(D.buyer2)}" oninput="setF('buyer2',this.value)" placeholder="second name, if any"></div></div>
+      <input value="${esc(D.buyer2)}" oninput="setF('buyer2',this.value,1)" onchange="setF('buyer2',this.value)" placeholder="second name, if any"></div></div>
   <div class="inline" style="gap:26px">
-    <div class="field" style="flex:1;min-width:14rem"><label>Email</label><input value="${esc(D.email)}" oninput="setF('email',this.value)"></div>
-    <div class="field" style="flex:1;min-width:12rem"><label>Phone</label><input value="${esc(D.phone)}" oninput="setF('phone',this.value)"></div></div>
+    <div class="field" style="flex:1;min-width:14rem"><label>Email</label><input value="${esc(D.email)}" oninput="setF('email',this.value,1)" onchange="setF('email',this.value)"></div>
+    <div class="field" style="flex:1;min-width:12rem"><label>Phone</label><input value="${esc(D.phone)}" oninput="setF('phone',this.value,1)" onchange="setF('phone',this.value)"></div></div>
   <div class="field"><label>Where it is going</label>
-    <input value="${esc(D.site)}" oninput="setF('site',this.value)" placeholder="site address">
+    <input value="${esc(D.site)}" oninput="setF('site',this.value,1)" onchange="setF('site',this.value)" placeholder="site address">
     <div class="help">The address on the agreement — where the doors are going.</div></div>
   <div class="inline" style="gap:26px">
-    <div class="field" style="flex:1;min-width:14rem"><label>Contractor</label><input value="${esc(D.gc)}" oninput="setF('gc',this.value)" placeholder="if any"></div>
-    <div class="field" style="flex:1;min-width:16rem"><label>Contractor contact — email / phone</label><input value="${esc(D.gcContact||"")}" oninput="setF('gcContact',this.value)"></div></div>
+    <div class="field" style="flex:1;min-width:14rem"><label>Contractor</label><input value="${esc(D.gc)}" oninput="setF('gc',this.value,1)" onchange="setF('gc',this.value)" placeholder="if any"></div>
+    <div class="field" style="flex:1;min-width:16rem"><label>Contractor contact — email / phone</label><input value="${esc(D.gcContact||"")}" oninput="setF('gcContact',this.value,1)" onchange="setF('gcContact',this.value)"></div></div>
   <div class="inline" style="gap:26px">
-    <div class="field" style="flex:1;min-width:14rem"><label>Architect</label><input value="${esc(D.architect)}" oninput="setF('architect',this.value)" placeholder="if any"></div>
-    <div class="field" style="flex:1;min-width:16rem"><label>Architect contact — email / phone</label><input value="${esc(D.archContact||"")}" oninput="setF('archContact',this.value)"></div></div>
+    <div class="field" style="flex:1;min-width:14rem"><label>Architect</label><input value="${esc(D.architect)}" oninput="setF('architect',this.value,1)" onchange="setF('architect',this.value)" placeholder="if any"></div>
+    <div class="field" style="flex:1;min-width:16rem"><label>Architect contact — email / phone</label><input value="${esc(D.archContact||"")}" oninput="setF('archContact',this.value,1)" onchange="setF('archContact',this.value)"></div></div>
   <hr><p class="eyebrow">The openings</p>`;
 
   D.openings.forEach((o,i)=>{
     h+=`<div style="border-bottom:1px solid var(--line);padding:14px 0">
     <div class="inline" style="gap:22px;align-items:flex-end">
       <div class="field" style="margin:0;flex:1;min-width:12rem"><label>Reference</label>
-        <input value="${esc(o.nm)}" oninput="setOp(${i},'nm',this.value)"></div>
-      <div class="field" style="margin:0"><label>Width in</label><input value="${esc(o.w)}" oninput="setOp(${i},'w',this.value)"></div>
-      <div class="field" style="margin:0"><label>Height in</label><input value="${esc(o.h)}" oninput="setOp(${i},'h',this.value)"></div>
+        <input value="${esc(o.nm)}" oninput="setOp(${i},'nm',this.value,1)" onchange="setOp(${i},'nm',this.value)"></div>
+      <div class="field" style="margin:0"><label>Width in</label><input value="${esc(o.w)}" oninput="setOp(${i},'w',this.value,1)" onchange="setOp(${i},'w',this.value)"></div>
+      <div class="field" style="margin:0"><label>Height in</label><input value="${esc(o.h)}" oninput="setOp(${i},'h',this.value,1)" onchange="setOp(${i},'h',this.value)"></div>
       <div class="field" style="margin:0"><label>Doors</label>
         <select onchange="setDoors(${i},this.value)" style="width:6.5rem">
           ${[...new Set(CONFIGS.map(c=>c.doors))].sort((a,b)=>a-b).map(n=>`<option ${cfgDoors(o)===n?"selected":""}>${n}</option>`).join("")}
@@ -1076,14 +1076,14 @@ function renderPrep(){
   <div style="margin-top:22px"><p class="eyebrow" style="margin:0 0 8px">Laser surveys in the cloud</p>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <select id="laserPick" style="border:none;border-bottom:1px solid var(--rule);background:transparent;font:var(--s1) var(--sans);padding:6px 2px;width:auto;max-width:28rem">
-        ${(SURVEYS||[]).length?SURVEYS.map(v=>`<option value="${esc(v.id)}">${esc(v.date||String(v.at||"").slice(0,10))} · ${esc(v.site||"—")}${v.opening?" · "+esc(v.opening):""} · ${fmtIn(v.w)} × ${fmtIn(v.h)}${v.by_name?" · "+esc(v.by_name):""}</option>`).join(""):'<option value="">— none yet —</option>'}</select>
+        ${(SURVEYS||[]).length?SURVEYS.map(v=>`<option value="${esc(v.id)}">${esc(v.date||String(v.at||"").slice(0,10))} · ${esc(v.site||"—")}${v.opening?" · "+esc(v.opening):""} · ${fmtIn(v.w)} × ${fmtIn(v.h)}${v.by_name?" · "+esc(v.by_name):""}</option>`).join(""):`<option value="">${SVERR?"⚑ "+esc(SVERR):"— none yet —"}</option>`}</select>
       <span style="font-size:var(--s1);color:var(--soft)">→</span>
       <select id="laserTo" style="border:none;border-bottom:1px solid var(--rule);background:transparent;font:var(--s1) var(--sans);padding:6px 2px;width:auto;max-width:16rem">
         ${D.openings.map((o,i)=>`<option value="${i}">${esc(o.nm)}</option>`).join("")}</select>
       <button class="ghost" style="padding:10px 16px" onclick="attachCloudSurvey()">Attach</button>
       <button class="ghost" style="padding:10px 16px" onclick="viewSurvey()">View</button>
       <button class="ghost" style="padding:10px 16px" onclick="loadSurveys(true)">↻</button>
-      <span id="laserMsg" style="font-size:var(--s1);color:var(--soft)"></span></div>
+      <span id="laserMsg" style="font-size:var(--s1);color:${SVERR?"var(--warn,#d9a441)":"var(--soft)"}">${SVERR?"\u2691 "+esc(SVERR):""}</span></div>
     <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><textarea id="laserPaste" rows="1" style="max-width:26rem" placeholder="or paste a laser file"></textarea><button class="ghost" style="padding:7px 13px;font-size:var(--s0)" onclick="importLaserPaste()">Attach the paste</button></div></div>
 
   <hr><p class="eyebrow">The specification</p>
@@ -1100,12 +1100,12 @@ function renderPrep(){
       ${g.list.map(o=>`<span class="chip${cur===o.id?" on":""}" onclick="pick('${k}','${o.id}')" title="${esc(o.c||"")}">${esc(o.n)}</span>`).join("")}
       <span class="chip${isC?" on":""}" onclick="pick('${k}','${CUSTOM_LABEL}')">${esc(CUSTOM_LABEL)}</span></div>
     ${isC?`<div class="field" style="margin:10px 0 0"><input class="${cn?"":"needs"}" value="${esc(cn)}"
-        oninput="setCustom('${k}',this.value)" placeholder="REQUIRED — what did they actually ask for?">
+        oninput="setCustom('${k}',this.value,1)" onchange="setCustom('${k}',this.value)" placeholder="REQUIRED — what did they actually ask for?">
         <div class="help">Write it so the shop could build from it without ringing anybody.</div></div>`:""}
     ${k==="finGrade"&&colorRoute()?`<div class="field" style="margin:14px 0 0;max-width:24rem">
         <label>${colorRoute()==="stain"?"Stain colour":"Paint colour"}</label>
         <input class="${String(D.color||"").trim()?"":"needs"}" value="${esc(D.color||"")}"
-          oninput="setF('color',this.value)" placeholder="${colorRoute()==="stain"?"from a physical sample on their species":"name or code"}">
+          oninput="setF('color',this.value,1)" onchange="setF('color',this.value)" placeholder="${colorRoute()==="stain"?"from a physical sample on their species":"name or code"}">
         <div class="help">Confirmed on a physical sample before the finish is applied.</div></div>
     ${colorRoute()==="paint"?`<div class="inline" style="gap:20px;margin-top:12px">
         <div class="field" style="margin:0"><label>Colour depth</label>
@@ -1129,7 +1129,7 @@ function renderPrep(){
   h+=`<hr><p class="eyebrow">Money and time</p>
   <div class="inline" style="gap:26px">
     <div class="field" style="flex:0 0 auto"><label>Price</label>
-      <input value="${esc(D.price)}" oninput="setF('price',this.value)" placeholder="0" style="width:11rem">
+      <input value="${esc(D.price)}" oninput="setF('price',this.value,1)" onchange="setF('price',this.value)" placeholder="0" style="width:11rem">
       <div class="help">From the estimator. This is the number the customer signs against.</div></div>
     <div class="field" style="flex:0 0 auto"><label>Lead time, weeks</label>
       <select onchange="setF('weeks',this.value)" style="width:9rem">
@@ -1137,7 +1137,7 @@ function renderPrep(){
       </select>
       <div class="help">16 minimum. Set it from the current production load — one day this suggests itself from live jobs; the person always decides.</div></div>
     <div class="field" style="flex:1;min-width:18rem"><label>Delivery / freight estimate</label>
-      <input value="${esc(D.delivery||"")}" oninput="setF('delivery',this.value)" placeholder="e.g. $450 local delivery; crating + freight at actual">
+      <input value="${esc(D.delivery||"")}" oninput="setF('delivery',this.value,1)" onchange="setF('delivery',this.value)" placeholder="e.g. $450 local delivery; crating + freight at actual">
       <div class="help">Estimates only — actual rates are charged at completion.</div></div>
   </div>
 
@@ -1147,10 +1147,10 @@ function renderPrep(){
   <div class="inline" style="gap:26px;margin-top:6px">
     <div class="field" style="flex:0 0 auto"><label>Ships to (state)</label>
       <input value="${esc(D.shipState||"CA")}" maxlength="2" style="width:5rem;text-transform:uppercase"
-        oninput="setShipState(this.value)">
+        oninput="setShipState(this.value,1)" onchange="setShipState(this.value)">
       <div class="help">Two letters. Anything but CA is an out-of-state order.</div></div>
     <div class="field" style="flex:0 0 auto"><label>Road miles to site</label>
-      <input value="${esc(D.deliveryMiles||"")}" oninput="setF('deliveryMiles',this.value)" placeholder="e.g. 85" style="width:7rem">
+      <input value="${esc(D.deliveryMiles||"")}" oninput="setF('deliveryMiles',this.value,1)" onchange="setF('deliveryMiles',this.value)" placeholder="e.g. 85" style="width:7rem">
       <div class="help">Only decides whether our trailer goes (up to 200) or a carrier does.</div></div>
     <div class="field" style="flex:1;min-width:14rem"><label>How it travels</label>
       <div style="padding:8px 0;font-size:var(--s1);color:var(--ink2)">
@@ -1169,17 +1169,17 @@ function renderPrep(){
        page, which is why it can carry a reason and a name. */""}
   <div class="inline" style="gap:26px;margin-top:6px">
     <div class="field" style="flex:0 0 auto"><label>Sales tax rate</label>
-      <input value="${esc(D.taxRate)}" oninput="setF('taxRate',this.value)" style="width:8rem" ${D.taxOff?"disabled":""}>
+      <input value="${esc(D.taxRate)}" oninput="setF('taxRate',this.value,1)" onchange="setF('taxRate',this.value)" style="width:8rem" ${D.taxOff?"disabled":""}>
       <div class="help">0.0925 = 9.25%. California taxes fabrication labour on custom goods, so the whole build is taxable.</div></div>
     <div class="field" style="flex:0 0 auto"><label>Remove sales tax</label>
       <label style="display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:var(--s1);color:var(--ink2);padding:8px 0">
         <input type="checkbox" ${D.taxOff?"checked":""} onchange="setF('taxOff',this.checked)" style="width:auto;margin:0">Not taxable</label>
       <div class="help">Office only. Out-of-state delivery, or a resale certificate held on file.</div></div>
     ${D.taxOff?`<div class="field" style="flex:1;min-width:16rem"><label>Why it comes off</label>
-      <input class="${D.taxOffWhy?"":"needs"}" value="${esc(D.taxOffWhy)}" oninput="setF('taxOffWhy',this.value)" placeholder="e.g. Resale certificate on file — Drexel Construction, permit 123-456789">
+      <input class="${D.taxOffWhy?"":"needs"}" value="${esc(D.taxOffWhy)}" oninput="setF('taxOffWhy',this.value,1)" onchange="setF('taxOffWhy',this.value)" placeholder="e.g. Resale certificate on file — Drexel Construction, permit 123-456789">
       <div class="help">This prints on the customer's copy beside the zero, and it is what defends the exemption in an audit.</div></div>
     <div class="field" style="flex:0 0 auto"><label>Taken off by</label>
-      <input class="${D.taxOffBy?"":"needs"}" value="${esc(D.taxOffBy)}" oninput="setF('taxOffBy',this.value)" placeholder="name" style="width:9rem">
+      <input class="${D.taxOffBy?"":"needs"}" value="${esc(D.taxOffBy)}" oninput="setF('taxOffBy',this.value,1)" onchange="setF('taxOffBy',this.value)" placeholder="name" style="width:9rem">
       <div class="help">Whoever decided it is not taxable.</div></div>`:""}
   </div>
   ${D.taxOff?`<div class="note" style="margin-top:8px"><p><b>Sales tax is off on this agreement.</b>
@@ -1190,9 +1190,9 @@ function renderPrep(){
       <label style="display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:var(--s1);color:var(--ink2);padding:8px 0">
         <input type="checkbox" ${D.rush?"checked":""} onchange="setF('rush',this.checked)" style="width:auto;margin:0">Offered and taken</label></div>
     ${D.rush?`<div class="field" style="flex:0 0 auto"><label>Rush to, weeks</label>
-      <input value="${esc(D.rushWeeks)}" oninput="setF('rushWeeks',this.value)" placeholder="e.g. 12" style="width:7rem"></div>
+      <input value="${esc(D.rushWeeks)}" oninput="setF('rushWeeks',this.value,1)" onchange="setF('rushWeeks',this.value)" placeholder="e.g. 12" style="width:7rem"></div>
     <div class="field" style="flex:0 0 auto"><label>Rush upcharge $</label>
-      <input value="${esc(D.rushCost)}" oninput="setF('rushCost',this.value)" placeholder="0" style="width:9rem">
+      <input value="${esc(D.rushCost)}" oninput="setF('rushCost',this.value,1)" onchange="setF('rushCost',this.value)" placeholder="0" style="width:9rem">
       <div class="help">Added to the total and shown as its own line.</div></div>
     <div class="field" style="flex:0 0 auto"><label>Guaranteed by</label>
       <input type="date" value="${esc(D.rushBy)}" onchange="setF('rushBy',this.value)" style="width:11rem">
@@ -1235,7 +1235,7 @@ function renderPrep(){
       Tick only once they have actually said yes</label></div></div>`).join("")}</div>
 
   <hr><div class="field"><label>Anything else on their copy</label>
-    <textarea rows="3" oninput="setF('notes',this.value)" placeholder="a sentence in your own voice — what you talked about, what you promised to check">${esc(D.notes)}</textarea></div>
+    <textarea rows="3" oninput="setF('notes',this.value,1)" onchange="setF('notes',this.value)" placeholder="a sentence in your own voice — what you talked about, what you promised to check">${esc(D.notes)}</textarea></div>
 
   <div style="margin:34px 0 20px;display:flex;gap:12px;flex-wrap:wrap">
     <button class="go" onclick="show('doc')">Read it as they will see it →</button>
@@ -1303,16 +1303,17 @@ function taxRate(){ return (D.taxOff || outOfState()) ? 0 : (num(D.taxRate)||0) 
 /* Changing the state has to CLEAR the casing selections, not merely stop displaying them —
    a hidden selection that still rides the record is how a shop ends up cutting trim for
    Nevada. Cleared here, once, at the moment the fact changes. */
-window.setShipState=function(v){
+window.setShipState=function(v,q){
   const s=String(v||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,2);
   D.shipState=s;
+  if(q){ brandOnly(); return }          /* mid-keystroke: store it, decide nothing */
   if(s&&s!=="CA"){
     // unconditional: a defaulted selection is still a selection, and the presets DO default
     // casingInt/casingExt. Leaving it set-but-hidden is how trim gets cut for Nevada.
     NO_OOS.forEach(k=>{ delete D.spec[k];
       const i=D.custom.findIndex(c=>c.k===k); if(i>=0)D.custom.splice(i,1); });
   }
-  render();
+  render(true);
 };
 /* Money is rounded to the cent HERE, not at display time, so the number the customer signs,
    the number stored on the quote and the number an invoice is raised from are the same number.
@@ -1521,11 +1522,11 @@ function show(v){
   render();
 }
 window.show=show;
-window.setF=function(k,v){ D[k]=v; render() };
+window.setF=function(k,v,q){ D[k]=v; touch(q) };
 window.addUp=function(){ (D.upcharges=D.upcharges||[]).push({desc:"",amt:""}); render() };
 window.setUp=function(i,k,v){ D.upcharges[i][k]=v; render() };
 window.delUp=function(i){ D.upcharges.splice(i,1); render() };
-window.setOp=function(i,k,v){ D.openings[i][k]=v; render() };
+window.setOp=function(i,k,v,q){ D.openings[i][k]=v; touch(q) };
 window.addOp=function(){ D.openings.push({nm:"Opening "+(D.openings.length+1),w:"",h:"",
   leaves:"4",move:"2 fold left, 2 fold right",config:"2L2R"}); render() };
 window.delOp=function(i){ D.openings.splice(i,1); render() };
@@ -1535,8 +1536,8 @@ window.pick=function(k,id){
   else if(!D.custom.some(c=>c.k===k))D.custom.push({k,note:""});
   render();
 };
-window.setCustom=function(k,v){
-  const c=D.custom.find(x=>x.k===k); if(c)c.note=v; render();
+window.setCustom=function(k,v,q){
+  const c=D.custom.find(x=>x.k===k); if(c)c.note=v; touch(q);
 };
 window.accept=function(k,on){ if(on)D.accepted[k]=true; else delete D.accepted[k]; render() };
 function dl(name,txt,type){
@@ -1556,11 +1557,34 @@ window.loadJSON=function(e){
     }catch(err){ alert("That is not a saved agreement.") } };
   r.readAsText(f); e.target.value="";
 };
-function render(){
-  if(D.view==="doc")renderDoc(); else renderPrep();
+/* 2.4 — NEVER REBUILD THE PAGE UNDER HIS TYPING. Every text field called render(), which
+   replaces the whole prep view's innerHTML; on each keystroke the input he was typing in was
+   destroyed and rebuilt, the caret went with it and the browser jumped to wherever focus landed.
+   He read that as the page running a search. The model still takes every character on `input`
+   (touch(1) — a quiet write); the page re-renders on `change`, which fires when he leaves the
+   field, so every derived figure still catches up. The guard below covers the rest: an async
+   render (a survey list arriving) can no longer yank him out of a sentence either — it is held
+   and runs the moment the field is done. */
+let RPEND=false;
+function typingIn(el){
+  return !!(el && (el.tagName==="TEXTAREA" ||
+    (el.tagName==="INPUT" && !/^(checkbox|radio|file|button|submit|reset)$/i.test(el.type||""))));
+}
+function brandOnly(){
   const b=$("brandWho");
   if(b)b.innerHTML=D.buyer?`<b>${esc(D.buyer)}</b><br>${esc(D.site||"")}`:"";
 }
+function touch(quiet){ if(quiet){ brandOnly(); return } render(true); }
+function render(force){
+  if(!force && typingIn(document.activeElement)){ RPEND=true; brandOnly(); return }
+  RPEND=false;
+  if(D.view==="doc")renderDoc(); else renderPrep();
+  brandOnly();
+}
+document.addEventListener("focusout",function(){
+  if(!RPEND)return;
+  setTimeout(function(){ if(RPEND && !typingIn(document.activeElement)) render(true) },0);
+});
 /* Demo content so the first thing anyone sees is the document working, not an
    empty form. Cleared the moment a real name is typed over it. */
 if(!D.buyer){
@@ -1581,7 +1605,16 @@ show("prep");
 /* ---- laser survey ---- */
 /* 2.1 (0090): surveys live in the cloud (tr-desk survey_list / survey_add). A file or paste attached here is
    filed there too, so the next person picks it from the list instead of hunting for the file. */
-async function loadSurveys(rerender){ try{ const j=await deskCall({action:"survey_list"}); if(j&&j.ok){ SURVEYS=j.rows||[]; if(rerender) render(); } }catch(e){} }
+/* 2.4 — an empty list is a lie here too. This swallowed its error, so a failed read and a
+   genuinely empty book both drew "— none yet —" and the surveys he had just filed looked lost. */
+async function loadSurveys(rerender){
+  try{
+    const j=await deskCall({action:"survey_list"});
+    if(j&&j.ok){ SVERR=""; SURVEYS=j.rows||[]; }
+    else { SVERR=(j&&j.error)||"could not read the surveys"; }
+  }catch(e){ SVERR=String(e&&e.message||e)||"could not read the surveys"; }
+  if(rerender) render(true);
+}
 function cloudToSurvey(v){ return {date:v.date||String(v.at||"").slice(0,10), job:v.site||"", w:Number(v.w), h:Number(v.h), wMin:Number(v.w_min??v.w), wMax:Number(v.w_max??v.w), hMin:Number(v.h_min??v.h), hMax:Number(v.h_max??v.h), nW:Number(v.n_w||0), nH:Number(v.n_h||0), clearances:v.clearances||null, by:v.by_name||"", cloud_id:v.id}; }
 window.viewSurvey=function(){ const v=SURVEYS.find(x=>x.id===$("laserPick").value); if(!v) return; let box=$("svBox"); if(!box){ box=document.createElement("div"); box.id="svBox"; box.style.cssText="position:fixed;inset:0;background:rgba(28,26,32,.6);z-index:70;display:flex;align-items:center;justify-content:center;padding:18px"; box.onclick=e=>{ if(e.target===box) box.remove(); }; document.body.appendChild(box); }
   box.innerHTML=`<div style="background:#fff;border-radius:4px;padding:18px;max-width:620px;width:100%"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font:12px var(--sans);color:var(--soft)"><span>${esc(v.site||"")}${v.opening?" · "+esc(v.opening):""} · ${esc(v.date||"")} · ${esc(v.by_name||"")}</span><button class="ghost" style="padding:6px 10px" onclick="document.getElementById('svBox').remove()">✕</button></div>${surveySvg(v,{dark:false})}</div>`; };
