@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.21</title>
+<title>Tungsten Royce — Input Desk 2.22</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -145,7 +145,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 </head>
 <body>
 <header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.20</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_pd" onclick="tab('pd')">Pipedrive<span class="pip" id="pdN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_open" onclick="tab('open')">Openings<span class="pip" id="opN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_cust" onclick="tab('cust')">Customers<span class="pip" id="cuN" style="display:none"></span></button><button id="t_pd" onclick="tab('pd')">Pipedrive<span class="pip" id="pdN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_open" onclick="tab('open')">Openings<span class="pip" id="opN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
@@ -154,7 +154,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
   <div id="v_shelf" style="display:none"></div>
   <div id="v_parts" style="display:none"></div>
   <div id="v_vend" style="display:none"></div>
-  <div id="v_pd" style="display:none"></div>
+  <div id="v_cust" style="display:none"></div><div id="v_pd" style="display:none"></div>
   <div id="v_open" style="display:none"></div>
   <div id="v_scans" style="display:none"></div>
   <div id="v_surveys" style="display:none"></div>
@@ -192,7 +192,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","parts","vend","pd","open","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="parts")loadParts(); if(t==="vend")loadVend(); if(t==="pd")loadPd(); if(t==="open")loadOpen(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","parts","vend","cust","pd","open","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="parts")loadParts(); if(t==="vend")loadVend(); if(t==="cust")loadCust(); if(t==="pd")loadPd(); if(t==="open")loadOpen(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } if(!VENDORS.length&&Q.vendors) VENDORS=Q.vendors.slice(); renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); loadPeople(); loadCats(); }
 async function loadCats(){ try{ const j=await desk({action:"items"}); if(j.categories&&j.categories.length) CATS=j.categories; if(CUR&&TAB==="deck") renderSide(); }catch(e){} }
 async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],shop:j.shop||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){ toast("who to ask: "+e.message,true); } }
@@ -532,7 +532,7 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.pdOnward=pdOnward;window.opForCustomer=opForCustomer;window.opAllCust=opAllCust;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.loadCust=loadCust;window.cuFilter=cuFilter;window.cuDebounce=cuDebounce;window.cuPick=cuPick;window.cuSet=cuSet;window.cuTake=cuTake;window.cuTakeAll=cuTakeAll;window.pdOnward=pdOnward;window.opForCustomer=opForCustomer;window.opAllCust=opAllCust;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 window.opFilter=opFilter;window.opDebounce=opDebounce;window.opPick=opPick;window.opSet=opSet;window.opTakeSteel=opTakeSteel;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
@@ -886,6 +886,128 @@ async function pdTake(what,cid){
       try{ const j=await desk(body); toast("added "+(j.label||"")); await loadPd(); }catch(x){ toast(x.message,true); } } return; }
     toast(e.message,true); }
 }
+
+/* =====================================================================
+   2.22 — CUSTOMERS. The book has 1,222 rows and had no screen at all;
+   every route to one went through the deck, which only carries rows with
+   something missing. The C-number is the spine — it is what every app
+   follows — so it leads every row and every card.
+   An OFFER taken here fills the RECORD, which is what the Agreement, the
+   Laser and the Concept Desk all read. That is the sync.
+===================================================================== */
+var CU=[], CUQ="", CUF="work", CUSEL=null, CUT=null, CUTMR=null, CUCOUNT={};
+const CUCHIP={ work:{t:"has paperwork"}, all:{t:"all"}, no_email:{t:"no e-mail"}, no_phone:{t:"no phone"},
+               no_site:{t:"no site"}, no_contact:{t:"no contact"}, no_pd:{t:"not in Pipedrive"} };
+function cuFilter(k){ CUF=(CUF===k?"all":k); cuPull(); }
+function cuDebounce(){ clearTimeout(CUTMR); CUTMR=setTimeout(cuPull,350); }
+async function loadCust(){ if(!$("cuList")) $("v_cust").innerHTML='<div class="empty">Loading…</div>'; await cuPull(); }
+async function cuPull(){
+  /* NEVER rebuild the shell under his typing — only the list refills. */
+  try{ const j=await desk({action:"customers_list",show:CUF,q:CUQ});
+       CU=j.rows||[]; CUCOUNT=j.counts||{};
+       const pip=$("cuN"); const n=CUCOUNT.work||0; pip.textContent=n; pip.style.display=n?"inline":"none"; }
+  catch(e){ // AN EMPTY LIST IS A LIE
+    const t=`<div class="empty">⚑ ${esc(e.message)}</div>`;
+    if($("cuList")) $("cuList").innerHTML=t; else $("v_cust").innerHTML=t;
+    return; }
+  renderCust();
+}
+function renderCust(){
+  if(!$("cuList")) $("v_cust").innerHTML=`<div class="rc"><div>
+    <div class="eyebrow">Customers · the book</div>
+    <input id="cuq" placeholder="name, C-number, e-mail" value="${esc(CUQ)}" oninput="CUQ=this.value;cuDebounce()">
+    <div class="chips" id="cuChips"></div>
+    <div class="hint" style="margin:0 0 6px" id="cuN2"></div>
+    <div class="list" id="cuList"></div>
+  </div><div id="cuWork"><div class="empty">Pick one.</div></div></div>`;
+  renderCuList();
+}
+function renderCuList(){
+  $("cuChips").innerHTML=Object.keys(CUCHIP).map(k=>{
+    const n=CUCOUNT[k];
+    return `<button class="${CUF===k?"on":""}" onclick="cuFilter('${k}')">${CUCHIP[k].t}${n==null?"":" "+n}</button>`;
+  }).join("");
+  $("cuN2").textContent=`${CU.length} shown`;
+  $("cuList").innerHTML=CU.map(r=>{
+    const miss=[r.no_email?"e-mail":null,r.no_phone?"phone":null,r.no_site?"site":null,r.no_contact?"contact":null]
+      .filter(Boolean);
+    const work=[r.quotes?r.quotes+" quote"+(r.quotes>1?"s":""):null, r.jobs?r.jobs+" job"+(r.jobs>1?"s":""):null,
+                r.surveys?r.surveys+" survey"+(r.surveys>1?"s":""):null, r.openings?r.openings+" opening"+(r.openings>1?"s":""):null]
+      .filter(Boolean).join(" · ");
+    return `<div class="rr ${CUSEL===r.id?"on":""}" data-id="${r.id}" onclick="cuPick('${r.id}')">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">${r.customer_no?("C-"+r.customer_no):"—"}</div>
+      <div><b>${esc(r.name||"—")}</b><div class="m">${esc(r.status||"")}${work?" · "+esc(work):""}</div>
+      <div class="m">${miss.length?`<span class="need">⚑ no ${miss.join(" · no ")}</span>`:`<span class="use">✓ filled</span>`}</div></div></div>`;
+  }).join("")||'<div class="empty">Nothing here.</div>';
+}
+async function cuPick(id){
+  CUSEL=id;
+  document.querySelectorAll("#cuList .rr").forEach(e=>e.classList.toggle("on",e.dataset.id===CUSEL));
+  $("cuWork").innerHTML='<div class="empty">Loading…</div>';
+  try{ CUT=await desk({action:"office_call",fn:"tr-intake",body:{action:"cust_get",customer_id:id}}); }
+  catch(e){ $("cuWork").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
+  renderCuWork();
+}
+const CUFIELDS=[["email","e-mail"],["phone","phone"],["site_address","site address"],["billing_address","billing address"]];
+function renderCuWork(){
+  const j=CUT||{}, c=j.customer||{}, f=j.fill||{}, have=f.have||{}, offers=f.offers||[];
+  const rows=CUFIELDS.map(([k,lbl])=>{
+    const v=c[k]||"";
+    return `<div class="f2"><div class="m">${lbl}</div>
+      <input value="${esc(v)}" placeholder="—" onchange="cuSet('${k}',this.value)"></div>`;
+  }).join("");
+  const off=offers.length?`<div class="box"><h3>We can see, but have not taken</h3>
+    ${offers.map(o=>`<div class="f2">
+      <div><b>${esc(o.field.replace(/_/g," "))}</b><div class="m">${esc(o.value)} · ${esc(o.from)} · ${esc(o.why)}</div></div>
+      <button class="sm" onclick="cuTake('${o.field}')">Use it</button></div>`).join("")}
+    ${offers.length>1?`<button class="sm go" style="margin-top:8px" onclick="cuTakeAll()">Take all ${offers.length}</button>`:""}
+    </div>`:"";
+  const ks=(j.contacts||[]);
+  const people=ks.length?`<div class="box"><h3>Who else is on this job</h3>${ks.map(k=>
+    `<div class="f2"><div><b>${esc(k.company||k.name||"—")}</b><div class="m">${[k.role,k.company?k.name:null,k.email,k.phone].filter(Boolean).map(esc).join(" · ")}</div></div></div>`).join("")}</div>`
+    :`<div class="box"><h3>Who else is on this job</h3><div class="m">no one yet — the Agreement files the GC and the architect on publish</div></div>`;
+  const q=(j.quotes||[]), jb=(j.jobs||[]), sv=(j.surveys||[]);
+  const paper=`<div class="box"><h3>Their paperwork</h3>
+    <div class="m">${[q.length?q.length+" quote"+(q.length>1?"s":""):null, jb.length?jb.length+" job"+(jb.length>1?"s":""):null,
+                      sv.length?sv.length+" survey"+(sv.length>1?"s":""):null].filter(Boolean).join(" · ")||"none yet"}</div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <a class="btn sm" href="agree.html?c=${encodeURIComponent(c.id||"")}">Write the agreement ↗</a>
+      <button class="sm" onclick="opForCustomer('${c.id}')">Openings</button>
+      <a class="btn sm" href="laser.html">Laser ↗</a>
+    </div></div>`;
+  $("cuWork").innerHTML=`<div class="panel">
+    <h3>${c.customer_no?("C-"+c.customer_no+" · "):""}${esc(c.name||"—")}</h3>
+    <div class="m" style="margin-bottom:8px">${[c.status,c.account_type,c.source].filter(Boolean).map(esc).join(" · ")}</div>
+    ${rows}
+    ${off}
+    ${people}
+    ${paper}
+  </div>`;
+}
+async function cuSet(k,v){
+  if(!CUT||!CUT.customer) return;
+  try{ await desk({action:"office_call",fn:"tr-intake",body:{action:"cust_update",customer_id:CUT.customer.id,[k]:v}});
+       CUT.customer[k]=v.trim()||null; toast("saved"); cuPull(); }
+  catch(e){ toast(e.message,true); }
+}
+async function cuTake(field){
+  const j=CUT||{}, o=((j.fill||{}).offers||[]).find(x=>x.field===field); if(!o) return;
+  try{ const r=await desk({action:"office_call",fn:"tr-intake",
+        body:{action:"cust_fill_take",customer_id:j.customer.id,by:NAME,take:{[field]:o.value},from:o.from}});
+       toast("kept "+field);
+       await cuPick(j.customer.id); await cuPull(); }
+  catch(e){ toast(e.message,true); }
+}
+async function cuTakeAll(){
+  const j=CUT||{}, offers=((j.fill||{}).offers||[]); if(!offers.length) return;
+  const take={}; for(const o of offers) take[o.field]=o.value;
+  try{ const r=await desk({action:"office_call",fn:"tr-intake",
+        body:{action:"cust_fill_take",customer_id:j.customer.id,by:NAME,take,from:"offers"}});
+       toast("kept "+((r.took||[]).join(" · ")||"nothing"));
+       await cuPick(j.customer.id); await cuPull(); }
+  catch(e){ toast(e.message,true); }
+}
+
 /* =====================================================================
    2.20 (0107) — OPENINGS.
    Every figure the Concept Desk draws and the Agreement signs used to live
