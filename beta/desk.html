@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.22</title>
+<title>Tungsten Royce — Input Desk 2.23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -986,9 +986,22 @@ function renderCuWork(){
 }
 async function cuSet(k,v){
   if(!CUT||!CUT.customer) return;
-  try{ await desk({action:"office_call",fn:"tr-intake",body:{action:"cust_update",customer_id:CUT.customer.id,[k]:v}});
-       CUT.customer[k]=v.trim()||null; toast("saved"); cuPull(); }
-  catch(e){ toast(e.message,true); }
+  const id=CUT.customer.id, want=v.trim()||null;
+  try{
+    await desk({action:"office_call",fn:"tr-intake",body:{action:"cust_update",customer_id:id,[k]:v}});
+    /* CONFIRM BY READ-BACK. A field the function does not know about is
+       accepted and silently dropped — the box would say "saved" and hold
+       nothing. Never let a control lie about what landed. */
+    const j=await desk({action:"office_call",fn:"tr-intake",body:{action:"cust_get",customer_id:id}});
+    const got=(j&&j.customer)?(j.customer[k]||null):undefined;
+    if(got===undefined){ toast("saved, but could not read it back",true); return; }
+    if(String(got||"")!==String(want||"")){
+      CUT=j; renderCuWork();
+      toast("\u2691 "+k.replace(/_/g," ")+" did not save \u2014 the server does not take that field yet",true);
+      return;
+    }
+    CUT=j; toast("saved"); cuPull();
+  }catch(e){ toast(e.message,true); }
 }
 async function cuTake(field){
   const j=CUT||{}, o=((j.fill||{}).offers||[]).find(x=>x.field===field); if(!o) return;
