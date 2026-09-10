@@ -124,12 +124,26 @@ details.kit{margin:6px 0;background:var(--bg2);border:1px solid var(--line);bord
 [data-theme=light] .src .jh{background:#efeae2!important}[data-theme=light] .ocr{background:#faf8f4!important}
 .themebtn{border:1px solid var(--line2);background:transparent;color:var(--mute);border-radius:var(--r);padding:4px 8px;font-size:13px;min-height:0;flex:0 0 auto;cursor:pointer;line-height:1}
 .flag{color:var(--warn)}
+
+table.mx{border-collapse:collapse;font-size:13px;min-width:100%}
+table.mx th,table.mx td{border:1px solid #2a2a2a;padding:5px 7px;text-align:center;white-space:nowrap}
+table.mx th.mxp{writing-mode:vertical-rl;transform:rotate(180deg);height:84px;font-weight:600;color:var(--mute)}
+table.mx th.mxn,table.mx td.mxn{text-align:left;white-space:normal;min-width:150px}
+table.mx tr.mxcat td{text-align:left;background:#1b1b1b;color:var(--gold);font-weight:700;letter-spacing:.04em;font-size:11px;text-transform:uppercase}
+table.mx td.mxc{cursor:pointer;color:var(--gold);font-size:15px;width:30px}
+table.mx td.mxc.on{background:#2a2417}
+table.mx td.mxc.busy{opacity:.4}
+table.mx td.mxi{cursor:pointer;color:var(--mute);font-size:12px}
+table.mx td.mxi.need{color:#a98a63}
+.mxnote{display:block;color:var(--mute);font-size:11px}
+.mxrot{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:8px;background:#3a2f18;color:#e0c48a;font-size:10px}
+.mxnone{display:inline-block;margin-left:6px;color:#8a6a6a;font-size:11px}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
 <header>
-  <div><div class="wm">TUNGSTEN <b>ROYCE</b><span style="font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #5a4a1e;color:#d9a441;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><div class="eyebrow" id="station">Shop floor</div></div>
+  <div><div class="wm">TUNGSTEN <b>ROYCE</b></div><div class="eyebrow" id="station">Shop floor</div></div>
   <div class="d" id="today"></div>
   <div class="r"><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span class="livedot" id="liveDot"></span><span class="eyebrow" id="clock"></span></div>
 </header>
@@ -138,6 +152,7 @@ details.kit{margin:6px 0;background:var(--bg2);border:1px solid var(--line);bord
   <button id="t_trav" onclick="tab('trav')">Travelers</button>
   <button id="t_inv" onclick="tab('inv')">Inventory</button>
   <button id="t_mach" onclick="tab('mach')">Machines</button>
+  <button id="t_mx" onclick="tab('mx')">Duty matrix</button>
   <button id="t_med" onclick="tab('med')">Media</button>
 </nav>
 <main>
@@ -164,6 +179,24 @@ details.kit{margin:6px 0;background:var(--bg2);border:1px solid var(--line);bord
       <div class="row"><select id="rqKind" style="width:auto"><option value="sharpen">Sharpen</option><option value="replace">Replace</option><option value="repair">Repair</option><option value="order">Order</option><option value="calibrate">Calibrate</option><option value="other">Other</option></select><select id="rqMach" style="width:auto"><option value="">machine (optional)</option></select><input id="rqWhat" placeholder="what" style="flex:1;min-width:220px"><select id="rqPrio" style="width:auto"><option value="normal">normal</option><option value="rush">🟠 rush</option><option value="urgent">🔴 urgent</option></select><button class="sm go" onclick="machReq()">Send to the office</button></div>
       </div>
     <div class="wcard"><h2>Maintenance</h2><table id="maintT"></table></div>
+  </div>
+  <div id="v_mx" style="display:none">
+    <div class="wcard"><h2>Who is on which machine</h2>
+      <div class="row" style="margin-top:0">
+        <span id="mxWhen" class="note"></span>
+        <span style="flex:1"></span>
+        <input id="mxDay" type="date" style="width:auto">
+        <select id="mxTier" style="width:auto"><option value="">light + heavy</option><option value="light">light only</option><option value="heavy">heavy only</option></select>
+        <button class="sm go" id="mxPushBtn" onclick="mxPush()">Push to their duties</button>
+      </div>
+      <div id="mxWrap"><p class="note">Loading…</p></div>
+      <div id="mxEdit" style="display:none;margin-top:10px"></div>
+    </div>
+    <div class="wcard" id="mxAdmin">
+      <div class="row" style="margin-top:0"><input id="mxNewTool" placeholder="new tool" style="flex:1;min-width:160px"><select id="mxNewCat" style="width:auto"></select><button class="sm" onclick="mxAddTool()">+ Tool</button></div>
+      <div class="row"><input id="mxNewCat2" placeholder="new category" style="flex:1;min-width:160px"><button class="sm" onclick="mxAddCat()">+ Category</button></div>
+      <div class="row"><span class="note">Rotate every</span><input id="mxRot" class="qty" inputmode="numeric" style="width:70px"><span class="note">days</span><button class="sm ghost" onclick="mxRotSet()">Set</button></div>
+    </div>
   </div>
   <div id="v_med" style="display:none">
     <div class="wcard"><h2>Job media — walkaround &amp; install shots</h2>
@@ -207,7 +240,136 @@ const byPrio=(a,b)=>(PR[a.priority||"normal"]-PR[b.priority||"normal"])||((a.slo
 let WHO=""; try{ WHO=localStorage.getItem("tr_station_who")||""; }catch(e){}
 const setWho=n=>{ WHO=n; try{localStorage.setItem("tr_station_who",n)}catch(e){} renderWho(); renderBoard(); };
 const who=()=>WHO;
-function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; } if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else if(t==="trav")loadTrav(); else loadShop(); }
+function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav","mx"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; } if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else if(t==="trav")loadTrav(); else if(t==="mx")loadMatrix(); else loadShop(); }
+
+/* ================= THE MACHINE DUTY MATRIX (tr-desk 2.31 / 0116) =================
+   Tools down the side, people across the top, a dot where somebody is on it.
+   A row with two dots is Ryan's forklift, which four people share — so the cell
+   is a toggle, never a radio. Setting who is on what needs the `crew` scope; at
+   the shop tablet the matrix reads, and says so rather than showing dead buttons
+   that lie. */
+const DESK=SB_URL+"/functions/v1/tr-desk";
+const desk=b=>call(DESK,b);
+let MX=null;
+
+async function loadMatrix(){
+  const j=await desk({action:"matrix_load"});
+  if(!j.ok){ $("mxWrap").innerHTML='<p class="note">⚑ '+esc(j.error)+'</p>'; return; }   // AN EMPTY LIST IS A LIE
+  MX=j;
+  if(!$("mxDay").value) $("mxDay").value=j.today;
+  if(document.activeElement!==$("mxRot")) $("mxRot").value=j.rotate_days;
+  const cs=$("mxNewCat"); if(document.activeElement!==cs){ cs.innerHTML=j.categories.map(c=>'<option>'+esc(c.name)+'</option>').join(""); }
+  $("mxAdmin").style.display=j.may_set?"block":"none";
+  $("mxPushBtn").disabled=!j.may_set;
+  $("mxWhen").innerHTML=j.may_set?'':'<span>read only · '+esc(j.me)+'</span>';
+  renderMatrix();
+}
+
+function renderMatrix(){
+  const j=MX; if(!j) return;
+  const ppl=j.people.filter(p=>p.kind!=="station").map(p=>p.name);
+  let cat=null, h='<div style="overflow-x:auto"><table class="mx"><thead><tr><th class="mxn">tool</th>'
+    + ppl.map(n=>'<th class="mxp" title="'+esc(n)+'">'+esc(n)+'</th>').join("")
+    + '<th class="mxi">light</th><th class="mxi">heavy</th></tr></thead><tbody>';
+  for(const m of j.machines){
+    if(m.category!==cat){ cat=m.category; h+='<tr class="mxcat"><td colspan="'+(ppl.length+3)+'">'+esc(cat||"—")+'</td></tr>'; }
+    const crew=m.crew||[];
+    const rot=m.due_to_rotate?' · '+m.days_on+'d':'';
+    h+='<tr data-m="'+esc(m.id)+'"><td class="mxn">'+esc(m.name)
+      +(m.note?'<span class="mxnote">'+esc(m.note)+'</span>':'')
+      +(m.due_to_rotate?'<span class="mxrot">rotate'+esc(rot)+'</span>':'')
+      +(crew.length?'':'<span class="mxnone">nobody</span>')+'</td>';
+    for(const n of ppl){
+      const on=crew.indexOf(n)>=0;
+      h+='<td class="mxc'+(on?' on':'')+'"'+(j.may_set?' onclick="mxTick(this)"':'')
+        +' data-m="'+esc(m.id)+'" data-w="'+esc(n)+'">'+(on?'●':'')+'</td>';
+    }
+    h+='<td class="mxi'+(m.no_light?' need':'')+'"'+(j.may_set?' onclick="mxTier(\''+esc(m.id)+'\',\'light\')"':'')+'>'
+      +(m.no_light?'set':m.light_days+'d'+(m.light_steps?' · '+m.light_steps:''))+'</td>';
+    h+='<td class="mxi'+(m.no_heavy?' need':'')+'"'+(j.may_set?' onclick="mxTier(\''+esc(m.id)+'\',\'heavy\')"':'')+'>'
+      +(m.no_heavy?'set':m.heavy_days+'d'+(m.heavy_steps?' · '+m.heavy_steps:''))+'</td>';
+    h+='</tr>';
+  }
+  h+='</tbody></table></div>';
+  $("mxWrap").innerHTML=h;
+}
+
+/* A CONTROL MUST NEVER LIE ABOUT WHAT LANDED — the cell paints from the row the
+   server sends back, not from the click. */
+async function mxTick(td){
+  const id=td.dataset.m, w=td.dataset.w, want=!td.classList.contains("on");
+  td.classList.add("busy");
+  const j=await desk({action:"matrix_crew",machine_id:id,worker:w,on:want});
+  td.classList.remove("busy");
+  if(!j.ok){ toast(j.error,true); return; }
+  const m=MX.machines.find(x=>x.id===id); if(m){ m.crew=j.row&&j.row.crew?j.row.crew:[]; m.crew_since=j.row?j.row.crew_since:null;
+    m.days_on=m.crew_since?Math.round((Date.parse(MX.today)-Date.parse(m.crew_since))/86400000):null;
+    m.due_to_rotate=m.days_on!==null&&m.days_on>=MX.rotate_days; }
+  renderMatrix();
+}
+
+/* The interval and the checklist, edited in place UNDER the matrix — the grid
+   itself is never re-rendered while he is typing in here. */
+async function mxTier(id,tier){
+  const m=MX.machines.find(x=>x.id===id); if(!m) return;
+  const days=tier==="light"?m.light_days:m.heavy_days;
+  const itemId=tier==="light"?m.light_id:m.heavy_id;
+  let steps=[];
+  if(itemId){ const j0=await desk({action:"matrix_steps",machine_id:id,tier}); if(!j0.ok){ toast(j0.error,true); return; } steps=j0.steps||[]; }
+  const box=$("mxEdit");
+  box.style.display="block";
+  box.innerHTML='<div class="row" style="margin-top:0"><b>'+esc(m.name)+' · '+tier+'</b>'
+    +'<span style="flex:1"></span><button class="sm ghost" onclick="mxEditClose()">Close</button></div>'
+    +'<div class="row"><span class="note">every</span><input id="mxD" class="qty" inputmode="numeric" style="width:80px" value="'+(days||"")+'"><span class="note">days</span>'
+    +'<button class="sm go" onclick="mxTierSave(\''+esc(id)+'\',\''+tier+'\')">Save</button>'
+    +(itemId?'<button class="sm bad" onclick="mxTierOff(\''+esc(id)+'\',\''+tier+'\')">Turn off</button>':'')+'</div>'
+    +'<textarea id="mxS" rows="7" style="width:100%" placeholder="one check per line">'+esc(steps.join("\n"))+'</textarea>';
+  $("mxD").focus();
+}
+function mxEditClose(){ $("mxEdit").style.display="none"; $("mxEdit").innerHTML=""; }
+async function mxTierSave(id,tier){
+  const d=Number($("mxD").value);
+  if(!(d>0)){ toast("how many days between checks?",true); return; }
+  const steps=$("mxS").value.split("\n").map(x=>x.trim()).filter(Boolean);
+  const j=await desk({action:"matrix_tier",machine_id:id,tier,interval_days:d,steps});
+  if(!j.ok){ toast(j.error,true); return; }
+  const m=MX.machines.find(x=>x.id===id); if(m) Object.assign(m,j.row||{});
+  mxEditClose(); renderMatrix(); toast("saved");
+}
+async function mxTierOff(id,tier){
+  const j=await desk({action:"matrix_tier",machine_id:id,tier,off:true});
+  if(!j.ok){ toast(j.error,true); return; }
+  const m=MX.machines.find(x=>x.id===id); if(m) Object.assign(m,j.row||{});
+  mxEditClose(); renderMatrix(); toast("off");
+}
+
+async function mxPush(){
+  const day=$("mxDay").value, tier=$("mxTier").value;
+  const j=await desk({action:"matrix_push",day,tier:tier||undefined});
+  if(!j.ok){ toast(j.error,true); return; }
+  toast(j.pushed.length+" on the slip"+(j.missed.length?" · "+j.missed.length+" not":""));
+  if(j.missed.length) $("mxWrap").insertAdjacentHTML("afterbegin",
+    '<p class="note">⚑ '+j.missed.map(x=>esc(x.machine+(x.worker?" / "+x.worker:"")+" — "+x.why)).join(" · ")+'</p>');
+}
+
+async function mxAddTool(){
+  const name=$("mxNewTool").value.trim(); if(name.length<2){ toast("give the tool a name",true); return; }
+  const j=await desk({action:"matrix_machine",name,category:$("mxNewCat").value||null});
+  if(!j.ok){ toast(j.error,true); return; }
+  $("mxNewTool").value=""; await loadMatrix(); toast("added");
+}
+async function mxAddCat(){
+  const name=$("mxNewCat2").value.trim(); if(name.length<2){ toast("give the category a name",true); return; }
+  const j=await desk({action:"matrix_category",name});
+  if(!j.ok){ toast(j.error,true); return; }
+  $("mxNewCat2").value=""; await loadMatrix(); toast("added");
+}
+async function mxRotSet(){
+  const days=Number($("mxRot").value); if(!(days>0)){ toast("how many days?",true); return; }
+  const j=await desk({action:"matrix_rotate_days",days});
+  if(!j.ok){ toast(j.error,true); return; }
+  MX.rotate_days=j.rotate_days; await loadMatrix(); toast("saved");
+}
 
 /* ================= BOARD (tr-crew) ================= */
 async function loadBoard(){
