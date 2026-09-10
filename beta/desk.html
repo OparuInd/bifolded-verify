@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.24</title>
+<title>Tungsten Royce — Input Desk 2.25</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -145,7 +145,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 </head>
 <body>
 <header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.20</span>
-  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_svc" onclick="tab('svc')">Service<span class="pip" id="svN" style="display:none"></span></button><button id="t_cust" onclick="tab('cust')">Customers<span class="pip" id="cuN" style="display:none"></span></button><button id="t_pd" onclick="tab('pd')">Pipedrive<span class="pip" id="pdN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_open" onclick="tab('open')">Openings<span class="pip" id="opN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
+  <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_cust" onclick="tab('cust')">Customers<span class="pip" id="cuN" style="display:none"></span></button><button id="t_pd" onclick="tab('pd')">Pipedrive<span class="pip" id="pdN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_open" onclick="tab('open')">Openings<span class="pip" id="opN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="service.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Service ↗</a><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
   <div id="v_deck"><div class="cats" id="cats"></div><div class="deckwrap"><div class="deck" id="deck"></div><div class="side" id="side"></div></div></div>
@@ -154,7 +154,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
   <div id="v_shelf" style="display:none"></div>
   <div id="v_parts" style="display:none"></div>
   <div id="v_vend" style="display:none"></div>
-  <div id="v_svc" style="display:none"></div><div id="v_cust" style="display:none"></div><div id="v_pd" style="display:none"></div>
+  <div id="v_cust" style="display:none"></div><div id="v_pd" style="display:none"></div>
   <div id="v_open" style="display:none"></div>
   <div id="v_scans" style="display:none"></div>
   <div id="v_surveys" style="display:none"></div>
@@ -192,7 +192,7 @@ const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(ba
 const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
 let Q=null,CAT="all",TAB="deck",CUR=null,PHOTO=null,ORDER=[],DONE_N=0;
-function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","parts","vend","svc","cust","pd","open","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="parts")loadParts(); if(t==="vend")loadVend(); if(t==="svc")loadSvc(); if(t==="cust")loadCust(); if(t==="pd")loadPd(); if(t==="open")loadOpen(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
+function tab(t,noload){TAB=t;for(const x of ["deck","assist","rcpt","shelf","parts","vend","cust","pd","open","scans","surveys","rcvd","steel","job"]){$("v_"+x).style.display=x===t?"block":"none";$("t_"+x).className=x===t?"on":"";} if(noload) return; if(t==="assist")loadAssist(); if(t==="rcpt")loadReceipts(); if(t==="shelf")loadShelf(); if(t==="parts")loadParts(); if(t==="vend")loadVend(); if(t==="cust")loadCust(); if(t==="pd")loadPd(); if(t==="open")loadOpen(); if(t==="scans")loadScans(); if(t==="surveys")loadSurveys(); if(t==="rcvd")loadRcvd(); if(t==="steel")loadSteel(); if(t==="job")loadJob();}
 async function load(){ if(!TOKEN){ location.replace("./"); return; } if(!NAME){ try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }catch(e){ if(/not valid/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; } $("deck").innerHTML=`<div class="empty" style="padding:60px">${esc(e.message)}</div>`; return; } } try{ Q=await desk({action:"queue"}); }catch(e){ $("deck").innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } if(!VENDORS.length&&Q.vendors) VENDORS=Q.vendors.slice(); renderCats(); renderDeck(); loadAssistCount(); pollRcvd(); pushHint(); loadPeople(); loadCats(); }
 async function loadCats(){ try{ const j=await desk({action:"items"}); if(j.categories&&j.categories.length) CATS=j.categories; if(CUR&&TAB==="deck") renderSide(); }catch(e){} }
 async function loadPeople(){ try{ const j=await desk({action:"people"}); PEOPLE={office:j.office||[],shop:j.shop||[],crew:j.crew||[]}; if(CUR&&TAB==="deck") renderSide(); }catch(e){ toast("who to ask: "+e.message,true); } }
@@ -532,7 +532,7 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.loadSvc=loadSvc;window.svShow=svShow;window.svDeb=svDeb;window.svCust=svCust;window.svOpenCall=svOpenCall;window.svStart=svStart;window.svFromPerson=svFromPerson;window.svFromDeal=svFromDeal;window.svCreate=svCreate;window.svPick=svPick;window.svLine=svLine;window.svSet=svSet;window.svBook=svBook;window.svSay=svSay;window.svDoor=svDoor;window.svDoorSave=svDoorSave;window.svBookView=svBookView;window.svBookPull=svBookPull;window.svPlaceShop=svPlaceShop;window.svBoard=svBoard;window.SVC=SVC;window.loadCust=loadCust;window.cuFilter=cuFilter;window.cuDebounce=cuDebounce;window.cuPick=cuPick;window.cuSet=cuSet;window.cuTake=cuTake;window.cuTakeAll=cuTakeAll;window.pdOnward=pdOnward;window.opForCustomer=opForCustomer;window.opAllCust=opAllCust;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.loadCust=loadCust;window.cuFilter=cuFilter;window.cuDebounce=cuDebounce;window.cuPick=cuPick;window.cuSet=cuSet;window.cuTake=cuTake;window.cuTakeAll=cuTakeAll;window.pdOnward=pdOnward;window.opForCustomer=opForCustomer;window.opAllCust=opAllCust;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 window.opFilter=opFilter;window.opDebounce=opDebounce;window.opPick=opPick;window.opSet=opSet;window.opTakeSteel=opTakeSteel;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
@@ -885,412 +885,6 @@ async function pdTake(what,cid){
     if(/^exists/.test(e.message)){ if(confirm("A customer with that name is already in the book. Add anyway?")){ body.force=true;
       try{ const j=await desk(body); toast("added "+(j.label||"")); await loadPd(); }catch(x){ toast(x.message,true); } } return; }
     toast(e.message,true); }
-}
-
-
-/* =====================================================================
-   2.24 — THE SERVICE DESK.
-
-   Ryan: "I need to access those customers for service calls, so I need them
-   and as much info about their job in the system" ... "make a service book.
-   Contact info, door type, style, finish, hardware ... make the different
-   services offered clickable, with comment section, linked to job, date of
-   contact, calendar booking, best contact and time ... search by door type,
-   distance/radius ... and need access permissions too."
-
-   WHAT THE DATA SAYS, and why the screen looks like this:
-   - The customer book (1,222) and the Pipedrive history (3,350 deals, 252 won
-     back to 2021) have NO join — not one customer is linked. So the finder
-     shows THREE lists, labelled by which book they came from, and linking is
-     a press somebody makes on a call, never a guess.
-   - 1,221 of 1,222 customers have no door written down. The card says so in
-     plain words and puts "Write the door down" next to it, because a service
-     call is the only moment anyone will ever type it.
-   - No site has coordinates, so the radius box stays quiet until the shop is
-     placed. A radius that ranked by nothing would be worse than none.
-===================================================================== */
-var SVC={menu:null,q:"",show:"open",board:[],counts:{},find:null,cust:null,call:null,mode:"board",tmr:null,book:null,may:{}};
-
-async function loadSvc(){
-  if(!$("svList")) $("v_svc").innerHTML='<div class="empty">Loading…</div>';
-  try{ if(!SVC.menu) SVC.menu=await desk({action:"service_menu"}); SVC.may=SVC.menu.may||{}; }
-  catch(e){ $("v_svc").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
-  await svBoard();
-}
-async function svBoard(){
-  try{ const j=await desk({action:"service_board",show:SVC.show});
-       SVC.board=j.rows||[]; SVC.counts=j.counts||{};
-       const pip=$("svN"), n=SVC.counts.open||0; pip.textContent=n; pip.style.display=n?"inline":"none"; }
-  catch(e){ /* AN EMPTY LIST IS A LIE */
-    const t=`<div class="empty">⚑ ${esc(e.message)}</div>`;
-    if($("svList")) $("svList").innerHTML=t; else $("v_svc").innerHTML=t; return; }
-  svShell(); svLeft();
-}
-function svShell(){
-  if($("svList")) return;
-  $("v_svc").innerHTML=`<div class="rc"><div>
-    <div class="eyebrow">Service · who is calling</div>
-    <input id="svq" placeholder="name, street, town, phone, C-number" value="${esc(SVC.q)}" oninput="SVC.q=this.value;svDeb()">
-    <div class="chips" id="svChips"></div>
-    <div class="hint" style="margin:0 0 6px" id="svCount"></div>
-    <div class="list" id="svList"></div>
-    <div style="margin-top:10px"><button class="sm" onclick="svBookView()">The service book — search by door ↗</button></div>
-  </div><div id="svWork"><div class="empty">Pick a call, or type who is on the phone.</div></div></div>`;
-}
-function svDeb(){ clearTimeout(SVC.tmr); SVC.tmr=setTimeout(svFind,350); }
-const SVCHIP={open:"open",new:"new",scheduled:"scheduled","on site":"on site",waiting:"waiting",booked:"booked",mine:"mine",closed:"closed"};
-function svShow(k){ SVC.show=k; SVC.q=""; const q=$("svq"); if(q) q.value=""; SVC.find=null; svBoard(); }
-
-async function svFind(){
-  if(!SVC.q.trim()){ SVC.find=null; svBoard(); return; }
-  try{ SVC.find=await desk({action:"service_find",q:SVC.q}); }
-  catch(e){ $("svList").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
-  svLeft();
-}
-function svLeft(){
-  $("svChips").innerHTML=Object.keys(SVCHIP).map(k=>
-    `<button class="${!SVC.find&&SVC.show===k?"on":""}" onclick="svShow('${k}')">${SVCHIP[k]}${SVC.counts[k]==null?"":" "+SVC.counts[k]}</button>`).join("");
-  if(SVC.find) return svFindList();
-  $("svCount").textContent=`${SVC.board.length} shown`;
-  $("svList").innerHTML=SVC.board.map(r=>{
-    const c=r.customer||{}, who=c.display_name||c.name||"—";
-    const when=r.booked_start?new Date(r.booked_start).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):null;
-    const doing=(r.doing||[]).map(svcName).filter(Boolean).join(" · ");
-    return `<div class="rr ${SVC.call&&SVC.call.call&&SVC.call.call.id===r.id?"on":""}" onclick="svOpenCall('${r.id}')">
-      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">S-${r.call_no||"—"}</div>
-      <div><b>${esc(who)}</b><div class="m">${[r.status,when,r.assigned_to].filter(Boolean).map(esc).join(" · ")}</div>
-      <div class="m">${doing?esc(doing):`<span class="need">nothing chosen yet</span>`}</div></div></div>`;
-  }).join("")||'<div class="empty">Nothing here.</div>';
-}
-function svcName(o){ const m=(SVC.menu&&SVC.menu.services)||[]; const x=m.find(y=>y.opt_id===o); return x?x.name:o; }
-
-function svFindList(){
-  const f=SVC.find||{}, cu=f.customers||[], pe=f.people||[], dl=f.deals||[];
-  $("svCount").textContent=`${cu.length} in the book · ${pe.length} in Pipedrive · ${dl.length} deals`;
-  const group=(t,inner)=>`<div class="eyebrow" style="margin:10px 0 4px">${t}</div>${inner||'<div class="m" style="padding:2px 0 6px">none</div>'}`;
-  $("svList").innerHTML=
-    group("In the book", cu.map(r=>`<div class="rr" onclick="svCust('${r.id}')">
-      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">${r.customer_no?("C-"+r.customer_no):"—"}</div>
-      <div><b>${esc(r.display_name||r.name||"—")}</b>
-      <div class="m">${[r.city,r.phone,r.email].filter(Boolean).map(esc).join(" · ")||"—"}</div>
-      <div class="m">${r.known?`<span class="use">${r.jobs} job · ${r.quotes} quote · ${r.openings} door · ${r.calls} call</span>`:`<span class="need">nothing on file</span>`}</div></div></div>`).join(""))
-    + group("Pipedrive — the person", pe.map(r=>`<div class="rr" onclick="svFromPerson(${r.person_id})">
-      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bronze2)">PD</div>
-      <div><b>${esc(r.name||"—")}</b>
-      <div class="m">${[r.org_name,(r.phones_t||"").split(" ")[0],(r.emails_t||"").split(" ")[0]].filter(Boolean).map(esc).join(" · ")||"—"}</div>
-      <div class="m">${r.won_deals?`<span class="use">${r.won_deals} won · last ${esc(String(r.last_won||"").slice(0,7))}</span>`:'<span class="m">no won deal</span>'}</div></div></div>`).join(""))
-    + group("Pipedrive — the deal", dl.map(r=>`<div class="rr" onclick="svFromDeal(${r.deal_id},${r.person_id||"null"})">
-      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:${r.status==="won"?"var(--bronze2)":"var(--mute)"}">${r.status==="won"?"WON":esc((r.status||"").slice(0,4))}</div>
-      <div><b>${esc(r.title||"—")}</b>
-      <div class="m">${[r.won_at?String(r.won_at).slice(0,10):null,r.site_address,r.person_name].filter(Boolean).map(esc).join(" · ")||"—"}</div></div></div>`).join(""));
-}
-
-/* ---- the customer card: everything we hold, each thing in its own panel --- */
-async function svCust(id){
-  SVC.mode="cust"; SVC.call=null;
-  $("svWork").innerHTML='<div class="empty">Loading…</div>';
-  try{ SVC.cust=await desk({action:"service_history",customer_id:id}); }
-  catch(e){ $("svWork").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
-  svCard();
-}
-function svCard(){
-  const j=SVC.cust||{}, c=j.customer||{}, may=j.may||{};
-  const doors=(j.doors||[]);
-  const dtxt=d=>[d.style,d.system,d.config_id,d.leaves?d.leaves+" leaf":null,
-                 (d.w_in&&d.h_in)?(d.w_in+"″ × "+d.h_in+"″"):null,
-                 d.finish,d.glass,d.cladding,d.motorized?"motorized":null].filter(Boolean).map(esc).join(" · ");
-  const doorBox=`<div class="box"><h3>The door</h3>
-    ${doors.length?doors.map(d=>`<div class="f2"><div><b>${esc(d.door||"door")}</b>
-       <div class="m">${dtxt(d)||"nothing recorded on it yet"}</div>
-       <div class="m">${[d.site_address,d.installed_on?("installed "+String(d.installed_on).slice(0,10)):null,d.calls?d.calls+" call":null].filter(Boolean).map(esc).join(" · ")}</div></div>
-       <button class="sm" onclick="svDoor('${d.opening_id}')">Edit</button></div>`).join("")
-      :`<div class="m">no door written down for them — nobody has ever typed one in</div>`}
-    ${may.service?`<button class="sm" style="margin-top:8px" onclick="svDoor('')">Write a door down</button>`:""}
-    </div>`;
-
-  const paper=`<div class="box"><h3>Their paperwork</h3>
-    <div class="m">${[j.jobs.length?j.jobs.length+" job"+(j.jobs.length>1?"s":""):null,
-                      j.quotes.length?j.quotes.length+" quote"+(j.quotes.length>1?"s":""):null,
-                      j.surveys.length?j.surveys.length+" survey"+(j.surveys.length>1?"s":""):null,
-                      j.calls.length?j.calls.length+" service call"+(j.calls.length>1?"s":""):null].filter(Boolean).join(" · ")||"none on file"}</div>
-    ${j.jobs.map(x=>`<div class="m">${esc([x.job_no,x.name,x.stage,x.contract_date].filter(Boolean).join(" · "))}</div>`).join("")}
-    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-      <a class="btn sm" href="agree.html?c=${encodeURIComponent(c.id||"")}">Agreement ↗</a>
-      <button class="sm" onclick="opForCustomer('${c.id}')">Openings</button>
-    </div></div>`;
-
-  const pd=j.pd, deals=(j.pd_deals||[]);
-  const pdBox=`<div class="box"><h3>What Pipedrive remembers</h3>
-    ${c.pd_person_id
-      ? (pd?`<div class="m">${pd.won_deals} won · ${pd.deals} in total · ${esc(String(pd.first_won||"").slice(0,10))} to ${esc(String(pd.last_won||"").slice(0,10))}</div>`
-           :'<div class="m">linked, but no deals against that person</div>')
-        + deals.slice(0,12).map(d=>`<div class="m">${esc([d.status==="won"?"✓":"·",String(d.won_at||d.add_time||"").slice(0,10),d.title,d.site_address].filter(Boolean).join(" · "))}</div>`).join("")
-      : `<div class="m"><span class="need">not linked to Pipedrive</span> — search their name above and press a Pipedrive row to open the call from there; the link is made then</div>`}
-    </div>`;
-
-  const calls=(j.calls||[]);
-  const callBox=`<div class="box"><h3>Service calls</h3>
-    ${calls.length?calls.map(x=>`<div class="f2"><div><b>S-${x.call_no}</b>
-      <div class="m">${esc([String(x.opened_at||"").slice(0,10),x.status,x.reported].filter(Boolean).join(" · "))}</div></div>
-      <button class="sm" onclick="svOpenCall('${x.id}')">Open</button></div>`).join(""):'<div class="m">none yet</div>'}
-    </div>`;
-
-  $("svWork").innerHTML=`<div class="panel">
-    <h3>${c.customer_no?("C-"+c.customer_no+" · "):""}${esc(c.display_name||c.name||"—")}</h3>
-    <div class="m" style="margin-bottom:8px">${[c.status,c.phone,c.email,c.site_address,c.city].filter(Boolean).map(esc).join(" · ")||"a name and nothing else on the record"}</div>
-    ${may.service?`<button class="go" onclick="svStart('${c.id}')">Start a service call</button>`:""}
-    ${doorBox}${callBox}${paper}${pdBox}
-  </div>`;
-}
-
-/* a Pipedrive-only caller: the customer row is made when the call is opened */
-function svFromPerson(pid){
-  const p=((SVC.find||{}).people||[]).find(x=>x.person_id===pid); if(!p) return;
-  svNewCall({name:p.name,pd_person_id:pid,phone:(p.phones_t||"").split(" ")[0]||"",email:(p.emails_t||"").split(" ")[0]||"",site_address:p.pd_address||""});
-}
-function svFromDeal(did,pid){
-  const d=((SVC.find||{}).deals||[]).find(x=>x.deal_id===did); if(!d) return;
-  svNewCall({name:d.person_name||d.org_name||d.title,pd_deal_id:did,pd_person_id:pid||null,site_address:d.site_address||""});
-}
-function svStart(cid){ svNewCall({customer_id:cid}); }
-
-/* the intake form. Nothing here is a wall except a name. */
-function svNewCall(seed){
-  SVC.mode="new"; SVC.seed=seed||{};
-  const s=SVC.seed;
-  $("svWork").innerHTML=`<div class="panel">
-    <h3>New service call</h3>
-    <div class="m" style="margin-bottom:8px">${s.customer_id?"an existing customer":"they are not in the book yet — opening the call writes them in and gives them a C-number"}</div>
-    ${s.customer_id?"":`<div class="f2"><div class="m">name</div><input id="sv_name" value="${esc(s.name||"")}" placeholder="who is calling"></div>`}
-    <div class="f2"><div class="m">phone</div><input id="sv_phone" value="${esc(s.phone||"")}" placeholder="—"></div>
-    <div class="f2"><div class="m">e-mail</div><input id="sv_email" value="${esc(s.email||"")}" placeholder="—"></div>
-    <div class="f2"><div class="m">site address</div><input id="sv_site" value="${esc(s.site_address||"")}" placeholder="—"></div>
-    <div class="f2"><div class="m">town</div><input id="sv_city" placeholder="—"></div>
-    <div class="f2"><div class="m">best person</div><input id="sv_best" placeholder="—"></div>
-    <div class="f2"><div class="m">best time</div><input id="sv_besttime" placeholder="—"></div>
-    <div class="f2"><div class="m">what they said</div><input id="sv_reported" placeholder="—"></div>
-    <div class="box"><h3>What they are asking for</h3><div id="sv_pick"></div></div>
-    <button class="go" onclick="svCreate()">Open the call</button>
-  </div>`;
-  SVC.picked=[]; svPicks("sv_pick");
-}
-/* THE CLICKABLE SERVICES, by band. Data (0114), never a list in the page. */
-function svPicks(into){
-  const m=(SVC.menu&&SVC.menu.services)||[];
-  const bands={}; for(const x of m) (bands[x.band]||(bands[x.band]=[])).push(x);
-  const BN={adjust:"Adjustment",auto:"Operator & automation",maint:"Maintenance",finish:"Finish",glass:"Glass & screens",parts:"Parts",visit:"A visit"};
-  $(into).innerHTML=Object.keys(bands).map(bk=>`<div class="eyebrow" style="margin:8px 0 3px">${esc(BN[bk]||bk)}</div>
-    <div class="chips">${bands[bk].map(x=>`<button class="${SVC.picked.indexOf(x.opt_id)>=0?"on":""}" onclick="svPick('${x.opt_id}','${into}')">${esc(x.name)}</button>`).join("")}</div>`).join("");
-}
-function svPick(o,into){ const i=SVC.picked.indexOf(o); if(i>=0) SVC.picked.splice(i,1); else SVC.picked.push(o); svPicks(into); }
-
-async function svCreate(){
-  const g=id=>{ const e=$(id); return e?e.value.trim():""; };
-  const body={action:"service_open",services:SVC.picked,
-    customer_id:SVC.seed.customer_id||undefined, name:g("sv_name")||SVC.seed.name||undefined,
-    pd_person_id:SVC.seed.pd_person_id||undefined, pd_deal_id:SVC.seed.pd_deal_id||undefined,
-    phone:g("sv_phone"),email:g("sv_email"),site_address:g("sv_site"),city:g("sv_city"),
-    best_contact:g("sv_best"),best_time:g("sv_besttime"),reported:g("sv_reported")};
-  try{ const j=await desk(body); toast("S-"+j.call_no+" opened"); await svOpenCall(j.call.id); svBoard(); }
-  catch(e){ toast(e.message,true); }
-}
-
-/* ---- the call itself ---------------------------------------------------- */
-async function svOpenCall(id){
-  SVC.mode="call";
-  $("svWork").innerHTML='<div class="empty">Loading…</div>';
-  try{ SVC.call=await desk({action:"service_get",call_id:id}); }
-  catch(e){ $("svWork").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
-  svCallCard();
-}
-function svCallCard(){
-  const j=SVC.call||{}, c=j.call||{}, cu=j.customer||{}, may=j.may||{}, d=j.door;
-  SVC.picked=(j.lines||[]).map(l=>l.opt_id);
-  const F=(k,lbl,v,ph)=>`<div class="f2"><div class="m">${lbl}</div><input id="sv_f_${k}" value="${esc(v||"")}" placeholder="${ph||"—"}" onchange="svSet('${k}',this.value)"></div>`;
-  const STAT=["new","scheduled","on site","waiting","closed"];
-  const bs=c.booked_start?new Date(c.booked_start):null;
-  const iso=bs?new Date(bs.getTime()-bs.getTimezoneOffset()*60000).toISOString().slice(0,16):"";
-  const money=may.money?`<div class="box"><h3>Money</h3>
-      <div class="f2"><div class="m">charge</div><input value="${esc(c.charge==null?"":String(c.charge))}" placeholder="—" onchange="svSet('charge',this.value)"></div>
-      <div class="f2"><div class="m">warranty</div><input value="${c.warranty==null?"":(c.warranty?"yes":"no")}" placeholder="yes / no" onchange="svSet('warranty',this.value.toLowerCase().startsWith('y'))"></div>
-      </div>`:"";
-  $("svWork").innerHTML=`<div class="panel">
-    <h3>S-${c.call_no} · ${esc(cu.display_name||cu.name||"—")}${cu.customer_no?(" · C-"+cu.customer_no):""}</h3>
-    <div class="m" style="margin-bottom:8px">${[String(c.opened_at||"").slice(0,10),"by "+esc(c.opened_by||"—"),c.came_in].filter(Boolean).join(" · ")}</div>
-    <div class="chips">${STAT.map(x=>`<button class="${c.status===x?"on":""}" onclick="svSet('status','${x}')">${x}</button>`).join("")}</div>
-
-    <div class="box"><h3>What they are asking for</h3><div id="sv_lines"></div></div>
-
-    ${F("reported","what they said",c.reported)}
-    ${F("found","what we found",c.found)}
-    ${F("fixed","what we did",c.fixed)}
-
-    <div class="box"><h3>Getting hold of them</h3>
-      ${F("contact_name","who",c.contact_name)}
-      ${F("contact_phone","phone",c.contact_phone)}
-      ${F("contact_email","e-mail",c.contact_email)}
-      ${F("best_contact","best person",c.best_contact)}
-      ${F("best_time","best time",c.best_time)}
-      ${F("called_on","date of contact",c.called_on)}
-      ${F("site_address","site",c.site_address)}
-      ${F("city","town",c.city)}
-    </div>
-
-    <div class="box"><h3>Booked in</h3>
-      <div class="f2"><div class="m">when</div><input type="datetime-local" value="${iso}" onchange="svBook(this.value)"></div>
-      ${F("assigned_to","who is going",c.assigned_to)}
-      <div class="m">${bs?esc(bs.toLocaleString()):"not booked"}${c.booked_by?(" · booked by "+esc(c.booked_by)):""}</div>
-    </div>
-
-    <div class="box"><h3>The door</h3>
-      ${d?`<div class="m">${esc([d.door,d.style,d.system,d.finish,d.glass,d.motorized?"motorized":null].filter(Boolean).join(" · "))}</div>
-           <button class="sm" style="margin-top:6px" onclick="svDoor('${d.opening_id}')">Edit the door</button>`
-        :`<div class="m">no door on this call</div>${may.service?`<button class="sm" style="margin-top:6px" onclick="svDoor('')">Write the door down</button>`:""}`}
-    </div>
-
-    ${money}
-
-    <div class="box"><h3>Comments</h3>
-      <div class="f2"><input id="sv_say" placeholder="what happened"><button class="sm" id="sv_add" onclick="svSay()">Add</button></div>
-      <div id="sv_comments">${(j.comments||[]).map(x=>`<div class="m" style="margin-top:5px"><b>${esc(x.by||"—")}</b> · ${esc(new Date(x.at).toLocaleString())}<br>${esc(x.body)}</div>`).join("")||'<div class="m">none yet</div>'}</div>
-    </div>
-
-    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-      <button class="sm" onclick="svCust('${cu.id||""}')">Their card</button>
-      <a class="btn sm" href="agree.html?c=${encodeURIComponent(cu.id||"")}">Agreement ↗</a>
-    </div>
-  </div>`;
-  svLines();
-}
-function svLines(){
-  const m=(SVC.menu&&SVC.menu.services)||[];
-  const bands={}; for(const x of m) (bands[x.band]||(bands[x.band]=[])).push(x);
-  const BN={adjust:"Adjustment",auto:"Operator & automation",maint:"Maintenance",finish:"Finish",glass:"Glass & screens",parts:"Parts",visit:"A visit"};
-  $("sv_lines").innerHTML=Object.keys(bands).map(bk=>`<div class="eyebrow" style="margin:8px 0 3px">${esc(BN[bk]||bk)}</div>
-    <div class="chips">${bands[bk].map(x=>`<button class="${SVC.picked.indexOf(x.opt_id)>=0?"on":""}" onclick="svLine('${x.opt_id}')">${esc(x.name)}</button>`).join("")}</div>`).join("");
-}
-async function svLine(o){
-  const c=(SVC.call||{}).call; if(!c) return;
-  const on=SVC.picked.indexOf(o)>=0;
-  /* paint first so the press feels instant, then confirm by read-back */
-  if(on) SVC.picked.splice(SVC.picked.indexOf(o),1); else SVC.picked.push(o);
-  svLines();
-  try{ await desk({action:"service_line",call_id:c.id,opt_id:o,how:on?"off":"on"});
-       const j=await desk({action:"service_get",call_id:c.id});
-       SVC.call=j; SVC.picked=(j.lines||[]).map(l=>l.opt_id); svLines(); }
-  catch(e){ toast(e.message,true); svOpenCall(c.id); }
-}
-async function svSet(k,v){
-  const c=(SVC.call||{}).call; if(!c) return;
-  try{ const r=await desk({action:"service_set",call_id:c.id,fields:{[k]:v}});
-       /* A CONTROL MUST NEVER LIE ABOUT WHAT LANDED */
-       if((r.refused||[]).length){ toast("⚑ "+r.refused.join(", ")+" — not yours to change",true); }
-       else toast("saved");
-       SVC.call.call=r.call; if(k==="status"||k==="assigned_to") svBoard(); }
-  catch(e){ toast(e.message,true); }
-}
-async function svBook(v){
-  const c=(SVC.call||{}).call; if(!c) return;
-  try{ const r=await desk({action:"service_set",call_id:c.id,fields:{booked_start:v?new Date(v).toISOString():"",status:v?"scheduled":c.status}});
-       if((r.refused||[]).length) toast("⚑ "+r.refused.join(", "),true); else toast("booked");
-       await svOpenCall(c.id); svBoard(); }
-  catch(e){ toast(e.message,true); }
-}
-async function svSay(){
-  const c=(SVC.call||{}).call; if(!c) return;
-  const el=$("sv_say"), body=el.value.trim(); if(!body) return;
-  try{ await desk({action:"service_say",call_id:c.id,body}); el.value=""; await svOpenCall(c.id); }
-  catch(e){ toast(e.message,true); }
-}
-
-/* ---- the door record ---------------------------------------------------- */
-function svDoor(oid){
-  const menu=SVC.menu||{}, cu=(SVC.cust&&SVC.cust.customer)||((SVC.call||{}).customer)||{};
-  const cid=cu.id||"";
-  let d={};
-  if(oid){ const src=((SVC.cust||{}).doors||[]).find(x=>x.opening_id===oid) || ((SVC.call||{}).door) || {}; d=src; }
-  const sel=(k,list,val,txt)=>`<div class="f2"><div class="m">${txt}</div><select id="dr_${k}">
-      <option value="">—</option>${list.map(x=>`<option value="${esc(x.v)}"${String(val||"")===String(x.v)?" selected":""}>${esc(x.n)}</option>`).join("")}</select></div>`;
-  const styles=(menu.styles||[]).map(x=>({v:x.style,n:x.name||x.style}));
-  const cfgs=(menu.configs||[]).map(x=>({v:x.config_id,n:x.label||x.config_id}));
-  const fins=(menu.finishes||[]).map(x=>({v:x.name,n:[x.brand,x.name].filter(Boolean).join(" ")}));
-  const g=k=>((menu.vocab||{})[k]||[]).map(x=>({v:x.opt_id,n:x.name}));
-  $("svWork").innerHTML=`<div class="panel">
-    <h3>${oid?"The door":"Write the door down"}</h3>
-    <div class="m" style="margin-bottom:8px">${esc(cu.display_name||cu.name||"")}</div>
-    <div class="f2"><div class="m">what to call it</div><input id="dr_name" value="${esc(d.door||d.name||"")}" placeholder="front, patio, entry…"></div>
-    ${sel("style",styles,d.style,"style")}
-    ${sel("system",g("trk_sys"),d.system,"system")}
-    ${sel("config_id",cfgs,d.config_id,"configuration")}
-    <div class="f2"><div class="m">leaves</div><input id="dr_leaves" value="${esc(d.leaves==null?"":String(d.leaves))}" placeholder="—"></div>
-    <div class="f2"><div class="m">width (in)</div><input id="dr_w_in" value="${esc(d.w_in==null?"":String(d.w_in))}" placeholder="—"></div>
-    <div class="f2"><div class="m">height (in)</div><input id="dr_h_in" value="${esc(d.h_in==null?"":String(d.h_in))}" placeholder="—"></div>
-    ${sel("finish",fins,d.finish,"finish")}
-    ${sel("glass",g("glass"),d.glass,"glass")}
-    ${sel("cladding",g("clad"),d.cladding,"cladding")}
-    ${sel("threshold",g("threshold"),d.threshold,"threshold")}
-    ${sel("motorized",g("auto"),d.motorized,"operator")}
-    <div class="f2"><div class="m">site address</div><input id="dr_site_address" value="${esc(d.site_address||"")}" placeholder="—"></div>
-    <div class="f2"><div class="m">installed on</div><input id="dr_installed_on" value="${esc(d.installed_on?String(d.installed_on).slice(0,10):"")}" placeholder="YYYY-MM-DD"></div>
-    <div class="f2"><div class="m">notes</div><input id="dr_notes" value="${esc(d.notes||"")}" placeholder="—"></div>
-    <button class="go" onclick="svDoorSave('${oid}','${cid}')">Save the door</button>
-    <button class="sm" onclick="${SVC.mode==='call'&&SVC.call?`svOpenCall('${(SVC.call.call||{}).id}')`:`svCust('${cid}')`}">Back</button>
-  </div>`;
-}
-async function svDoorSave(oid,cid){
-  const g=k=>{ const e=$("dr_"+k); return e?String(e.value).trim():""; };
-  const fields={};
-  for(const k of ["name","style","system","config_id","leaves","w_in","h_in","finish","glass","cladding","threshold","motorized","site_address","installed_on","notes"]) fields[k]=g(k);
-  for(const k of ["leaves","w_in","h_in"]) if(fields[k]!=="") fields[k]=Number(fields[k]);
-  try{ const j=await desk({action:"door_set",opening_id:oid||undefined,customer_id:cid||undefined,
-        call_id:(SVC.mode==="call"&&SVC.call&&SVC.call.call)?SVC.call.call.id:undefined, fields});
-       toast("the door is on the record");
-       if(SVC.mode==="call"&&SVC.call&&SVC.call.call) svOpenCall(SVC.call.call.id); else svCust(cid); }
-  catch(e){ toast(e.message,true); }
-}
-
-/* ---- the service book: search by door ----------------------------------- */
-async function svBookView(){
-  SVC.mode="book";
-  $("svWork").innerHTML='<div class="empty">Loading…</div>';
-  await svBookPull();
-}
-async function svBookPull(){
-  const g=id=>{ const e=$(id); return e?e.value:""; };
-  const body={action:"service_book",q:g("bk_q"),style:g("bk_style"),system:g("bk_system"),finish:g("bk_finish"),city:g("bk_city")};
-  const rad=g("bk_radius"); if(rad) body.radius=Number(rad);
-  let j; try{ j=await desk(body); }
-  catch(e){ $("svWork").innerHTML=`<div class="panel"><div class="empty">⚑ ${esc(e.message)}</div></div>`; return; }
-  SVC.book=j;
-  const menu=SVC.menu||{};
-  const opt=(list,val)=>`<option value="">—</option>`+list.map(x=>`<option value="${esc(x.v)}"${val===x.v?" selected":""}>${esc(x.n)}</option>`).join("");
-  const styles=(menu.styles||[]).map(x=>({v:x.style,n:x.name||x.style}));
-  const systems=((menu.vocab||{}).trk_sys||[]).map(x=>({v:x.opt_id,n:x.name}));
-  const fins=(menu.finishes||[]).map(x=>({v:x.name,n:[x.brand,x.name].filter(Boolean).join(" ")}));
-  $("svWork").innerHTML=`<div class="panel">
-    <h3>The service book</h3>
-    <div class="m" style="margin-bottom:8px">${j.count} door${j.count===1?"":"s"} on record${j.shop_placed?"":" · the shop has no location set, so distance is off"}</div>
-    <div class="f2"><div class="m">anything</div><input id="bk_q" value="${esc(g("bk_q"))}" placeholder="name, street, town" oninput="clearTimeout(SVC.tmr);SVC.tmr=setTimeout(svBookPull,350)"></div>
-    <div class="f2"><div class="m">style</div><select id="bk_style" onchange="svBookPull()">${opt(styles,g("bk_style"))}</select></div>
-    <div class="f2"><div class="m">system</div><select id="bk_system" onchange="svBookPull()">${opt(systems,g("bk_system"))}</select></div>
-    <div class="f2"><div class="m">finish</div><select id="bk_finish" onchange="svBookPull()">${opt(fins,g("bk_finish"))}</select></div>
-    <div class="f2"><div class="m">town</div><input id="bk_city" value="${esc(g("bk_city"))}" placeholder="—" oninput="clearTimeout(SVC.tmr);SVC.tmr=setTimeout(svBookPull,350)"></div>
-    ${j.shop_placed?`<div class="f2"><div class="m">within (miles)</div><input id="bk_radius" value="${esc(g("bk_radius"))}" placeholder="—" oninput="clearTimeout(SVC.tmr);SVC.tmr=setTimeout(svBookPull,350)"></div>`
-      :`<div class="box"><h3>Distance</h3><div class="m">${j.sites_with_coordinates} of ${j.count} sites have coordinates, and the shop has no location yet — set it and this sorts by drive-out distance</div>
-        ${SVC.may.money?`<div class="f2"><input id="bk_lat" placeholder="shop latitude"><input id="bk_lon" placeholder="shop longitude"><button class="sm" onclick="svPlaceShop()">Place the shop</button></div>`:""}</div>`}
-    <div class="list" style="margin-top:8px">${(j.rows||[]).map(r=>`<div class="rr" onclick="svCust('${r.customer_id}')">
-      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">${r.customer_no?("C-"+r.customer_no):"—"}</div>
-      <div><b>${esc(r.customer||"—")}</b>
-      <div class="m">${esc([r.door,r.style,r.system,r.finish,r.leaves?r.leaves+" leaf":null].filter(Boolean).join(" · "))||"—"}</div>
-      <div class="m">${esc([r.site_address,r.city,r.miles!=null?r.miles+" mi":null,r.calls?r.calls+" call":null].filter(Boolean).join(" · "))}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>'}</div>
-    <button class="sm" style="margin-top:8px" onclick="svBoard()">Back to the calls</button>
-  </div>`;
-}
-async function svPlaceShop(){
-  const lat=$("bk_lat").value.trim(), lon=$("bk_lon").value.trim();
-  if(!lat||!lon){ toast("both numbers",true); return; }
-  try{ await desk({action:"shop_origin_set",lat:Number(lat),lon:Number(lon)}); toast("the shop is placed"); svBookPull(); }
-  catch(e){ toast(e.message,true); }
 }
 
 /* =====================================================================

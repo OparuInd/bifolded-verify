@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141414">
+<title>Tungsten Royce — Service</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#141414;--bg2:#191919;--card:#1f1f1f;--card2:#262626;--line:#2c2c2c;--line2:#3a3a3a;--fg:#f4f2ee;--fg2:#cfcac2;--mute:#8f8a82;--mute2:#66625c;
+      --bronze:#a98a63;--bronze2:#c9ab7f;--bronze-ink:#141414;--ok:#6cba85;--warn:#d9a441;--bad:#d95c5c;--info:#7fb0da;--r:4px;
+      --fh:"Familjen Grotesk",ui-sans-serif,system-ui,sans-serif;--fb:"Inter",ui-sans-serif,system-ui,sans-serif;--fm:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 var(--fb)}
+header{display:flex;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);background:#161616;position:sticky;top:0;z-index:10}
+.wm{font-family:var(--fh);font-weight:700;letter-spacing:.12em;font-size:13px}.wm b{color:var(--bronze)}
+header h1{font-family:var(--fh);font-size:16px;font-weight:600;margin:0}header .v{color:var(--mute2);font-size:12px}
+.tabs{display:flex;gap:2px;margin-left:14px}.tabs button,.tabs a{white-space:nowrap}.tabs button{border:1px solid transparent;background:transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600}.tabs button.on{background:var(--card2);color:var(--bronze2);border-color:var(--line2)}.tabs .pip{font-family:var(--fm);font-size:10.5px;background:var(--bad);color:#fff;border-radius:9px;padding:0 6px;margin-left:5px}
+header .r{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mute)}
+.eyebrow{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+button{font:inherit;color:inherit;cursor:pointer;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);padding:8px 12px;font-weight:600}a.btn{font:inherit;color:inherit;cursor:pointer;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);padding:8px 12px;font-weight:600;text-decoration:none;display:inline-block}a.btn:hover{border-color:var(--bronze)}a.btn.sm{padding:5px 9px;font-size:12px}button:hover{border-color:var(--bronze)}button:disabled{opacity:.4;cursor:default}
+button.go{background:var(--bronze);border-color:var(--bronze);color:var(--bronze-ink)}button.ghost{background:transparent}button.sm{padding:5px 9px;font-size:12px}button.ok{background:#1f3a29;border-color:#2f5a3c;color:var(--ok)}button.warn{background:#2a2418;border-color:#5a4a1e;color:var(--warn)}button.bad{background:#3a1f1f;border-color:#5a2f2f;color:var(--bad)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r);padding:8px 10px;font-size:14px;width:100%}input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bronze)}
+main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
+.cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}.cats span{font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line2);border-radius:14px;padding:5px 11px;color:var(--mute);cursor:pointer}.cats span.on{border-color:var(--bronze);color:var(--bronze2);background:#2a2418}.cats span b{color:var(--fg2);margin-left:5px;font-weight:500}
+.deckwrap{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}
+.deck{position:relative;min-height:520px;perspective:1200px}
+.dc{position:absolute;left:0;right:0;top:0;background:var(--card);border:1px solid var(--line);border-radius:8px;transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease,box-shadow .2s ease;overflow:hidden;will-change:transform}
+.dc.top{z-index:3;border-color:var(--bronze);box-shadow:0 2px 0 rgba(255,255,255,.04) inset,0 12px 28px rgba(0,0,0,.45),0 34px 70px rgba(0,0,0,.6);animation:dealIn .42s cubic-bezier(.22,1.2,.36,1) backwards;cursor:grab}
+.dc.top.swiping{transition:none;cursor:grabbing;box-shadow:0 24px 48px rgba(0,0,0,.55),0 60px 100px rgba(0,0,0,.65)}
+.dc.s1{transform:translateY(30px) scale(.975) rotate(-1.1deg);z-index:2;background:#242424;opacity:.95;box-shadow:0 8px 20px rgba(0,0,0,.45);pointer-events:none}
+.dc.s2{transform:translateY(56px) scale(.95) rotate(1.3deg);z-index:1;background:#282828;opacity:.8;box-shadow:0 6px 16px rgba(0,0,0,.35);pointer-events:none}
+.dc.s1 > *,.dc.s2 > *{visibility:hidden}
+.dc.s1::after{content:"NEXT · " attr(data-title);visibility:visible;position:absolute;left:16px;right:16px;bottom:9px;font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--bronze2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes dealIn{from{transform:translateY(40px) scale(.96) rotate(-2deg);opacity:0}to{transform:none;opacity:1}}
+.dc.top.fly-l{transform:translateX(-130%) rotate(-14deg)!important;opacity:0}.dc.top.fly-r{transform:translateX(130%) rotate(14deg)!important;opacity:0}.dc.top.fly-d{transform:translateY(60px) scale(.9)!important;opacity:0}
+.dc.top.wash-l{background:linear-gradient(240deg,rgba(217,164,65,.16),transparent 55%),var(--card)}.dc.top.wash-r{background:linear-gradient(120deg,rgba(143,138,130,.14),transparent 55%),var(--card)}
+.swhint{position:absolute;top:46%;font-family:var(--fm);font-size:14px;letter-spacing:.14em;text-transform:uppercase;padding:8px 14px;border-radius:3px;opacity:0;transition:opacity .15s;pointer-events:none;z-index:5}.swhint.l{right:18px;background:#2a2418;color:var(--warn);border:1px solid #5a4a1e}.swhint.r{left:18px;background:#262626;color:var(--fg2);border:1px solid var(--line2)}
+.shuffle{animation:shuf .5s ease}@keyframes shuf{0%{transform:rotate(0)}25%{transform:translateX(-18px) rotate(-3deg)}55%{transform:translateX(16px) rotate(2.5deg)}100%{transform:none}}
+.deckbar{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mute)}.deckbar .dots{display:flex;gap:3px;flex:1;overflow:hidden}.deckbar .dots i{width:5px;height:5px;border-radius:50%;background:var(--line2);flex:0 0 auto}.deckbar .dots i.on{background:var(--bronze)}.deckbar .dots i.done{background:#2f5a3c}.deckbar kbd{font-family:var(--fm);font-size:10px;border:1px solid var(--line2);border-radius:3px;padding:1px 5px;color:var(--mute2)}
+.photo .bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(24px) saturate(1.2);opacity:.55;transform:scale(1.15)}
+.photo img{position:relative}
+.photo{position:relative;background:#0f0f0f;aspect-ratio:16/10;overflow:hidden;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line)}
+.photo img{width:100%;height:100%;object-fit:contain}
+.photo .nop{text-align:center;color:var(--mute);position:relative;z-index:1}.photo .nop b{display:block;font-family:var(--fh);font-size:18px;color:var(--fg2);margin-bottom:8px}.photo .nop::before{content:"";display:block;width:64px;height:64px;margin:0 auto 14px;border-radius:50%;border:1px dashed var(--line2);background:radial-gradient(circle at 50% 40%,rgba(201,171,127,.18),transparent 70%)}.photo:has(.nop){background:radial-gradient(ellipse at 50% 60%,#1a1815,#0f0f0f 70%)}
+.photo .cap{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}
+.body{padding:14px 16px}
+.cat{font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--bronze2)}
+.ttl{font-family:var(--fh);font-size:24px;font-weight:600;letter-spacing:-.01em;line-height:1.2;margin:4px 0 6px}
+.gaps{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}.gap{font-family:var(--fm);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid #5a4a1e;color:var(--warn);border-radius:3px;padding:2px 7px}.gap.have{border-color:#2f5a3c;color:var(--ok)}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;color:var(--mute)}.kv b{display:block;font-family:var(--fm);font-size:14px;color:var(--fg2);font-weight:500}
+.side{display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.panel h2{font-family:var(--fh);font-size:15px;font-weight:600;margin:0 0 10px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}.f label{font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}.f label i{color:var(--warn);font-style:normal;margin-left:6px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.four{display:grid;grid-template-columns:1fr 1fr;gap:8px}.four button{padding:14px 10px;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:3px}.four button small{font-weight:400;font-size:11px;color:var(--mute)}.four button.go small{color:#3a2c14}
+.hint{font-size:12px;color:var(--mute2)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.chips button{font-family:var(--fm);font-size:11px;padding:4px 9px;border-radius:11px;border:1px solid var(--line2);background:var(--card);color:var(--mute);font-weight:600}
+.chips button.on{background:var(--bronze);border-color:var(--bronze);color:#231a09}
+.chips button b{font-family:var(--fm);font-weight:700;margin-left:4px;color:var(--bronze2)}
+.chips button.on b{color:#231a09}
+.chips button.off{opacity:.35}
+.kinds{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 0}
+.kinds label{font-family:var(--fm);font-size:11px;padding:4px 9px;border-radius:11px;border:1px solid var(--line2);background:var(--card);color:var(--mute);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0}
+.kinds label.on{background:var(--bronze);border-color:var(--bronze);color:#231a09}
+.kinds label input{width:auto;margin:0;accent-color:#231a09}
+.assist{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;background:var(--card);display:grid;grid-template-columns:120px 1fr;gap:14px}
+.assist img{width:120px;height:90px;object-fit:cover;border-radius:3px;background:#000}
+.assist .who{font-size:12px;color:var(--mute)}.assist .ttl{font-size:17px}
+.assist.mine{border-color:var(--bronze)}
+.ans{margin-top:6px;padding:8px 10px;border-left:2px solid var(--ok);background:var(--bg2);font-size:13px}
+.rc{display:grid;grid-template-columns:300px 1fr;gap:18px}
+.sctop{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.sctop input{max-width:260px}.chip{font-family:var(--fm);font-size:11px;letter-spacing:.06em;border:1px solid var(--line2);border-radius:3px;padding:3px 8px;background:transparent;color:var(--mute);cursor:pointer}.chip.on{border-color:var(--bronze);color:var(--bronze2)}
+.scgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.sc{border:1px solid var(--line);border-radius:var(--r);background:var(--card);cursor:pointer;overflow:hidden}.sc:hover{border-color:var(--bronze)}.sc .th{aspect-ratio:1/1;background:#0f0f0f;display:flex;align-items:center;justify-content:center;color:var(--mute2);font-size:26px}.sc .th img{width:100%;height:100%;object-fit:cover}.sc .cap{padding:6px 8px;font-size:11.5px;line-height:1.3}.sc .cap b{font-family:var(--fm);font-size:12px}.sc .cap .m{color:var(--mute);font-size:11px}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:50;align-items:center;justify-content:center;padding:16px}.lb.on{display:flex}.lbi{background:var(--card);border:1px solid var(--line2);border-radius:var(--r);max-width:96vw;max-height:94vh;display:flex;flex-direction:column;min-width:min(520px,94vw)}.lbh{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12.5px}.lbh #lbCap{font-family:var(--fm);font-size:12px;color:var(--fg2)}.lbb{overflow:auto;display:flex;align-items:center;justify-content:center;background:#000}.lbb img{max-width:94vw;max-height:84vh;object-fit:contain;cursor:zoom-in}.lbb.z{align-items:flex-start;justify-content:flex-start;max-height:84vh}.lbb.z img{max-width:none;max-height:none;cursor:zoom-out}.lbb iframe{width:94vw;height:84vh;border:0;background:#fff}a.btn{display:inline-block;border:1px solid var(--line2);border-radius:var(--r);padding:4px 8px;font-size:12px;font-weight:600;color:inherit;text-decoration:none;background:var(--card2)}
+.lines .ln{min-width:220px}.lines .li{min-width:150px}.lines .lk{min-width:110px}.lines td:first-child{width:38%}
+.rc .list{display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
+.rr.new{border-left:3px solid var(--bronze)}.kd{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);min-width:52px}.kd.survey{color:var(--bronze2)}
+.linkbox{border:1px solid var(--line2);border-radius:var(--r);background:var(--card2);padding:12px;margin-bottom:12px}.linkbox .r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.linkbox select,.linkbox input{flex:1;min-width:160px}.url{font-family:var(--fm);font-size:12px;word-break:break-all;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:8px}
+.stl{display:grid;grid-template-columns:1fr 1fr;gap:14px}.stl .box{border:1px solid var(--line2);border-radius:var(--r);background:var(--card2);padding:12px}.stl h3{margin:0 0 8px;font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:500}.need{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}.need b{font-family:var(--fm);font-weight:500;color:var(--fg2)}.need .m{color:var(--mute);font-family:var(--fm);font-size:11px}.need .use{margin-left:auto}.cost{font-family:var(--fm);font-size:12px;display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--line)}.cost .na{color:var(--warn)}.cost .ok{color:var(--ok)}.seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{font-size:12px}.seg button.on{border-color:var(--bronze);color:var(--bronze)}.flag{font-family:var(--fm);font-size:11px;color:var(--warn);letter-spacing:.04em}.pcs{display:flex;flex-direction:column;gap:4px}.pc{display:flex;gap:6px;align-items:center;font-family:var(--fm);font-size:12px}.pc input{width:64px}.pc input.len{width:110px}.pc .x{color:var(--mute);cursor:pointer;padding:0 4px}.pc .eq{color:var(--mute)}.pctot{font-family:var(--fm);font-size:12px;color:var(--fg2);padding-top:4px}.stl.job{grid-template-columns:360px 1fr}.chg{display:grid;grid-template-columns:84px minmax(100px,1fr) 118px 44px 66px 66px 70px 118px 22px;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-family:var(--fm);font-size:12px}.chg input,.chg select{font-size:12px;padding:5px 6px}.chg .x{color:var(--mute);cursor:pointer;text-align:center}.chg .amt{text-align:right;color:var(--fg2);white-space:nowrap}.chg.hd{color:var(--mute);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;border-top:0}.tot{display:flex;gap:18px;font-family:var(--fm);font-size:12px;padding-top:8px;color:var(--fg2)}.tot b{color:var(--fg)}@media(max-width:980px){.chg{grid-template-columns:1fr 1fr}.stl.job{grid-template-columns:1fr}}@media(max-width:980px){.stl{grid-template-columns:1fr}}
+.lk{display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}.lk .m{color:var(--mute);font-family:var(--fm);font-size:11px}.lk.off{opacity:.5}
+.rr{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--card);cursor:pointer;display:flex;gap:10px;align-items:center}.rr.on{border-color:var(--bronze)}.rr img{width:56px;height:56px;object-fit:cover;border-radius:3px;background:#000}.rr .m{font-size:12px;color:var(--mute)}.rr b{font-family:var(--fm)}
+.lines{width:100%;border-collapse:collapse;font-size:13px}.lines th{font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line2)}.lines td{padding:4px 6px;border-bottom:1px solid var(--line)}.lines input,.lines select{padding:5px 7px;font-size:13px}
+.ocr{white-space:pre-wrap;font-family:var(--fm);font-size:11px;color:var(--mute);max-height:180px;overflow:auto;background:var(--bg2);padding:8px;border-radius:var(--r);border:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2a2418;border:1px solid var(--bronze);color:var(--bronze2);padding:9px 14px;border-radius:var(--r);font-size:13px;display:none;z-index:50}.toast.bad{background:#2a1a1a;border-color:var(--bad);color:#f0b4b4}
+.empty{color:var(--mute);padding:20px;text-align:center}
+.prog{height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin:6px 0}.prog i{display:block;height:100%;background:var(--bronze)}
+.drop{border:1px dashed var(--line2);border-radius:var(--r);padding:12px;text-align:center;color:var(--mute);font-size:12.5px}
+@media(max-width:980px){.deckwrap,.rc{grid-template-columns:1fr}.deck{margin-bottom:56px}#stat{display:none}header{flex-wrap:wrap;height:auto;gap:8px 12px;padding:8px 12px}}
+@media(pointer:coarse){button{min-height:44px}input,select{min-height:44px;font-size:16px}.four button{padding:16px 10px;font-size:15px}.cats span{padding:8px 13px;font-size:12px}}
+
+.scanbtn{padding:6px 12px;min-height:0}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.work{display:grid;grid-template-columns:240px 1fr;gap:14px}.work>div,.rc>div,.deckwrap>div{min-width:0}
+.kindsel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.kindsel span{font-family:var(--fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line2);border-radius:14px;padding:5px 11px;color:var(--mute);cursor:pointer}.kindsel span.on{border-color:var(--bronze);color:var(--bronze2);background:#2a2418}
+@media(max-width:640px){header{padding:8px 10px;gap:6px 10px}header h1{font-size:15px}header .v{display:none}.tabs{margin-left:0;order:5;flex:1 0 100%;overflow-x:auto;gap:4px}.tabs button{padding:8px 10px;white-space:nowrap;font-size:13px}header .r{gap:8px}#by{display:none}
+  main{padding:10px 10px 90px}.deck{min-height:440px}.ttl{font-size:20px}.kv{grid-template-columns:1fr 1fr}.f3{grid-template-columns:1fr}.f2{grid-template-columns:1fr}.assist{grid-template-columns:1fr}.assist img{width:100%;height:160px}
+  .work{grid-template-columns:1fr}.work img{max-height:46vh;object-fit:contain}.rc .list{max-height:32vh}.lines{min-width:640px}.rr img{width:48px;height:48px}
+  .swhint{top:40%}.deckbar .keys{display:none}.deckbar{flex-wrap:nowrap}.deckbar .dots{display:none}.toast{left:10px;right:10px;transform:none;text-align:center}}
+
+/* ---- light mode (☀) — same tokens, warm paper; dark is the default ---- */
+:root[data-theme=light]{--bg:#f3f0ea;--bg2:#faf8f4;--card:#ffffff;--card2:#efeae2;--line:#e3ded5;--line2:#cfc7ba;--fg:#1c1a17;--fg2:#3f3b35;--mute:#6f6960;--mute2:#9c958a;--bronze:#9a7b52;--bronze2:#7a5f3c;--bronze-ink:#ffffff;--ok:#2e7d4c;--warn:#a5701a;--bad:#c23b3b;--info:#2f6fa3}
+[data-theme=light] header{background:rgba(250,248,244,.94)!important;border-bottom-color:var(--line)!important}
+[data-theme=light] nav,[data-theme=light] #track,[data-theme=light] #panel,[data-theme=light] #askbar{background:#faf8f4!important}
+[data-theme=light] .card.hero{background:linear-gradient(180deg,#f7f1e6,#fff)!important}
+[data-theme=light] .card.urgent,[data-theme=light] .req.urgent{background:linear-gradient(180deg,#fdecec,#fff)!important}
+[data-theme=light] .dc.s1{background:#ece7de!important;box-shadow:0 8px 20px rgba(60,45,20,.14)!important}[data-theme=light] .dc.s2{background:#e2dcd1!important;box-shadow:0 6px 16px rgba(60,45,20,.1)!important}[data-theme=light] .dc.top{box-shadow:0 12px 28px rgba(60,45,20,.16),0 34px 70px rgba(60,45,20,.22)!important}
+[data-theme=light] button.ok{background:#e4f3ea!important;border-color:#b9dcc6!important}[data-theme=light] button.bad{background:#fbe6e6!important;border-color:#efc0c0!important}[data-theme=light] button.warn{background:#fbf1de!important;border-color:#e6cf9c!important}
+[data-theme=light] .chip.on,[data-theme=light] .cats span.on,[data-theme=light] .kindsel span.on,[data-theme=light] .opts span.on,[data-theme=light] .who button.on,[data-theme=light] .install,[data-theme=light] .oqsent{background:#f3ead9!important}
+[data-theme=light] .ans,[data-theme=light] .msgl .rep,[data-theme=light] .ackbar,[data-theme=light] .req,[data-theme=light] .log{background:#f7f4ee!important}
+[data-theme=light] .oqback{background:#fbe6e6!important;color:#8a2020!important}
+[data-theme=light] .photo,[data-theme=light] .ac .ph,[data-theme=light] .mini{background:#e9e4dc!important}
+[data-theme=light] .blk.planned{background:#f3ede2!important;border-color:#cdbfa5!important}[data-theme=light] .blk.started{background:linear-gradient(90deg,#d9c39c var(--fill),#f3ead9 var(--fill))!important;color:#1c1a17!important}[data-theme=light] .blk.done{background:#e4f3ea!important;color:#1f5a35!important}[data-theme=light] .blk.overdue{background:#fbe6e6!important}[data-theme=light] .blk.next{color:var(--fg2)!important}
+[data-theme=light] .lane-l:hover,[data-theme=light] .lane-l.sel,[data-theme=light] .lane.sel{background:#f3ead9!important}
+[data-theme=light] .pc .st.live,[data-theme=light] .ch .st.live{background:#e4f3ea}
+[data-theme=light] .toast{background:#f3ead9!important;color:#5a4526!important}[data-theme=light] .toast.bad{background:#fbe6e6!important;color:#8a2020!important}
+[data-theme=light] .lrow.live{background:#eaf5ee!important}
+[data-theme=light] .card.live,[data-theme=light] .cardline.started{box-shadow:inset 0 0 0 1px rgba(46,125,76,.35)!important}
+[data-theme=light] .src .jh{background:#efeae2!important}[data-theme=light] .ocr{background:#faf8f4!important}
+.themebtn{border:1px solid var(--line2);background:transparent;color:var(--mute);border-radius:var(--r);padding:4px 8px;font-size:13px;min-height:0;flex:0 0 auto;cursor:pointer;line-height:1}
+.vt{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px}.vt td{padding:4px 6px;border-top:1px solid var(--line)}.vt tr.pref td{color:var(--bronze2)}
+.lines input.ln{width:118px}.lines select{max-width:116px}.lines input.lp{width:86px}.lines input.lq{width:44px!important}.lines input.lc{width:64px!important}
+</style>
+<script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
+</head>
+<body>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Service</h1><span class="v">1.0</span>
+  <div class="tabs">
+    <button class="on" id="t_calls" onclick="tab('calls')">Calls<span class="pip" id="svN" style="display:none"></span></button>
+    <button id="t_book" onclick="tab('book')">The book</button>
+    <button id="t_diary" onclick="tab('diary')">Diary</button>
+    <button id="t_access" onclick="tab('access')">Access</button>
+  </div>
+  <div class="r">
+    <a class="btn sm" href="desk.html">Input Desk ↗</a>
+    <button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button>
+    <button class="themebtn" onclick="signOut()" title="sign out">⏻</button>
+    <span class="by" id="by"></span>
+  </div>
+</header>
+<main>
+  <div id="v_calls"><div id="v_svc"></div></div>
+  <div id="v_book" style="display:none"><div id="bkWork"><div class="empty">Loading…</div></div></div>
+  <div id="v_diary" style="display:none"></div>
+  <div id="v_access" style="display:none"></div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN";
+/* PUBLISHED TABLET BUILD — no office key in this file. The person is the ?k= office token (workers.kind=office),
+   remembered on the device as tr_dk so the installed app opens without the link. tr-desk 1.1 names them from it. */
+const HASH0=location.hash; let TOKEN=""; try{ const u=new URL(location.href); const k=u.searchParams.get("k"); if(k&&k.length>=20){ TOKEN=k; localStorage.setItem("tr_dk",k); history.replaceState(null,"",location.pathname); } else TOKEN=localStorage.getItem("tr_dk")||""; }catch(e){}
+const SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co", BASE=SB_URL+"/functions/v1/";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let NAME=""; const BY=()=>NAME; let VENDORS=[]; let PEOPLE={office:[],shop:[],crew:[]};   // 2.9: who to ask / who to assign is DATA (workers), never a constant
+const CREW=BASE+"tr-crew";
+/* 0083 — session. The home page signs in (name + password) and leaves {access_token, refresh_token, expires_at} here;
+   every call carries it as jwt, refreshed through tr-crew when it is about to expire. ⏻ clears it. */
+const SESS_KEY="tr_sess";
+function getSess(){ try{ return JSON.parse(localStorage.getItem(SESS_KEY)||"null"); }catch(e){ return null; } }
+async function sessJwt(){ let s=getSess(); if(!s||!s.access_token) return ""; if((s.expires_at||0)*1000<Date.now()+90000){ try{ const r=await fetch(CREW,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify({action:"refresh",refresh_token:s.refresh_token})}); const j=await r.json(); if(!j.ok){ signOut(); return ""; } s=j.session; localStorage.setItem(SESS_KEY,JSON.stringify(s)); }catch(e){} } return s.access_token; }
+function signOut(){ try{ localStorage.removeItem(SESS_KEY); localStorage.removeItem("tr_k"); localStorage.removeItem("tr_station_k"); localStorage.removeItem("tr_dk"); }catch(e){} location.replace("./"); }
+const post=async(fn,body)=>{const r=await fetch(BASE+fn,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+APIKEY},body:JSON.stringify(Object.assign({token:TOKEN,jwt:await sessJwt()},body))});const j=await r.json().catch(()=>({ok:false,error:"HTTP "+r.status}));if(j&&j.error==="signed out"){signOut();}if(!j||!j.ok)throw new Error((j&&j.error)||("HTTP "+r.status));return j;};
+const desk=b=>post("tr-desk",b);
+const toast=(t,bad)=>{const e=$("toast");e.textContent=t;e.className="toast"+(bad?" bad":"");e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",bad?5000:2600);};
+const money=n=>n==null||n===""?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const LBL={answer:"answer",qty:"qty on hand",photo:"photo",cost:"cost",vendor:"vendor",category:"category",min_qty:"min qty",document:"document",finish:"finish",density:"density",actual_thk:"actual thickness"};
+
+/* =====================================================================
+   2.24 — THE SERVICE DESK.
+
+   Ryan: "I need to access those customers for service calls, so I need them
+   and as much info about their job in the system" ... "make a service book.
+   Contact info, door type, style, finish, hardware ... make the different
+   services offered clickable, with comment section, linked to job, date of
+   contact, calendar booking, best contact and time ... search by door type,
+   distance/radius ... and need access permissions too."
+
+   WHAT THE DATA SAYS, and why the screen looks like this:
+   - The customer book (1,222) and the Pipedrive history (3,350 deals, 252 won
+     back to 2021) have NO join — not one customer is linked. So the finder
+     shows THREE lists, labelled by which book they came from, and linking is
+     a press somebody makes on a call, never a guess.
+   - 1,221 of 1,222 customers have no door written down. The card says so in
+     plain words and puts "Write the door down" next to it, because a service
+     call is the only moment anyone will ever type it.
+   - No site has coordinates, so the radius box stays quiet until the shop is
+     placed. A radius that ranked by nothing would be worse than none.
+===================================================================== */
+var SVC={menu:null,q:"",show:"open",board:[],counts:{},find:null,cust:null,call:null,mode:"board",tmr:null,book:null,may:{}};
+
+async function loadSvc(){
+  if(!$("svList")) $("v_svc").innerHTML='<div class="empty">Loading…</div>';
+  try{ if(!SVC.menu) SVC.menu=await desk({action:"service_menu"}); SVC.may=SVC.menu.may||{}; }
+  catch(e){ $("v_svc").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
+  await svBoard();
+}
+async function svBoard(){
+  try{ const j=await desk({action:"service_board",show:SVC.show});
+       SVC.board=j.rows||[]; SVC.counts=j.counts||{};
+       const pip=$("svN"), n=SVC.counts.open||0; pip.textContent=n; pip.style.display=n?"inline":"none"; }
+  catch(e){ /* AN EMPTY LIST IS A LIE */
+    const t=`<div class="empty">⚑ ${esc(e.message)}</div>`;
+    if($("svList")) $("svList").innerHTML=t; else $("v_svc").innerHTML=t; return; }
+  svShell(); svLeft();
+}
+function svShell(){
+  if($("svList")) return;
+  $("v_svc").innerHTML=`<div class="rc"><div>
+    <div class="eyebrow">Service · who is calling</div>
+    <input id="svq" placeholder="name, street, town, phone, C-number" value="${esc(SVC.q)}" oninput="SVC.q=this.value;svDeb()">
+    <div class="chips" id="svChips"></div>
+    <div class="hint" style="margin:0 0 6px" id="svCount"></div>
+    <div class="list" id="svList"></div>
+    <div style="margin-top:10px"><button class="sm" onclick="svBookView()">The service book — search by door ↗</button></div>
+  </div><div id="svWork"><div class="empty">Pick a call, or type who is on the phone.</div></div></div>`;
+}
+function svDeb(){ clearTimeout(SVC.tmr); SVC.tmr=setTimeout(svFind,350); }
+const SVCHIP={open:"open",new:"new",scheduled:"scheduled","on site":"on site",waiting:"waiting",booked:"booked",mine:"mine",closed:"closed"};
+function svShow(k){ SVC.show=k; SVC.q=""; const q=$("svq"); if(q) q.value=""; SVC.find=null; svBoard(); }
+
+async function svFind(){
+  if(!SVC.q.trim()){ SVC.find=null; svBoard(); return; }
+  try{ SVC.find=await desk({action:"service_find",q:SVC.q}); }
+  catch(e){ $("svList").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
+  svLeft();
+}
+function svLeft(){
+  $("svChips").innerHTML=Object.keys(SVCHIP).map(k=>
+    `<button class="${!SVC.find&&SVC.show===k?"on":""}" onclick="svShow('${k}')">${SVCHIP[k]}${SVC.counts[k]==null?"":" "+SVC.counts[k]}</button>`).join("");
+  if(SVC.find) return svFindList();
+  $("svCount").textContent=`${SVC.board.length} shown`;
+  $("svList").innerHTML=SVC.board.map(r=>{
+    const c=r.customer||{}, who=c.display_name||c.name||"—";
+    const when=r.booked_start?new Date(r.booked_start).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):null;
+    const doing=(r.doing||[]).map(svcName).filter(Boolean).join(" · ");
+    return `<div class="rr ${SVC.call&&SVC.call.call&&SVC.call.call.id===r.id?"on":""}" onclick="svOpenCall('${r.id}')">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">S-${r.call_no||"—"}</div>
+      <div><b>${esc(who)}</b><div class="m">${[r.status,when,r.assigned_to].filter(Boolean).map(esc).join(" · ")}</div>
+      <div class="m">${doing?esc(doing):`<span class="need">nothing chosen yet</span>`}</div></div></div>`;
+  }).join("")||'<div class="empty">Nothing here.</div>';
+}
+function svcName(o){ const m=(SVC.menu&&SVC.menu.services)||[]; const x=m.find(y=>y.opt_id===o); return x?x.name:o; }
+
+function svFindList(){
+  const f=SVC.find||{}, cu=f.customers||[], pe=f.people||[], dl=f.deals||[];
+  $("svCount").textContent=`${cu.length} in the book · ${pe.length} in Pipedrive · ${dl.length} deals`;
+  const group=(t,inner)=>`<div class="eyebrow" style="margin:10px 0 4px">${t}</div>${inner||'<div class="m" style="padding:2px 0 6px">none</div>'}`;
+  $("svList").innerHTML=
+    group("In the book", cu.map(r=>`<div class="rr" onclick="svCust('${r.id}')">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">${r.customer_no?("C-"+r.customer_no):"—"}</div>
+      <div><b>${esc(r.display_name||r.name||"—")}</b>
+      <div class="m">${[r.city,r.phone,r.email].filter(Boolean).map(esc).join(" · ")||"—"}</div>
+      <div class="m">${r.known?`<span class="use">${r.jobs} job · ${r.quotes} quote · ${r.openings} door · ${r.calls} call</span>`:`<span class="need">nothing on file</span>`}</div></div></div>`).join(""))
+    + group("Pipedrive — the person", pe.map(r=>`<div class="rr" onclick="svFromPerson(${r.person_id})">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bronze2)">PD</div>
+      <div><b>${esc(r.name||"—")}</b>
+      <div class="m">${[r.org_name,(r.phones_t||"").split(" ")[0],(r.emails_t||"").split(" ")[0]].filter(Boolean).map(esc).join(" · ")||"—"}</div>
+      <div class="m">${r.won_deals?`<span class="use">${r.won_deals} won · last ${esc(String(r.last_won||"").slice(0,7))}</span>`:'<span class="m">no won deal</span>'}</div></div></div>`).join(""))
+    + group("Pipedrive — the deal", dl.map(r=>`<div class="rr" onclick="svFromDeal(${r.deal_id},${r.person_id||"null"})">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:${r.status==="won"?"var(--bronze2)":"var(--mute)"}">${r.status==="won"?"WON":esc((r.status||"").slice(0,4))}</div>
+      <div><b>${esc(r.title||"—")}</b>
+      <div class="m">${[r.won_at?String(r.won_at).slice(0,10):null,r.site_address,r.person_name].filter(Boolean).map(esc).join(" · ")||"—"}</div></div></div>`).join(""));
+}
+
+/* ---- the customer card: everything we hold, each thing in its own panel --- */
+async function svCust(id){
+  SVC.mode="cust"; SVC.call=null;
+  $("svWork").innerHTML='<div class="empty">Loading…</div>';
+  try{ SVC.cust=await desk({action:"service_history",customer_id:id}); }
+  catch(e){ $("svWork").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
+  svCard();
+}
+function svCard(){
+  const j=SVC.cust||{}, c=j.customer||{}, may=j.may||{};
+  const doors=(j.doors||[]);
+  const dtxt=d=>[d.style,d.system,d.config_id,d.leaves?d.leaves+" leaf":null,
+                 (d.w_in&&d.h_in)?(d.w_in+"″ × "+d.h_in+"″"):null,
+                 d.finish,d.glass,d.cladding,d.motorized?"motorized":null].filter(Boolean).map(esc).join(" · ");
+  const doorBox=`<div class="box"><h3>The door</h3>
+    ${doors.length?doors.map(d=>`<div class="f2"><div><b>${esc(d.door||"door")}</b>
+       <div class="m">${dtxt(d)||"nothing recorded on it yet"}</div>
+       <div class="m">${[d.site_address,d.installed_on?("installed "+String(d.installed_on).slice(0,10)):null,d.calls?d.calls+" call":null].filter(Boolean).map(esc).join(" · ")}</div></div>
+       <button class="sm" onclick="svDoor('${d.opening_id}')">Edit</button></div>`).join("")
+      :`<div class="m">no door written down for them — nobody has ever typed one in</div>`}
+    ${may.service?`<button class="sm" style="margin-top:8px" onclick="svDoor('')">Write a door down</button>`:""}
+    </div>`;
+
+  const paper=`<div class="box"><h3>Their paperwork</h3>
+    <div class="m">${[j.jobs.length?j.jobs.length+" job"+(j.jobs.length>1?"s":""):null,
+                      j.quotes.length?j.quotes.length+" quote"+(j.quotes.length>1?"s":""):null,
+                      j.surveys.length?j.surveys.length+" survey"+(j.surveys.length>1?"s":""):null,
+                      j.calls.length?j.calls.length+" service call"+(j.calls.length>1?"s":""):null].filter(Boolean).join(" · ")||"none on file"}</div>
+    ${j.jobs.map(x=>`<div class="m">${esc([x.job_no,x.name,x.stage,x.contract_date].filter(Boolean).join(" · "))}</div>`).join("")}
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <a class="btn sm" href="agree.html?c=${encodeURIComponent(c.id||"")}">Agreement ↗</a>
+      <a class="btn sm" href="desk.html#openings" target="_blank" rel="noopener">Openings ↗</a>
+    </div></div>`;
+
+  const pd=j.pd, deals=(j.pd_deals||[]);
+  const pdBox=`<div class="box"><h3>What Pipedrive remembers</h3>
+    ${c.pd_person_id
+      ? (pd?`<div class="m">${pd.won_deals} won · ${pd.deals} in total · ${esc(String(pd.first_won||"").slice(0,10))} to ${esc(String(pd.last_won||"").slice(0,10))}</div>`
+           :'<div class="m">linked, but no deals against that person</div>')
+        + deals.slice(0,12).map(d=>`<div class="m">${esc([d.status==="won"?"✓":"·",String(d.won_at||d.add_time||"").slice(0,10),d.title,d.site_address].filter(Boolean).join(" · "))}</div>`).join("")
+      : `<div class="m"><span class="need">not linked to Pipedrive</span> — search their name above and press a Pipedrive row to open the call from there; the link is made then</div>`}
+    </div>`;
+
+  const calls=(j.calls||[]);
+  const callBox=`<div class="box"><h3>Service calls</h3>
+    ${calls.length?calls.map(x=>`<div class="f2"><div><b>S-${x.call_no}</b>
+      <div class="m">${esc([String(x.opened_at||"").slice(0,10),x.status,x.reported].filter(Boolean).join(" · "))}</div></div>
+      <button class="sm" onclick="svOpenCall('${x.id}')">Open</button></div>`).join(""):'<div class="m">none yet</div>'}
+    </div>`;
+
+  $("svWork").innerHTML=`<div class="panel">
+    <h3>${c.customer_no?("C-"+c.customer_no+" · "):""}${esc(c.display_name||c.name||"—")}</h3>
+    <div class="m" style="margin-bottom:8px">${[c.status,c.phone,c.email,c.site_address,c.city].filter(Boolean).map(esc).join(" · ")||"a name and nothing else on the record"}</div>
+    ${may.service?`<button class="go" onclick="svStart('${c.id}')">Start a service call</button>`:""}
+    ${doorBox}${callBox}${paper}${pdBox}
+  </div>`;
+}
+
+/* a Pipedrive-only caller: the customer row is made when the call is opened */
+function svFromPerson(pid){
+  const p=((SVC.find||{}).people||[]).find(x=>x.person_id===pid); if(!p) return;
+  svNewCall({name:p.name,pd_person_id:pid,phone:(p.phones_t||"").split(" ")[0]||"",email:(p.emails_t||"").split(" ")[0]||"",site_address:p.pd_address||""});
+}
+function svFromDeal(did,pid){
+  const d=((SVC.find||{}).deals||[]).find(x=>x.deal_id===did); if(!d) return;
+  svNewCall({name:d.person_name||d.org_name||d.title,pd_deal_id:did,pd_person_id:pid||null,site_address:d.site_address||""});
+}
+function svStart(cid){ svNewCall({customer_id:cid}); }
+
+/* the intake form. Nothing here is a wall except a name. */
+function svNewCall(seed){
+  SVC.mode="new"; SVC.seed=seed||{};
+  const s=SVC.seed;
+  $("svWork").innerHTML=`<div class="panel">
+    <h3>New service call</h3>
+    <div class="m" style="margin-bottom:8px">${s.customer_id?"an existing customer":"they are not in the book yet — opening the call writes them in and gives them a C-number"}</div>
+    ${s.customer_id?"":`<div class="f2"><div class="m">name</div><input id="sv_name" value="${esc(s.name||"")}" placeholder="who is calling"></div>`}
+    <div class="f2"><div class="m">phone</div><input id="sv_phone" value="${esc(s.phone||"")}" placeholder="—"></div>
+    <div class="f2"><div class="m">e-mail</div><input id="sv_email" value="${esc(s.email||"")}" placeholder="—"></div>
+    <div class="f2"><div class="m">site address</div><input id="sv_site" value="${esc(s.site_address||"")}" placeholder="—"></div>
+    <div class="f2"><div class="m">town</div><input id="sv_city" placeholder="—"></div>
+    <div class="f2"><div class="m">best person</div><input id="sv_best" placeholder="—"></div>
+    <div class="f2"><div class="m">best time</div><input id="sv_besttime" placeholder="—"></div>
+    <div class="f2"><div class="m">what they said</div><input id="sv_reported" placeholder="—"></div>
+    <div class="box"><h3>What they are asking for</h3><div id="sv_pick"></div></div>
+    <button class="go" onclick="svCreate()">Open the call</button>
+  </div>`;
+  SVC.picked=[]; svPicks("sv_pick");
+}
+/* THE CLICKABLE SERVICES, by band. Data (0114), never a list in the page. */
+function svPicks(into){
+  const m=(SVC.menu&&SVC.menu.services)||[];
+  const bands={}; for(const x of m) (bands[x.band]||(bands[x.band]=[])).push(x);
+  const BN={adjust:"Adjustment",auto:"Operator & automation",maint:"Maintenance",finish:"Finish",glass:"Glass & screens",parts:"Parts",visit:"A visit"};
+  $(into).innerHTML=Object.keys(bands).map(bk=>`<div class="eyebrow" style="margin:8px 0 3px">${esc(BN[bk]||bk)}</div>
+    <div class="chips">${bands[bk].map(x=>`<button class="${SVC.picked.indexOf(x.opt_id)>=0?"on":""}" onclick="svPick('${x.opt_id}','${into}')">${esc(x.name)}</button>`).join("")}</div>`).join("");
+}
+function svPick(o,into){ const i=SVC.picked.indexOf(o); if(i>=0) SVC.picked.splice(i,1); else SVC.picked.push(o); svPicks(into); }
+
+async function svCreate(){
+  const g=id=>{ const e=$(id); return e?e.value.trim():""; };
+  const body={action:"service_open",services:SVC.picked,
+    customer_id:SVC.seed.customer_id||undefined, name:g("sv_name")||SVC.seed.name||undefined,
+    pd_person_id:SVC.seed.pd_person_id||undefined, pd_deal_id:SVC.seed.pd_deal_id||undefined,
+    phone:g("sv_phone"),email:g("sv_email"),site_address:g("sv_site"),city:g("sv_city"),
+    best_contact:g("sv_best"),best_time:g("sv_besttime"),reported:g("sv_reported")};
+  try{ const j=await desk(body); toast("S-"+j.call_no+" opened"); await svOpenCall(j.call.id); svBoard(); }
+  catch(e){ toast(e.message,true); }
+}
+
+/* ---- the call itself ---------------------------------------------------- */
+async function svOpenCall(id){
+  SVC.mode="call";
+  $("svWork").innerHTML='<div class="empty">Loading…</div>';
+  try{ SVC.call=await desk({action:"service_get",call_id:id}); }
+  catch(e){ $("svWork").innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
+  svCallCard();
+}
+function svCallCard(){
+  const j=SVC.call||{}, c=j.call||{}, cu=j.customer||{}, may=j.may||{}, d=j.door;
+  SVC.picked=(j.lines||[]).map(l=>l.opt_id);
+  const F=(k,lbl,v,ph)=>`<div class="f2"><div class="m">${lbl}</div><input id="sv_f_${k}" value="${esc(v||"")}" placeholder="${ph||"—"}" onchange="svSet('${k}',this.value)"></div>`;
+  const STAT=["new","scheduled","on site","waiting","closed"];
+  const bs=c.booked_start?new Date(c.booked_start):null;
+  const iso=bs?new Date(bs.getTime()-bs.getTimezoneOffset()*60000).toISOString().slice(0,16):"";
+  const money=may.money?`<div class="box"><h3>Money</h3>
+      <div class="f2"><div class="m">charge</div><input value="${esc(c.charge==null?"":String(c.charge))}" placeholder="—" onchange="svSet('charge',this.value)"></div>
+      <div class="f2"><div class="m">warranty</div><input value="${c.warranty==null?"":(c.warranty?"yes":"no")}" placeholder="yes / no" onchange="svSet('warranty',this.value.toLowerCase().startsWith('y'))"></div>
+      </div>`:"";
+  $("svWork").innerHTML=`<div class="panel">
+    <h3>S-${c.call_no} · ${esc(cu.display_name||cu.name||"—")}${cu.customer_no?(" · C-"+cu.customer_no):""}</h3>
+    <div class="m" style="margin-bottom:8px">${[String(c.opened_at||"").slice(0,10),"by "+esc(c.opened_by||"—"),c.came_in].filter(Boolean).join(" · ")}</div>
+    <div class="chips">${STAT.map(x=>`<button class="${c.status===x?"on":""}" onclick="svSet('status','${x}')">${x}</button>`).join("")}</div>
+
+    <div class="box"><h3>What they are asking for</h3><div id="sv_lines"></div></div>
+
+    ${F("reported","what they said",c.reported)}
+    ${F("found","what we found",c.found)}
+    ${F("fixed","what we did",c.fixed)}
+
+    <div class="box"><h3>Getting hold of them</h3>
+      ${F("contact_name","who",c.contact_name)}
+      ${F("contact_phone","phone",c.contact_phone)}
+      ${F("contact_email","e-mail",c.contact_email)}
+      ${F("best_contact","best person",c.best_contact)}
+      ${F("best_time","best time",c.best_time)}
+      ${F("called_on","date of contact",c.called_on)}
+      ${F("site_address","site",c.site_address)}
+      ${F("city","town",c.city)}
+    </div>
+
+    <div class="box"><h3>Booked in</h3>
+      <div class="f2"><div class="m">when</div><input type="datetime-local" value="${iso}" onchange="svBook(this.value)"></div>
+      ${F("assigned_to","who is going",c.assigned_to)}
+      <div class="m">${bs?esc(bs.toLocaleString()):"not booked"}${c.booked_by?(" · booked by "+esc(c.booked_by)):""}</div>
+    </div>
+
+    <div class="box"><h3>The door</h3>
+      ${d?`<div class="m">${esc([d.door,d.style,d.system,d.finish,d.glass,d.motorized?"motorized":null].filter(Boolean).join(" · "))}</div>
+           <button class="sm" style="margin-top:6px" onclick="svDoor('${d.opening_id}')">Edit the door</button>`
+        :`<div class="m">no door on this call</div>${may.service?`<button class="sm" style="margin-top:6px" onclick="svDoor('')">Write the door down</button>`:""}`}
+    </div>
+
+    ${money}
+
+    <div class="box"><h3>Comments</h3>
+      <div class="f2"><input id="sv_say" placeholder="what happened"><button class="sm" id="sv_add" onclick="svSay()">Add</button></div>
+      <div id="sv_comments">${(j.comments||[]).map(x=>`<div class="m" style="margin-top:5px"><b>${esc(x.by||"—")}</b> · ${esc(new Date(x.at).toLocaleString())}<br>${esc(x.body)}</div>`).join("")||'<div class="m">none yet</div>'}</div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      <button class="sm" onclick="svCust('${cu.id||""}')">Their card</button>
+      <a class="btn sm" href="agree.html?c=${encodeURIComponent(cu.id||"")}">Agreement ↗</a>
+    </div>
+  </div>`;
+  svLines();
+}
+function svLines(){
+  const m=(SVC.menu&&SVC.menu.services)||[];
+  const bands={}; for(const x of m) (bands[x.band]||(bands[x.band]=[])).push(x);
+  const BN={adjust:"Adjustment",auto:"Operator & automation",maint:"Maintenance",finish:"Finish",glass:"Glass & screens",parts:"Parts",visit:"A visit"};
+  $("sv_lines").innerHTML=Object.keys(bands).map(bk=>`<div class="eyebrow" style="margin:8px 0 3px">${esc(BN[bk]||bk)}</div>
+    <div class="chips">${bands[bk].map(x=>`<button class="${SVC.picked.indexOf(x.opt_id)>=0?"on":""}" onclick="svLine('${x.opt_id}')">${esc(x.name)}</button>`).join("")}</div>`).join("");
+}
+async function svLine(o){
+  const c=(SVC.call||{}).call; if(!c) return;
+  const on=SVC.picked.indexOf(o)>=0;
+  /* paint first so the press feels instant, then confirm by read-back */
+  if(on) SVC.picked.splice(SVC.picked.indexOf(o),1); else SVC.picked.push(o);
+  svLines();
+  try{ await desk({action:"service_line",call_id:c.id,opt_id:o,how:on?"off":"on"});
+       const j=await desk({action:"service_get",call_id:c.id});
+       SVC.call=j; SVC.picked=(j.lines||[]).map(l=>l.opt_id); svLines(); }
+  catch(e){ toast(e.message,true); svOpenCall(c.id); }
+}
+async function svSet(k,v){
+  const c=(SVC.call||{}).call; if(!c) return;
+  try{ const r=await desk({action:"service_set",call_id:c.id,fields:{[k]:v}});
+       /* A CONTROL MUST NEVER LIE ABOUT WHAT LANDED */
+       if((r.refused||[]).length){ toast("⚑ "+r.refused.join(", ")+" — not yours to change",true); }
+       else toast("saved");
+       SVC.call.call=r.call; if(k==="status"||k==="assigned_to") svBoard(); }
+  catch(e){ toast(e.message,true); }
+}
+async function svBook(v){
+  const c=(SVC.call||{}).call; if(!c) return;
+  try{ const r=await desk({action:"service_set",call_id:c.id,fields:{booked_start:v?new Date(v).toISOString():"",status:v?"scheduled":c.status}});
+       if((r.refused||[]).length) toast("⚑ "+r.refused.join(", "),true); else toast("booked");
+       await svOpenCall(c.id); svBoard(); }
+  catch(e){ toast(e.message,true); }
+}
+async function svSay(){
+  const c=(SVC.call||{}).call; if(!c) return;
+  const el=$("sv_say"), body=el.value.trim(); if(!body) return;
+  try{ await desk({action:"service_say",call_id:c.id,body}); el.value=""; await svOpenCall(c.id); }
+  catch(e){ toast(e.message,true); }
+}
+
+/* ---- the door record ---------------------------------------------------- */
+function svDoor(oid){
+  const menu=SVC.menu||{}, cu=(SVC.cust&&SVC.cust.customer)||((SVC.call||{}).customer)||{};
+  const cid=cu.id||"";
+  let d={};
+  if(oid){ const src=((SVC.cust||{}).doors||[]).find(x=>x.opening_id===oid) || ((SVC.call||{}).door) || {}; d=src; }
+  const sel=(k,list,val,txt)=>`<div class="f2"><div class="m">${txt}</div><select id="dr_${k}">
+      <option value="">—</option>${list.map(x=>`<option value="${esc(x.v)}"${String(val||"")===String(x.v)?" selected":""}>${esc(x.n)}</option>`).join("")}</select></div>`;
+  const styles=(menu.styles||[]).map(x=>({v:x.style,n:x.name||x.style}));
+  const cfgs=(menu.configs||[]).map(x=>({v:x.config_id,n:x.label||x.config_id}));
+  const fins=(menu.finishes||[]).map(x=>({v:x.name,n:[x.brand,x.name].filter(Boolean).join(" ")}));
+  const g=k=>((menu.vocab||{})[k]||[]).map(x=>({v:x.opt_id,n:x.name}));
+  $("svWork").innerHTML=`<div class="panel">
+    <h3>${oid?"The door":"Write the door down"}</h3>
+    <div class="m" style="margin-bottom:8px">${esc(cu.display_name||cu.name||"")}</div>
+    <div class="f2"><div class="m">what to call it</div><input id="dr_name" value="${esc(d.door||d.name||"")}" placeholder="front, patio, entry…"></div>
+    ${sel("style",styles,d.style,"style")}
+    ${sel("system",g("trk_sys"),d.system,"system")}
+    ${sel("config_id",cfgs,d.config_id,"configuration")}
+    <div class="f2"><div class="m">leaves</div><input id="dr_leaves" value="${esc(d.leaves==null?"":String(d.leaves))}" placeholder="—"></div>
+    <div class="f2"><div class="m">width (in)</div><input id="dr_w_in" value="${esc(d.w_in==null?"":String(d.w_in))}" placeholder="—"></div>
+    <div class="f2"><div class="m">height (in)</div><input id="dr_h_in" value="${esc(d.h_in==null?"":String(d.h_in))}" placeholder="—"></div>
+    ${sel("finish",fins,d.finish,"finish")}
+    ${sel("glass",g("glass"),d.glass,"glass")}
+    ${sel("cladding",g("clad"),d.cladding,"cladding")}
+    ${sel("threshold",g("threshold"),d.threshold,"threshold")}
+    ${sel("motorized",g("auto"),d.motorized,"operator")}
+    <div class="f2"><div class="m">site address</div><input id="dr_site_address" value="${esc(d.site_address||"")}" placeholder="—"></div>
+    <div class="f2"><div class="m">installed on</div><input id="dr_installed_on" value="${esc(d.installed_on?String(d.installed_on).slice(0,10):"")}" placeholder="YYYY-MM-DD"></div>
+    <div class="f2"><div class="m">notes</div><input id="dr_notes" value="${esc(d.notes||"")}" placeholder="—"></div>
+    <button class="go" onclick="svDoorSave('${oid}','${cid}')">Save the door</button>
+    <button class="sm" onclick="${SVC.mode==='call'&&SVC.call?`svOpenCall('${(SVC.call.call||{}).id}')`:`svCust('${cid}')`}">Back</button>
+  </div>`;
+}
+async function svDoorSave(oid,cid){
+  const g=k=>{ const e=$("dr_"+k); return e?String(e.value).trim():""; };
+  const fields={};
+  for(const k of ["name","style","system","config_id","leaves","w_in","h_in","finish","glass","cladding","threshold","motorized","site_address","installed_on","notes"]) fields[k]=g(k);
+  for(const k of ["leaves","w_in","h_in"]) if(fields[k]!=="") fields[k]=Number(fields[k]);
+  try{ const j=await desk({action:"door_set",opening_id:oid||undefined,customer_id:cid||undefined,
+        call_id:(SVC.mode==="call"&&SVC.call&&SVC.call.call)?SVC.call.call.id:undefined, fields});
+       toast("the door is on the record");
+       if(SVC.mode==="call"&&SVC.call&&SVC.call.call) svOpenCall(SVC.call.call.id); else svCust(cid); }
+  catch(e){ toast(e.message,true); }
+}
+
+/* ---- the service book: search by door ----------------------------------- */
+async function svBookView(){
+  SVC.mode="book";
+  $(SVC.pane).innerHTML='<div class="empty">Loading…</div>';
+  await svBookPull();
+}
+async function svBookPull(){
+  const g=id=>{ const e=$(id); return e?e.value:""; };
+  const body={action:"service_book",q:g("bk_q"),style:g("bk_style"),system:g("bk_system"),finish:g("bk_finish"),city:g("bk_city")};
+  const rad=g("bk_radius"); if(rad) body.radius=Number(rad);
+  let j; try{ j=await desk(body); }
+  catch(e){ $(SVC.pane).innerHTML=`<div class="panel"><div class="empty">⚑ ${esc(e.message)}</div></div>`; return; }
+  SVC.book=j;
+  const menu=SVC.menu||{};
+  const opt=(list,val)=>`<option value="">—</option>`+list.map(x=>`<option value="${esc(x.v)}"${val===x.v?" selected":""}>${esc(x.n)}</option>`).join("");
+  const styles=(menu.styles||[]).map(x=>({v:x.style,n:x.name||x.style}));
+  const systems=((menu.vocab||{}).trk_sys||[]).map(x=>({v:x.opt_id,n:x.name}));
+  const fins=(menu.finishes||[]).map(x=>({v:x.name,n:[x.brand,x.name].filter(Boolean).join(" ")}));
+  $(SVC.pane).innerHTML=`<div class="panel">
+    <h3>The service book</h3>
+    <div class="m" style="margin-bottom:8px">${j.count} door${j.count===1?"":"s"} on record${j.shop_placed?"":" · the shop has no location set, so distance is off"}</div>
+    <div class="f2"><div class="m">anything</div><input id="bk_q" value="${esc(g("bk_q"))}" placeholder="name, street, town" oninput="clearTimeout(SVC.tmr);SVC.tmr=setTimeout(svBookPull,350)"></div>
+    <div class="f2"><div class="m">style</div><select id="bk_style" onchange="svBookPull()">${opt(styles,g("bk_style"))}</select></div>
+    <div class="f2"><div class="m">system</div><select id="bk_system" onchange="svBookPull()">${opt(systems,g("bk_system"))}</select></div>
+    <div class="f2"><div class="m">finish</div><select id="bk_finish" onchange="svBookPull()">${opt(fins,g("bk_finish"))}</select></div>
+    <div class="f2"><div class="m">town</div><input id="bk_city" value="${esc(g("bk_city"))}" placeholder="—" oninput="clearTimeout(SVC.tmr);SVC.tmr=setTimeout(svBookPull,350)"></div>
+    ${j.shop_placed?`<div class="f2"><div class="m">within (miles)</div><input id="bk_radius" value="${esc(g("bk_radius"))}" placeholder="—" oninput="clearTimeout(SVC.tmr);SVC.tmr=setTimeout(svBookPull,350)"></div>`
+      :`<div class="box"><h3>Distance</h3><div class="m">${j.sites_with_coordinates} of ${j.count} sites have coordinates, and the shop has no location yet — set it and this sorts by drive-out distance</div>
+        ${SVC.may.money?`<div class="f2"><input id="bk_lat" placeholder="shop latitude"><input id="bk_lon" placeholder="shop longitude"><button class="sm" onclick="svPlaceShop()">Place the shop</button></div>`:""}</div>`}
+    <div class="list" style="margin-top:8px">${(j.rows||[]).map(r=>`<div class="rr" onclick="svCust('${r.customer_id}')">
+      <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">${r.customer_no?("C-"+r.customer_no):"—"}</div>
+      <div><b>${esc(r.customer||"—")}</b>
+      <div class="m">${esc([r.door,r.style,r.system,r.finish,r.leaves?r.leaves+" leaf":null].filter(Boolean).join(" · "))||"—"}</div>
+      <div class="m">${esc([r.site_address,r.city,r.miles!=null?r.miles+" mi":null,r.calls?r.calls+" call":null].filter(Boolean).join(" · "))}</div></div></div>`).join("")||'<div class="empty">Nothing matches.</div>'}</div>
+    <button class="sm" style="margin-top:8px" onclick="tab('calls')">Back to the calls</button>
+  </div>`;
+}
+async function svPlaceShop(){
+  const lat=$("bk_lat").value.trim(), lon=$("bk_lon").value.trim();
+  if(!lat||!lon){ toast("both numbers",true); return; }
+  try{ await desk({action:"shop_origin_set",lat:Number(lat),lon:Number(lon)}); toast("the shop is placed"); svBookPull(); }
+  catch(e){ toast(e.message,true); }
+}
+
+
+/* =====================================================================
+   TR SERVICE 1.0 — the module.
+
+   Ryan: "I wanted you to create a seperate Service module outside the desk
+   that carried all the information and that I could set access."
+
+   Same runtime, same look, its own page. Four tabs: the calls, the book of
+   doors, the diary of what is booked, and ACCESS — the screen where he says
+   who may take a call, who may put money on one, and who only sees their own.
+===================================================================== */
+let TAB="calls";
+function tab(t){
+  for(const x of ["calls","book","diary","access"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; }
+  TAB=t;
+  if(t==="calls") loadSvc();
+  if(t==="book"){ SVC.pane="bkWork"; ensureMenu().then(svBookView); }
+  if(t==="diary") loadDiary();
+  if(t==="access") loadAccess();
+}
+async function ensureMenu(){ if(!SVC.menu){ SVC.menu=await desk({action:"service_menu"}); SVC.may=SVC.menu.may||{}; } }
+
+/* ---- the diary: what is booked, day by day --------------------------- */
+async function loadDiary(){
+  const el=$("v_diary");
+  el.innerHTML='<div class="empty">Loading…</div>';
+  const from=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  let j; try{ j=await desk({action:"service_diary",from}); }
+  catch(e){ el.innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }   /* AN EMPTY LIST IS A LIE */
+  const days={};
+  for(const r of (j.rows||[])){ const d=String(r.booked_start).slice(0,10); (days[d]||(days[d]=[])).push(r); }
+  const keys=Object.keys(days).sort();
+  el.innerHTML=`<div class="panel"><h3>Booked</h3>
+    ${keys.length?keys.map(d=>`<div class="eyebrow" style="margin:12px 0 4px">${esc(new Date(d+"T12:00:00").toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"}))}</div>
+      ${days[d].map(r=>{const c=r.customer||{};
+        return `<div class="rr" onclick="tab('calls');setTimeout(()=>svOpenCall('${r.id}'),60)">
+          <div style="width:56px;height:56px;background:#0f0f0f;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bronze2)">${esc(new Date(r.booked_start).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}))}</div>
+          <div><b>${esc(c.display_name||c.name||"—")}</b>
+          <div class="m">${[("S-"+r.call_no),r.status,r.assigned_to,r.city].filter(Boolean).map(esc).join(" · ")}</div>
+          <div class="m">${esc(r.reported||"")}</div></div></div>`;}).join("")}`).join("")
+      :'<div class="empty">Nothing booked.</div>'}
+  </div>`;
+}
+
+/* ---- ACCESS ----------------------------------------------------------
+   Who may do what, per PERSON. The roles carry a default (owner takes the
+   call and the money, crew see their own booked work); a tick here writes
+   that person's own list, which from then on is what counts — and the row
+   says which of the two it is reading, so nothing is a guess. */
+var ACC=null;
+async function loadAccess(){
+  const el=$("v_access");
+  el.innerHTML='<div class="empty">Loading…</div>';
+  try{ ACC=await desk({action:"service_people"}); }
+  catch(e){ el.innerHTML=`<div class="empty">⚑ ${esc(e.message)}</div>`; return; }
+  renderAccess();
+}
+const ACCCOL=[["service","take the call"],["money","put money on it"],["field","their own booked work"]];
+function renderAccess(){
+  const j=ACC||{}, rows=j.rows||[], can=!!j.may_set;
+  $("v_access").innerHTML=`<div class="panel">
+    <h3>Who may do what</h3>
+    <div class="m" style="margin-bottom:10px">${can?"":"⚑ read only — "+esc(j.me||"you")+" cannot change access"}</div>
+    ${rows.map(r=>`<div class="f2" style="align-items:flex-start">
+      <div><b>${esc(r.name)}</b><div class="m">${[r.kind,r.role,r.from].filter(Boolean).map(esc).join(" · ")}</div></div>
+      <div class="chips" style="margin:0">
+        ${ACCCOL.map(([k,lbl])=>`<button class="${r[k]?"on":""}"${can?"":" disabled"} onclick="accSet('${esc(r.name)}','${k}',${r[k]?"false":"true"})">${lbl}</button>`).join("")}
+        ${can&&r.from==="set here"?`<button onclick="accClear('${esc(r.name)}')">back to the role</button>`:""}
+      </div></div>`).join("")||'<div class="empty">Nobody active.</div>'}
+  </div>`;
+}
+async function accSet(name,k,on){
+  const r=(ACC.rows||[]).find(x=>x.name===name); if(!r) return;
+  const want={service:r.service,money:r.money,field:r.field}; want[k]=on;
+  try{ const j=await desk({action:"service_access_set",worker:name,
+        service:want.service,service_money:want.money,service_field:want.field});
+       /* CONFIRM BY READ-BACK — the server sends the row it actually wrote */
+       const got=j.row||{};
+       if(!!got[k]!==on){ toast("⚑ "+name+" — that did not stick",true); }
+       else toast("saved");
+       await loadAccess(); }
+  catch(e){ toast(e.message,true); }
+}
+async function accClear(name){
+  try{ await desk({action:"service_access_set",worker:name,clear:true}); toast("back to the role"); await loadAccess(); }
+  catch(e){ toast(e.message,true); }
+}
+
+/* ---- the way in ------------------------------------------------------ */
+async function boot(){
+  if(!TOKEN && !getSess()){ location.replace("./"); return; }
+  try{ const w=await desk({action:"whoami"}); NAME=w.name; $("by").textContent=NAME; }
+  catch(e){
+    if(/not valid|signed out/i.test(e.message)){ try{localStorage.removeItem("tr_dk")}catch(x){} location.replace("./"); return; }
+    $("v_svc").innerHTML=`<div class="empty" style="padding:60px">⚑ ${esc(e.message)}</div>`; return;
+  }
+  SVC.pane="bkWork";
+  loadSvc();
+}
+window.tab=tab;window.signOut=signOut;
+window.loadSvc=loadSvc;window.svShow=svShow;window.svDeb=svDeb;window.svCust=svCust;window.svOpenCall=svOpenCall;
+window.svStart=svStart;window.svFromPerson=svFromPerson;window.svFromDeal=svFromDeal;window.svCreate=svCreate;
+window.svPick=svPick;window.svLine=svLine;window.svSet=svSet;window.svBook=svBook;window.svSay=svSay;
+window.svDoor=svDoor;window.svDoorSave=svDoorSave;window.svBookView=svBookView;window.svBookPull=svBookPull;
+window.svPlaceShop=svPlaceShop;window.svBoard=svBoard;window.SVC=SVC;
+window.accSet=accSet;window.accClear=accClear;
+boot();
+</script>
+</body>
+</html>
