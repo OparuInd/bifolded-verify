@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TR Agreement 2.6</title>
+<title>TR Agreement 2.7</title>
 <!--
   TR AGREEMENT 1.1 · Tungsten Royce · BY BIFOLDED
   Copyright Tungsten Royce. Proprietary.
@@ -1588,6 +1588,7 @@ document.addEventListener("focusout",function(){
 /* Demo content so the first thing anyone sees is the document working, not an
    empty form. Cleared the moment a real name is typed over it. */
 if(!D.buyer){
+  D._demo={};   /* what the SAMPLE put there — see dbFill: a demo value is empty */
   D.buyer="Mr & Mrs Shanker"; D.site="1142 Canyon Acres Drive, Laguna Beach CA";
   D.email="shanker@example.com"; D.phone="949 555 0117";
   D.rep="Ryan"; D.repPhone="949 555 0142"; D.repEmail="ryan@tungstenroyce.com";
@@ -1598,6 +1599,11 @@ if(!D.buyer){
           casingInt:"int_std",casingExt:"ext_std",auto:"none",t24:"na"};
   D.color="Provincial — confirmed on a physical sample";
   D.price="46800"; D.weeks="18";
+  /* snapshot the sample so a real customer can wipe it — a live agreement
+     must never inherit the demo's price, openings or address. */
+  for(const k of ["buyer","buyer2","site","billing","email","phone","gc","gcContact",
+                  "architect","archContact","no","color","colorDepth","price","weeks"]) D._demo[k]=D[k];
+  D._demoOpenings=JSON.stringify(D.openings); D._demoSpec=JSON.stringify(D.spec);
   D.notes="You asked about the sill detail where the patio drains toward the opening — I have flagged it for the drawing and we will show you two ways to handle it.";
 }
 show("prep");
@@ -1818,6 +1824,68 @@ function dbSearch(v){
     dbSay(j.rows.length?"pick the customer":"no match — enter them in Point of Contact first");
   },300);
 }
+/* what we hold on this customer → the document's own field names */
+const FILLMAP=[["name","buyer"],["email","email"],["phone","phone"],
+  ["site_address","site"],["billing_address","billing"],
+  ["gc","gc"],["gc_contact","gcContact"],
+  ["architect","architect"],["arch_contact","archContact"]];
+var DBOFFERS=[], DBCID=null;
+async function dbFill(id){
+  DBCID=id; DBOFFERS=[];
+  let j; try{ j=await dbCall({action:"cust_get",customer_id:id}); }
+  catch(e){ dbSay("\u2691 "+String(e.message||e)); return; }
+  if(!j||!j.ok){ dbSay("\u2691 "+((j&&j.error)||"the record did not come back")); return; }
+  const f=j.fill||{}; const have=f.have||{}; const filled=[]; const wiped=[];
+  /* A SAMPLE VALUE IS NOT AN ANSWER. Anything still exactly as the demo left
+     it counts as empty here — otherwise the demo blocks every fill, and worse,
+     a real agreement keeps the sample's address and price. */
+  const isDemo=fld=>D._demo&&D._demo[fld]!==undefined&&String(D[fld]||"")===String(D._demo[fld]||"");
+  const openTo=fld=>!String(D[fld]||"").trim()||isDemo(fld);
+  for(const [k,fld] of FILLMAP){
+    const v=have[k]; if(!v) continue;
+    if(!openTo(fld)) continue;                   /* never over what he typed */
+    D[fld]=String(v); filled.push(fld);
+  }
+  /* the sample's leftovers go, now that a real customer is on the document */
+  for(const fld of ["buyer2","site","billing","email","phone","gc","gcContact","architect","archContact",
+                    "color","colorDepth","price","weeks"]){
+    if(isDemo(fld)&&String(D[fld]||"").trim()){ D[fld]=""; wiped.push(fld); }
+  }
+  if(D._demoOpenings&&JSON.stringify(D.openings)===D._demoOpenings){
+    D.openings=[{nm:"Opening 1",w:"",h:"",leaves:"4",move:"2 fold left, 2 fold right",config:"2L2R"}];
+    wiped.push("openings");
+  }
+  if(D._demo){ for(const k in D._demo) D._demo[k]=undefined; }   /* the sample is gone */
+  window.__wiped=wiped;
+  DBOFFERS=(f.offers||[]).filter(o=>{
+    const m=FILLMAP.find(x=>x[0]===o.field);
+    return m && !String(D[m[1]]||"").trim();
+  });
+  dbOffers(filled);
+}
+function dbOffers(filled){
+  const box=document.getElementById("dbHits"); if(!box) return;
+  const bits=[];
+  if(filled&&filled.length) bits.push('<span style="opacity:.85">filled '+filled.join(" \u00b7 ")+'</span>');
+  if(window.__wiped&&window.__wiped.length) bits.push('<span style="opacity:.7">sample cleared \u00b7 '+window.__wiped.length+' field'+(window.__wiped.length>1?"s":"")+'</span>');
+  for(const o of DBOFFERS){
+    bits.push('<button onclick="dbTake(\''+o.field+'\')" style="font:inherit;font-size:12px;border:0;border-radius:5px;padding:6px 10px;cursor:pointer;background:#6b5330;color:#fff">'
+      +esc2(o.field.replace(/_/g," "))+' \u00b7 '+esc2(o.value)+' \u00b7 '+esc2(o.from)+' \u2192 use it</button>');
+  }
+  box.innerHTML=bits.join(" ");
+}
+function esc2(x){ return String(x==null?"":x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+async function dbTake(field){
+  const o=DBOFFERS.find(x=>x.field===field); if(!o) return;
+  const m=FILLMAP.find(x=>x[0]===field); if(m){ D[m[1]]=String(o.value); }
+  /* the document takes it now; the RECORD only takes it if the office says so */
+  const j=await dbCall({action:"cust_fill_take",customer_id:DBCID,by:(D.rep||"office"),
+                        take:{[field]:o.value}, from:o.from});
+  DBOFFERS=DBOFFERS.filter(x=>x.field!==field);
+  dbOffers([]); dbStamp(); render();
+  dbSay(j&&j.ok?("kept "+field+" on C-"+(j.customer&&j.customer.customer_no||""))
+               :("\u2691 in the document only \u2014 "+((j&&j.error)||"not saved to the record")));
+}
 async function dbPick(id,name,cno){
   dbSay("loading quotes\u2026");
   const j=await dbCall({action:"cust_quotes",customer_id:id});
@@ -1839,8 +1907,12 @@ async function dbPick(id,name,cno){
   const c=j.customer||{};
   /* Pull into the document. The demo clears because a real buyer lands. */
   D.buyer=name; D.no=String(q.quote_no);
-  if(c.email)D.email=c.email; if(c.phone)D.phone=c.phone;
-  if(c.site_address)D.site=c.site_address;
+  /* EVERY field we hold a value for, filled only where the document is empty —
+     never over something already typed. `cust_get` says what we have and what
+     it can only offer; the offers wait for a press. */
+  await dbFill(id);
+  if(!D.email&&c.email)D.email=c.email; if(!D.phone&&c.phone)D.phone=c.phone;
+  if(!D.site&&c.site_address)D.site=c.site_address;
   if(q.value&&!num(D.price))D.price=String(q.value);
   D._db={quote_id:q.id,quote_no:q.quote_no,customer_no:cno,customer_id:id,status:q.status};
   /* Estimator breakout: the quote already knows the openings — pull, don't retype. */
@@ -1867,9 +1939,11 @@ async function dbPick(id,name,cno){
     if(bo.trim&&bo.trim.pct)D.notes=(D.notes?D.notes+"\n":"")+"Estimator trim level: "+bo.trim.name;
     if(skipped)alert(skipped+" line(s) had no price in the Estimator — cost them before this becomes a contract.");
   }
-  document.getElementById("dbPanel").style.display="none";
+  /* keep the panel open only while something is still on OFFER — otherwise
+     the press he needs is behind a closed drawer */
+  if(!DBOFFERS.length){ document.getElementById("dbPanel").style.display="none"; dbSay(""); }
+  else { dbSay("still on offer \u2014 press to use"); }
   dbStamp(); render();
-  dbSay("");
 }
 /* 2.5 — WHAT GETS PUBLISHED.
    The document always knew its invitations, its draws and its two totals; it

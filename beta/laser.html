@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tungsten Royce — Laser 2.5</title>
+  <title>Tungsten Royce — Laser 2.6</title>
   <!-- v1.7 — the true-opening outline is now a toggle, and any leg 1/2in or more
        outside the buildable box draws in red instead of grey. -->
   <style>
@@ -570,7 +570,7 @@
   <div class="field">
     <label>Site (address)</label>
     <div class="input-group" style="background:#f7f8fa">
-      <input type="text" id="job-site" placeholder="" autocomplete="street-address" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/>
+      <input type="text" id="job-site" placeholder="" autocomplete="street-address" style="font-size:1rem;padding:11px 10px;border:none;background:transparent;width:100%;outline:none;color:#1a1a2e"/><div id="site-note" style="font-size:12px;margin-top:4px;opacity:.9"></div>
     </div>
   </div>
   <div class="field" style="margin-bottom:0">
@@ -866,7 +866,26 @@
     sel.innerHTML='<option value="">— pick the job, quote or customer —</option>'+((j.jobs||[]).length?'<optgroup label="Jobs">'+(j.jobs||[]).map(x=>`<option value="j:${x.id}">${esc(x.label)}</option>`).join("")+'</optgroup>':'');
     sel.innerHTML+=((j.quotes||[]).length?'<optgroup label="Open quotes">'+(j.quotes||[]).map(x=>`<option value="q:${x.id}">${esc(x.label)}</option>`).join("")+'</optgroup>':'')+((j.customers||[]).length?'<optgroup label="Customers">'+(j.customers||[]).map(x=>`<option value="c:${x.id}">${esc(x.label)}</option>`).join("")+'</optgroup>':'')+'<option value="_new">＋ new customer…</option>';
     try{ const last=localStorage.getItem("tr.laser.target"); if(last&&[...sel.options].some(o=>o.value===last)) sel.value=last; }catch(e){} }
-  function onTarget(){ const v=document.getElementById("job-target").value; document.getElementById("newCust").style.display=v==="_new"?"block":"none"; if(v==="_new") document.getElementById("nc-name").focus(); try{ localStorage.setItem("tr.laser.target",v); }catch(e){} }
+  function onTarget(){ const v=document.getElementById("job-target").value; document.getElementById("newCust").style.display=v==="_new"?"block":"none"; if(v==="_new") document.getElementById("nc-name").focus(); try{ localStorage.setItem("tr.laser.target",v); }catch(e){}
+    /* Picking a customer we already know fills the site, instead of making the
+       field type an address we are already holding. Only when it is empty. */
+    if(v&&v.charAt(0)==="c") fillFromCustomer(v.slice(2)); else setSiteNote(""); }
+  function setSiteNote(t){ const el=document.getElementById("site-note"); if(el) el.innerHTML=t||""; }
+  async function fillFromCustomer(cid){
+    if(!cid) return; setSiteNote("");
+    let j; try{ j=await desk({action:"office_call",fn:"tr-intake",body:{action:"cust_get",customer_id:cid}}); }
+    catch(e){ setSiteNote("\u2691 "+esc(String(e.message||e))); return; }
+    if(!j||!j.ok){ setSiteNote("\u2691 "+esc((j&&j.error)||"the record did not come back")); return; }
+    const f=j.fill||{}, have=f.have||{}, site=document.getElementById("job-site");
+    if(site&&!site.value.trim()&&have.site_address){ site.value=have.site_address; setSiteNote("site from the record"); return; }
+    const off=(f.offers||[]).find(o=>o.field==="site_address");
+    if(site&&!site.value.trim()&&off){
+      setSiteNote('<button type="button" onclick="takeSite()" style="font:inherit;font-size:12px;border:0;border-radius:5px;padding:5px 9px;cursor:pointer;background:#6b5330;color:#fff">'+esc(off.value)+' \u00b7 '+esc(off.from)+' \u2192 use it</button>');
+      window.__siteOffer=off;
+    }
+  }
+  function takeSite(){ const o=window.__siteOffer; if(!o) return; const site=document.getElementById("job-site");
+    if(site&&!site.value.trim()) site.value=o.value; setSiteNote("site from the "+esc(o.from)); }
   async function saveCustomer(force){ const name=document.getElementById("nc-name").value.trim(), address=document.getElementById("nc-address").value.trim(), phone=document.getElementById("nc-phone").value.trim(), email=document.getElementById("nc-email").value.trim(); const note=document.getElementById("nc-note"); if(name.length<2){ note.innerHTML='<b style="color:#a33327">A name.</b>'; return; }
     const btn=document.getElementById("nc-btn"); btn.disabled=true; const j=await desk({action:"survey_customer_new",name,address,phone,email,force:!!force}); btn.disabled=false;
     if(j&&j.error==="exists"){ const ex=j.existing[0]; note.innerHTML=`<b>C-${ex.customer_no} ${esc(ex.name)}</b> is already in the book${ex.site_address?" · "+esc(ex.site_address):""}. <a href="#" onclick="useExisting('${ex.id}');return false">Use that one</a> · <a href="#" onclick="saveCustomer(true);return false">Save as a new one anyway</a>`; return; }
