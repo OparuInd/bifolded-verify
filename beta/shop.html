@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 4.0 (2026-09-06)  ·  PUBLIC (station token)  ·  the shop tablet
+  TR FINAL SOLUTION — Shop Floor 4.1 (2026-09-10)  ·  PUBLIC (station token)  ·  the shop tablet
   4.0 = the Bifolded.com design language + the crew schedule rail (tr-crew v1.0, migration 0076).
   BOARD      one column per person: the office's plan for today in time order, a live timer on what is
              started, Start / Done in two taps (pick your name once at the top), the day log (pre / post),
@@ -138,6 +138,13 @@ table.mx td.mxi.need{color:#a98a63}
 .mxnote{display:block;color:var(--mute);font-size:11px}
 .mxrot{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:8px;background:#3a2f18;color:#e0c48a;font-size:10px}
 .mxnone{display:inline-block;margin-left:6px;color:#8a6a6a;font-size:11px}
+
+.pn select,.pn input{width:auto;min-width:120px}
+.mxman{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.mxcard{border:1px solid var(--line2);border-radius:var(--r);padding:10px 12px;background:#161616}
+.mxhead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mxhead .note{margin-left:auto}
+.mxline{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-top:1px solid var(--line);font-size:13px}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
@@ -183,6 +190,7 @@ table.mx td.mxi.need{color:#a98a63}
   <div id="v_mx" style="display:none">
     <div class="wcard"><h2>Who is on which machine</h2>
       <div class="row" style="margin-top:0">
+        <div class="viewtog"><span id="mvTool" onclick="mxView('tool')">By tool</span><span id="mvMan" onclick="mxView('man')">By person</span></div>
         <span id="mxWhen" class="note"></span>
         <span style="flex:1"></span>
         <input id="mxDay" type="date" style="width:auto">
@@ -193,8 +201,13 @@ table.mx td.mxi.need{color:#a98a63}
       <div id="mxEdit" style="display:none;margin-top:10px"></div>
     </div>
     <div class="wcard" id="mxAdmin">
-      <div class="row" style="margin-top:0"><input id="mxNewTool" placeholder="new tool" style="flex:1;min-width:160px"><select id="mxNewCat" style="width:auto"></select><button class="sm" onclick="mxAddTool()">+ Tool</button></div>
-      <div class="row"><input id="mxNewCat2" placeholder="new category" style="flex:1;min-width:160px"><button class="sm" onclick="mxAddCat()">+ Category</button></div>
+      <div class="row" style="margin-top:0">
+        <span id="mxToolPick"></span>
+        <input id="mxToolName" placeholder="tool" style="flex:1;min-width:150px">
+        <span id="mxCatPick"></span>
+        <button class="sm go" id="mxToolSave" onclick="mxToolSave()">Save</button>
+        <button class="sm bad" id="mxToolRetire" onclick="mxToolRetire()" style="display:none">Retire</button>
+      </div>
       <div class="row"><span class="note">Rotate every</span><input id="mxRot" class="qty" inputmode="numeric" style="width:70px"><span class="note">days</span><button class="sm ghost" onclick="mxRotSet()">Set</button></div>
     </div>
   </div>
@@ -250,7 +263,7 @@ function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav","mx"])
    that lie. */
 const DESK=SB_URL+"/functions/v1/tr-desk";
 const desk=b=>call(DESK,b);
-let MX=null;
+let MX=null, MXV="tool";
 
 async function loadMatrix(){
   const j=await desk({action:"matrix_load"});
@@ -258,15 +271,80 @@ async function loadMatrix(){
   MX=j;
   if(!$("mxDay").value) $("mxDay").value=j.today;
   if(document.activeElement!==$("mxRot")) $("mxRot").value=j.rotate_days;
-  const cs=$("mxNewCat"); if(document.activeElement!==cs){ cs.innerHTML=j.categories.map(c=>'<option>'+esc(c.name)+'</option>').join(""); }
   $("mxAdmin").style.display=j.may_set?"block":"none";
   $("mxPushBtn").disabled=!j.may_set;
   $("mxWhen").innerHTML=j.may_set?'':'<span>read only · '+esc(j.me)+'</span>';
+  if(j.may_set) renderToolBar();
   renderMatrix();
 }
 
+/* PICK OR NEW. A select of what exists with "＋ new" on the end; choosing it
+   swaps the select for a text box in place, so nothing sends him to another
+   screen to create the thing first. The box is never re-rendered under him. */
+function pickNew(id,list,cur,ph){
+  const opts=list.map(v=>'<option'+(v===cur?' selected':'')+'>'+esc(v)+'</option>').join("");
+  return '<span class="pn" id="'+id+'_w">'
+    +'<select id="'+id+'" onchange="pnNew(this)"><option value=""></option>'+opts
+    +'<option value="__new">＋ new</option></select>'
+    +'<input id="'+id+'_n" placeholder="'+esc(ph)+'" style="display:none;width:150px">'
+    +'</span>';
+}
+function pnNew(sel){
+  if(sel.value!=="__new") return;
+  const box=$(sel.id+"_n");
+  sel.style.display="none"; box.style.display="inline-block"; box.value=""; box.focus();
+}
+function pnVal(id){
+  const box=$(id+"_n");
+  if(box&&box.style.display!=="none") return box.value.trim();
+  const sel=$(id); return sel&&sel.value!=="__new"?sel.value.trim():"";
+}
+
+/* THE TOOL BAR — pick a tool to rename or recategorise, or leave it blank and
+   the same row adds a new one. One row, three drop-downs, no second screen. */
+function renderToolBar(){
+  const j=MX;
+  const names=j.machines.map(m=>m.name);
+  const cats=j.categories.map(c=>c.name);
+  if($("mxToolPick").dataset.n!==String(names.length)+"/"+cats.length){
+    $("mxToolPick").dataset.n=String(names.length)+"/"+cats.length;
+    $("mxToolPick").innerHTML=pickNew("mxTool",names,"","");
+    $("mxCatPick").innerHTML=pickNew("mxCat",cats,"","category");
+    $("mxTool").onchange=function(){ pnNew(this); mxToolPicked(); };
+  }
+}
+function mxToolPicked(){
+  const nm=pnVal("mxTool");
+  const m=MX.machines.find(x=>x.name===nm);
+  $("mxToolName").value=m?m.name:"";
+  if(m&&$("mxCat")) $("mxCat").value=m.category||"";
+  $("mxToolRetire").style.display=m?"inline-block":"none";
+  $("mxToolSave").textContent=m?"Save":"+ Tool";
+}
+async function mxToolSave(){
+  const picked=pnVal("mxTool");
+  const m=MX.machines.find(x=>x.name===picked);
+  const name=$("mxToolName").value.trim()||picked;
+  const category=pnVal("mxCat")||null;
+  if(name.length<2){ toast("give the tool a name",true); return; }
+  const j=await desk(m?{action:"matrix_machine",id:m.id,fields:{name,category}}
+                     :{action:"matrix_machine",name,category});
+  if(!j.ok){ toast(j.error,true); return; }
+  $("mxToolName").value=""; $("mxToolPick").dataset.n="";
+  await loadMatrix(); toast("saved");
+}
+async function mxToolRetire(){
+  const m=MX.machines.find(x=>x.name===pnVal("mxTool")); if(!m) return;
+  const j=await desk({action:"matrix_machine",id:m.id,fields:{active:false,status:"retired"}});
+  if(!j.ok){ toast(j.error,true); return; }
+  $("mxToolName").value=""; $("mxToolPick").dataset.n="";
+  await loadMatrix(); toast("retired");
+}
+function mxView(v){ MXV=v; $("mvTool").className=v==="tool"?"on":""; $("mvMan").className=v==="man"?"on":""; renderMatrix(); }
+
 function renderMatrix(){
   const j=MX; if(!j) return;
+  if(MXV==="man") return renderByPerson();
   const ppl=j.people.filter(p=>p.kind!=="station").map(p=>p.name);
   let cat=null, h='<div style="overflow-x:auto"><table class="mx"><thead><tr><th class="mxn">tool</th>'
     + ppl.map(n=>'<th class="mxp" title="'+esc(n)+'">'+esc(n)+'</th>').join("")
@@ -294,6 +372,28 @@ function renderMatrix(){
   $("mxWrap").innerHTML=h;
 }
 
+/* THE GUYS AND THEIR ASSIGNMENTS — the same matrix read down the other axis. */
+function renderByPerson(){
+  const j=MX;
+  const by={}; for(const m of j.machines) for(const w of (m.crew||[])) (by[w]=by[w]||[]).push(m);
+  const ppl=j.people.filter(p=>p.kind!=="station");
+  let h='<div class="mxman">';
+  for(const p of ppl){
+    const list=by[p.name]||[];
+    h+='<div class="mxcard"><div class="mxhead">'+av(p.name,26)+'<b>'+esc(p.name)+'</b>'
+      +'<span class="note">'+(list.length?list.length+(list.length===1?' tool':' tools'):'nothing yet')+'</span></div>';
+    for(const m of list){
+      h+='<div class="mxline"><span>'+esc(m.name)+'</span><span class="note">'
+        +(m.no_light?'light —':'light '+m.light_days+'d')+' · '
+        +(m.no_heavy?'heavy —':'heavy '+m.heavy_days+'d')
+        +(m.due_to_rotate?' · <span class="mxrot">rotate · '+m.days_on+'d</span>':'')+'</span></div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  $("mxWrap").innerHTML=h;
+}
+
 /* A CONTROL MUST NEVER LIE ABOUT WHAT LANDED — the cell paints from the row the
    server sends back, not from the click. */
 async function mxTick(td){
@@ -315,12 +415,15 @@ async function mxTier(id,tier){
   const days=tier==="light"?m.light_days:m.heavy_days;
   const itemId=tier==="light"?m.light_id:m.heavy_id;
   let steps=[];
-  if(itemId){ const j0=await desk({action:"matrix_steps",machine_id:id,tier}); if(!j0.ok){ toast(j0.error,true); return; } steps=j0.steps||[]; }
+  let j0=null;
+  if(itemId){ j0=await desk({action:"matrix_steps",machine_id:id,tier}); if(!j0.ok){ toast(j0.error,true); return; } steps=j0.steps||[]; }
   const box=$("mxEdit");
   box.style.display="block";
+  const svc=(j0&&j0.item&&j0.item.service)||(tier==="heavy"?"Full alignment":"Monthly check");
   box.innerHTML='<div class="row" style="margin-top:0"><b>'+esc(m.name)+' · '+tier+'</b>'
     +'<span style="flex:1"></span><button class="sm ghost" onclick="mxEditClose()">Close</button></div>'
-    +'<div class="row"><span class="note">every</span><input id="mxD" class="qty" inputmode="numeric" style="width:80px" value="'+(days||"")+'"><span class="note">days</span>'
+    +'<div class="row">'+pickNew("mxJob",MX.procedures||[],svc,"job")
+    +'<span class="note">every</span><input id="mxD" class="qty" inputmode="numeric" style="width:80px" value="'+(days||"")+'"><span class="note">days</span>'
     +'<button class="sm go" onclick="mxTierSave(\''+esc(id)+'\',\''+tier+'\')">Save</button>'
     +(itemId?'<button class="sm bad" onclick="mxTierOff(\''+esc(id)+'\',\''+tier+'\')">Turn off</button>':'')+'</div>'
     +'<textarea id="mxS" rows="7" style="width:100%" placeholder="one check per line">'+esc(steps.join("\n"))+'</textarea>';
@@ -331,9 +434,12 @@ async function mxTierSave(id,tier){
   const d=Number($("mxD").value);
   if(!(d>0)){ toast("how many days between checks?",true); return; }
   const steps=$("mxS").value.split("\n").map(x=>x.trim()).filter(Boolean);
-  const j=await desk({action:"matrix_tier",machine_id:id,tier,interval_days:d,steps});
+  const service=pnVal("mxJob");
+  const j=await desk(Object.assign({action:"matrix_tier",machine_id:id,tier,interval_days:d,steps},
+                                   service?{service}:{}));
   if(!j.ok){ toast(j.error,true); return; }
   const m=MX.machines.find(x=>x.id===id); if(m) Object.assign(m,j.row||{});
+  if(service&&(MX.procedures||[]).indexOf(service)<0) MX.procedures.push(service);
   mxEditClose(); renderMatrix(); toast("saved");
 }
 async function mxTierOff(id,tier){
@@ -352,18 +458,6 @@ async function mxPush(){
     '<p class="note">⚑ '+j.missed.map(x=>esc(x.machine+(x.worker?" / "+x.worker:"")+" — "+x.why)).join(" · ")+'</p>');
 }
 
-async function mxAddTool(){
-  const name=$("mxNewTool").value.trim(); if(name.length<2){ toast("give the tool a name",true); return; }
-  const j=await desk({action:"matrix_machine",name,category:$("mxNewCat").value||null});
-  if(!j.ok){ toast(j.error,true); return; }
-  $("mxNewTool").value=""; await loadMatrix(); toast("added");
-}
-async function mxAddCat(){
-  const name=$("mxNewCat2").value.trim(); if(name.length<2){ toast("give the category a name",true); return; }
-  const j=await desk({action:"matrix_category",name});
-  if(!j.ok){ toast(j.error,true); return; }
-  $("mxNewCat2").value=""; await loadMatrix(); toast("added");
-}
 async function mxRotSet(){
   const days=Number($("mxRot").value); if(!(days>0)){ toast("how many days?",true); return; }
   const j=await desk({action:"matrix_rotate_days",days});
