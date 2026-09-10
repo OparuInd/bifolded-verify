@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.20</title>
+<title>Tungsten Royce — Input Desk 2.21</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
@@ -36,7 +36,7 @@ header h1{font-family:var(--fh);font-size:16px;font-weight:600;margin:0}header .
 .tabs{display:flex;gap:2px;margin-left:14px}.tabs button,.tabs a{white-space:nowrap}.tabs button{border:1px solid transparent;background:transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600}.tabs button.on{background:var(--card2);color:var(--bronze2);border-color:var(--line2)}.tabs .pip{font-family:var(--fm);font-size:10.5px;background:var(--bad);color:#fff;border-radius:9px;padding:0 6px;margin-left:5px}
 header .r{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--mute)}
 .eyebrow{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
-button{font:inherit;color:inherit;cursor:pointer;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);padding:8px 12px;font-weight:600}button:hover{border-color:var(--bronze)}button:disabled{opacity:.4;cursor:default}
+button{font:inherit;color:inherit;cursor:pointer;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);padding:8px 12px;font-weight:600}a.btn{font:inherit;color:inherit;cursor:pointer;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);padding:8px 12px;font-weight:600;text-decoration:none;display:inline-block}a.btn:hover{border-color:var(--bronze)}a.btn.sm{padding:5px 9px;font-size:12px}button:hover{border-color:var(--bronze)}button:disabled{opacity:.4;cursor:default}
 button.go{background:var(--bronze);border-color:var(--bronze);color:var(--bronze-ink)}button.ghost{background:transparent}button.sm{padding:5px 9px;font-size:12px}button.ok{background:#1f3a29;border-color:#2f5a3c;color:var(--ok)}button.warn{background:#2a2418;border-color:#5a4a1e;color:var(--warn)}button.bad{background:#3a1f1f;border-color:#5a2f2f;color:var(--bad)}
 input,select,textarea{font:inherit;color:var(--fg);background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r);padding:8px 10px;font-size:14px;width:100%}input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bronze)}
 main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
@@ -532,7 +532,7 @@ async function saveLines(id){
     toast(`${j.items.length} line${j.items.length>1?"s":""} on the shelf · ${j.items.filter(i=>i.created).length} new${j.items.filter(i=>i.created&&i.code).length?" · "+j.items.filter(i=>i.created&&i.code).map(i=>i.code).join(" "):""}`); loadReceipts();
   }catch(e){toast(e.message,true);}
 }
-window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
+window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.pdOnward=pdOnward;window.opForCustomer=opForCustomer;window.opAllCust=opAllCust;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 window.opFilter=opFilter;window.opDebounce=opDebounce;window.opPick=opPick;window.opSet=opSet;window.opTakeSteel=opTakeSteel;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
    Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
@@ -852,9 +852,20 @@ function pdPick(kind,id){ PDSEL=kind+id; PDT=PD.find(x=>x.kind===kind&&Number(x.
       ${already?"":`<div style="display:flex;gap:6px;margin-top:8px">
         <button class="sm" style="flex:1" onclick="pdTake('add')">\uFF0B Add as prospect</button>
         <button class="sm" onclick="pdTake('not_ours')">Not ours</button></div>`}
+      ${already?pdOnward(r.have_customer_id):""}
     </div>
   </div>`;
 }
+/* Once they are in the book, say so and open the next door — the whole point
+   of the mirror is that a deal becomes paperwork without retyping a name. */
+function pdOnward(cid){
+  if(!cid) return "";
+  return `<div style="display:flex;gap:6px;margin-top:8px">
+    <a class="btn sm" style="flex:1;text-align:center" href="agree.html?c=${encodeURIComponent(cid)}">Write the agreement \u2197</a>
+    <button class="sm" onclick="opForCustomer('${cid}')">Openings</button></div>`;
+}
+function opForCustomer(cid){ tab("open",1); OPQ=""; OPF="all"; OPSEL=null; OPCUST=cid||null;
+  if(!$("opList")) loadOpen(); else opPull(); }
 var PDTMR=null;
 function pdDebounce(){ clearTimeout(PDTMR); PDTMR=setTimeout(pdPull,350); }
 async function pdTake(what,cid){
@@ -864,7 +875,12 @@ async function pdTake(what,cid){
   if(what==="add"){ const nm=prompt("Name for the book",PDT.person_name||PDT.org_name||PDT.label||""); if(!nm) return; body.name=nm; }
   try{ const j=await desk(body);
        toast(j.outcome==="added"?("added "+(j.label||"")):j.outcome==="linked"?"linked":"marked not ours");
-       await loadPd(); }
+       await loadPd();
+       /* Hand him the next step instead of making him find the name again. */
+       const nc=j.customer&&j.customer.id;
+       if(nc&&$("pdWork")){ const box=document.createElement("div"); box.className="box";
+         box.innerHTML=`<h3>In our book</h3><div class="use">\u2713 C-${(j.customer.customer_no||"")} ${esc(j.customer.name||"")}</div>`+pdOnward(nc);
+         $("pdWork").innerHTML=""; $("pdWork").appendChild(box); } }
   catch(e){
     if(/^exists/.test(e.message)){ if(confirm("A customer with that name is already in the book. Add anyway?")){ body.force=true;
       try{ const j=await desk(body); toast("added "+(j.label||"")); await loadPd(); }catch(x){ toast(x.message,true); } } return; }
@@ -877,11 +893,12 @@ async function pdTake(what,cid){
    The mount decides which steel is SUGGESTED — rear flush usually L-steel,
    front flush usually flat bar — and a press is what makes it real.
 ===================================================================== */
-var OP=[], OPQ="", OPF="all", OPSEL=null, OPT=null, OPTMR=null;
+var OP=[], OPQ="", OPF="all", OPSEL=null, OPT=null, OPTMR=null, OPCUST=null;
 const OPCHIP={ all:{t:"all"}, need:{t:"needs an answer"}, flush:{t:"flush mounts"},
                job:{t:"on a job"}, quote:{t:"on a quote"}, loose:{t:"no job yet"} };
 const OPMOUNT=[["inset","inset"],["rear_flush","rear flush"],["front_flush","front flush"]];
 function opFilter(k){ OPF=(OPF===k?"all":k); opPull(); }
+function opAllCust(){ OPCUST=null; opPull(); }
 function opDebounce(){ clearTimeout(OPTMR); OPTMR=setTimeout(opPull,350); }
 async function loadOpen(){
   if(!$("opList")) $("v_open").innerHTML='<div class="empty">Loading…</div>';
@@ -889,7 +906,9 @@ async function loadOpen(){
 }
 async function opPull(){
   /* NEVER rebuild the grid under his typing — only the list refills. */
-  try{ const j=await desk({action:"openings_list",show:OPF==="need"?"all":OPF,q:OPQ});
+  const body={action:"openings_list",show:OPF==="need"?"all":OPF,q:OPQ};
+  if(OPCUST) body.customer_id=OPCUST;
+  try{ const j=await desk(body);
        OP=j.rows||[];
        if(OPF==="need") OP=OP.filter(r=>(r.missing||[]).length);
        const pip=$("opN"); const n=j.need||0; pip.textContent=n; pip.style.display=n?"inline":"none"; }
@@ -916,7 +935,7 @@ function renderOpen(){
 function renderOpenList(){
   $("opChips").innerHTML=Object.keys(OPCHIP).map(k=>
     `<button class="${OPF===k?"on":""}" onclick="opFilter('${k}')">${OPCHIP[k].t}</button>`).join("");
-  $("opN2").textContent=`${OP.length} shown`;
+  $("opN2").innerHTML=`${OP.length} shown`+(OPCUST?` · <button class="sm" onclick="opAllCust()">one customer \u00d7</button>`:"");
   $("opList").innerHTML=OP.map(r=>{
     const where=r.job_no?("job "+r.job_no):r.quote_no?("quote "+r.quote_no):"no job yet";
     const miss=(r.missing||[]).length;
