@@ -142,6 +142,11 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
     <section><div class="sh"><span class="eyebrow">Today</span><span class="n" id="todayN"></span><div class="viewtog"><span id="vDeck" onclick="setView('deck')">Deck</span><span id="vList" onclick="setView('list')">List</span></div></div>
       <div id="secHero"></div><div id="today"></div></section>
 
+    <section><div class="sh"><span class="eyebrow">Not in</span><span class="n" id="awayN"></span></div>
+      <div class="card"><div id="awayRow"></div>
+        <div class="row"><input id="awayH" class="qty" inputmode="decimal" placeholder="hours" style="width:90px"><input id="awayNote" placeholder="note" style="flex:1"></div>
+      </div></section>
+
     <section><div class="sh"><span class="eyebrow">Slip log</span><span class="n" id="logN"></span></div>
       <div class="card">
         <div class="eyebrow">Pre — what I'm on this morning</div>
@@ -287,6 +292,8 @@ async function boot(){
   pushHint();
   loadIntake();
 }
+setTimeout(loadAway, 700);
+
 async function loadIntake(){
   const j=await pub({action:"crew_view"}); if(!j.ok)return;
   $("asks").innerHTML=j.asks.length?j.asks.map(a=>`<div class="card">${a.job_no?`<div class="job">${esc(a.job_no)}</div>`:""}<div class="title">Photo: ${esc(a.what)}</div>
@@ -298,6 +305,48 @@ async function loadIntake(){
       ${q.status==="answered"?`<div class="ans"><b>${esc(q.answered_by||"office")}</b> ${esc(q.answer)}</div>`:'<div class="wait">sent — the office will answer here</div>'}</div>`).join("");
   loadOffice(); loadMedia(); loadMyReceipts();
 }
+/* ================= NOT IN (tr-desk 2.33 / 0117) =================
+   His own day, logged by him. The server takes the name from the token, not
+   from this page, so this can only ever be about the man holding the phone. */
+const DESK=SB_URL+"/functions/v1/tr-desk";
+const desk=b=>call(DESK,b);
+const AWAYK=[["sick","Sick"],["vacation","Vacation"],["personal","Personal"],
+             ["late","Came in late"],["left_early","Left early"]];
+let AWAY=null;
+
+async function loadAway(){
+  const j=await desk({action:"crew_status"});
+  if(!j.ok){ $("awayRow").innerHTML='<p class="note">⚑ '+esc(j.error)+'</p>'; return; }
+  AWAY=j; renderAway();
+}
+function renderAway(){
+  const j=AWAY; if(!j) return;
+  const me=j.people.find(p=>p.name===j.me);
+  const mine=me?(me.days||[]).filter(d=>d.day===j.today):[];
+  const on=mine.map(d=>d.kind);
+  $("awayN").textContent=on.length?String(on.length):"";
+  $("awayN").style.display=on.length?"inline-block":"none";
+  $("awayRow").innerHTML='<div class="row" style="margin-top:0">'
+    + AWAYK.map(k=>'<button class="'+(on.indexOf(k[0])>=0?"go":"ghost")
+      +'" onclick="awayTap(\''+k[0]+'\')">'+k[1]+'</button>').join("")
+    + '</div>'
+    + (mine.length?'<div class="note" style="margin-top:8px">'
+        + mine.map(d=>esc(d.kind.replace("_"," "))+(d.hours!=null?" · "+d.hours+"h":"")).join(" · ")
+        + '</div>':'');
+}
+async function awayTap(kind){
+  const me=AWAY&&AWAY.people.find(p=>p.name===AWAY.me);
+  const on=me?(me.days||[]).some(d=>d.day===AWAY.today&&d.kind===kind):false;
+  const hv=$("awayH").value.trim(), nv=$("awayNote").value.trim();
+  const j=await desk(Object.assign({action:"absence_mine",kind},
+    on?{clear:true}:{},
+    (!on&&hv!=="")?{hours:Number(hv)}:{}, (!on&&nv)?{note:nv}:{}));
+  if(!j.ok){ $("msg").textContent=j.error; return; }
+  if(me){ me.days=(me.days||[]).filter(d=>d.day!==AWAY.today).concat(j.rows||[]); }
+  $("awayH").value=""; $("awayNote").value="";
+  renderAway(); $("msg").textContent="";
+}
+
 // ---- TODAY: deck (swipeable stack) or list (filter / sort) ----
 let VIEW="deck"; try{ VIEW=localStorage.getItem("tr_view")||"deck"; }catch(e){}
 let LF="today", LS="prio", DECK_I=0;

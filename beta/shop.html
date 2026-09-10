@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 4.1 (2026-09-10)  ·  PUBLIC (station token)  ·  the shop tablet
+  TR FINAL SOLUTION — Shop Floor 4.2 (2026-09-10)  ·  PUBLIC (station token)  ·  the shop tablet
   4.0 = the Bifolded.com design language + the crew schedule rail (tr-crew v1.0, migration 0076).
   BOARD      one column per person: the office's plan for today in time order, a live timer on what is
              started, Start / Done in two taps (pick your name once at the top), the day log (pre / post),
@@ -145,6 +145,8 @@ table.mx td.mxi.need{color:#a98a63}
 .mxhead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .mxhead .note{margin-left:auto}
 .mxline{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-top:1px solid var(--line);font-size:13px}
+
+.mxx{color:var(--mute);cursor:pointer;text-decoration:underline;margin-left:6px}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
@@ -160,6 +162,7 @@ table.mx td.mxi.need{color:#a98a63}
   <button id="t_inv" onclick="tab('inv')">Inventory</button>
   <button id="t_mach" onclick="tab('mach')">Machines</button>
   <button id="t_mx" onclick="tab('mx')">Duty matrix</button>
+  <button id="t_ppl" onclick="tab('ppl')">People</button>
   <button id="t_med" onclick="tab('med')">Media</button>
 </nav>
 <main>
@@ -211,6 +214,14 @@ table.mx td.mxi.need{color:#a98a63}
       <div class="row"><span class="note">Rotate every</span><input id="mxRot" class="qty" inputmode="numeric" style="width:70px"><span class="note">days</span><button class="sm ghost" onclick="mxRotSet()">Set</button></div>
     </div>
   </div>
+  <div id="v_ppl" style="display:none">
+    <div class="wcard"><h2>Who is here</h2>
+      <div class="row" style="margin-top:0"><span id="plWhen" class="note"></span><span style="flex:1"></span>
+        <input id="plDay" type="date" style="width:auto" onchange="loadPeople()"></div>
+      <div id="plOut"></div>
+      <div id="plWrap"><p class="note">Loading…</p></div>
+    </div>
+  </div>
   <div id="v_med" style="display:none">
     <div class="wcard"><h2>Job media — walkaround &amp; install shots</h2>
       <div class="row"><select id="medJob" onchange="medStatus()" style="flex:1"></select><span id="medChips"></span></div>
@@ -253,7 +264,89 @@ const byPrio=(a,b)=>(PR[a.priority||"normal"]-PR[b.priority||"normal"])||((a.slo
 let WHO=""; try{ WHO=localStorage.getItem("tr_station_who")||""; }catch(e){}
 const setWho=n=>{ WHO=n; try{localStorage.setItem("tr_station_who",n)}catch(e){} renderWho(); renderBoard(); };
 const who=()=>WHO;
-function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav","mx"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; } if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else if(t==="trav")loadTrav(); else if(t==="mx")loadMatrix(); else loadShop(); }
+function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav","mx","ppl"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; } if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else if(t==="trav")loadTrav(); else if(t==="mx")loadMatrix(); else if(t==="ppl")loadPeople(); else loadShop(); }
+
+/* ================= WHO IS HERE (tr-desk 2.33 / 0117) =================
+   EMPLOYMENT is what a man IS and changes rarely. AN ABSENCE is one day.
+   The office writes anybody's; a man writes his own from The Slip. */
+let PPL=null;
+const EMPL={full_time:"full time",part_time:"part time",on_call:"on call",reserved:"reserved"};
+const WHY={sick:"sick",vacation:"vacation",personal:"personal",holiday:"holiday",
+           left_early:"left early",late:"late",no_show:"no show",other:"out"};
+
+async function loadPeople(){
+  const day=$("plDay").value;
+  const j=await desk(Object.assign({action:"crew_status"},day?{from:day,to:day}:{}));
+  if(!j.ok){ $("plWrap").innerHTML='<p class="note">⚑ '+esc(j.error)+'</p>'; return; }
+  PPL=j;
+  if(!$("plDay").value) $("plDay").value=j.today;
+  $("plWhen").innerHTML=j.may_set?'':'<span>read only · '+esc(j.me)+'</span>';
+  renderPeople();
+}
+
+function renderPeople(){
+  const j=PPL; if(!j) return;
+  const day=$("plDay").value||j.today;
+  const ppl=j.people.filter(p=>p.kind!=="station");
+  const out=ppl.filter(p=>(p.days||[]).some(d=>d.day===day));
+  $("plOut").innerHTML=out.length
+    ? '<div class="row" style="margin-top:0">'+out.map(p=>{
+        const d=(p.days||[]).filter(x=>x.day===day);
+        return '<span class="mxrot">'+esc(p.name)+' · '+d.map(x=>esc(WHY[x.kind]||x.kind)+(x.hours!=null?' '+x.hours+'h':'')).join(' · ')+'</span>';
+      }).join('')+'</div>'
+    : '<p class="note">everybody in</p>';
+
+  let h='<div class="mxman">';
+  for(const p of ppl){
+    const d=(p.days||[]).filter(x=>x.day===day);
+    h+='<div class="mxcard"><div class="mxhead">'+av(p.name,26)+'<b>'+esc(p.name)+'</b>'
+      +'<span class="note">'+esc(p.kind)+'</span></div>';
+    h+='<div class="mxline"><span class="note">is</span><span>'
+      + (j.may_set
+         ? '<select onchange="plEmp(\''+esc(p.name)+'\',this.value)">'
+           + j.employment.map(e=>'<option value="'+e+'"'+(e===p.employment?' selected':'')+'>'+EMPL[e]+'</option>').join("")
+           + '</select>'
+         : esc(EMPL[p.employment]||p.employment))
+      +'</span></div>';
+    for(const x of d){
+      h+='<div class="mxline"><span>'+esc(WHY[x.kind]||x.kind)+(x.hours!=null?' · '+x.hours+'h':'')
+        +(x.note?' <span class="note">'+esc(x.note)+'</span>':'')+'</span>'
+        +'<span class="note">'+esc(x.source)
+        +(j.may_set?' <a class="mxx" onclick="plAway(\''+esc(p.name)+'\',\''+x.kind+'\',true)">clear</a>':'')
+        +'</span></div>';
+    }
+    if(j.may_set){
+      h+='<div class="mxline"><span>'
+        +'<select id="plK_'+esc(p.name).replace(/\W/g,'')+'">'
+        + j.kinds.map(k=>'<option value="'+k+'">'+esc(WHY[k]||k)+'</option>').join("")
+        +'</select> <input class="qty" style="width:52px" id="plH_'+esc(p.name).replace(/\W/g,'')+'" inputmode="decimal" placeholder="h">'
+        +'</span><span><button class="sm" onclick="plAway(\''+esc(p.name)+'\')">Log</button></span></div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  $("plWrap").innerHTML=h;
+}
+
+async function plEmp(name,employment){
+  const j=await desk({action:"crew_employment_set",worker:name,employment});
+  if(!j.ok){ toast(j.error,true); await loadPeople(); return; }
+  const p=PPL.people.find(x=>x.name===name); if(p) p.employment=j.row.employment;
+  toast("saved");
+}
+async function plAway(name,kind,clear){
+  const id=name.replace(/\W/g,'');
+  const k=kind||($("plK_"+id)&&$("plK_"+id).value);
+  const hEl=$("plH_"+id), hours=clear?null:(hEl&&hEl.value.trim()!==""?Number(hEl.value):null);
+  const day=$("plDay").value||PPL.today;
+  const j=await desk(Object.assign({action:"absence_set",worker:name,day,kind:k},
+                                   clear?{clear:true}:(hours!=null?{hours}:{})));
+  if(!j.ok){ toast(j.error,true); return; }
+  const p=PPL.people.find(x=>x.name===name);
+  if(p){ p.days=(p.days||[]).filter(x=>x.day!==day).concat(j.rows||[]); }
+  if(hEl) hEl.value="";
+  renderPeople(); toast(clear?"cleared":"logged");
+}
 
 /* ================= THE MACHINE DUTY MATRIX (tr-desk 2.31 / 0116) =================
    Tools down the side, people across the top, a dot where somebody is on it.
