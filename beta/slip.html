@@ -144,7 +144,7 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
 
     <section><div class="sh"><span class="eyebrow">Not in</span><span class="n" id="awayN"></span></div>
       <div class="card"><div id="awayRow"></div>
-        <div class="row"><input id="awayH" class="qty" inputmode="decimal" placeholder="hours" style="width:90px"><input id="awayNote" placeholder="note" style="flex:1"></div>
+        <div class="row"><input id="awayH" class="qty" inputmode="decimal" placeholder="hours" style="width:90px"><span class="note">thru</span><input id="awayThru" type="date" style="width:auto"><input id="awayNote" placeholder="note" style="flex:1"></div>
       </div></section>
 
     <section><div class="sh"><span class="eyebrow">Slip log</span><span class="n" id="logN"></span></div>
@@ -337,14 +337,15 @@ function renderAway(){
 async function awayTap(kind){
   const me=AWAY&&AWAY.people.find(p=>p.name===AWAY.me);
   const on=me?(me.days||[]).some(d=>d.day===AWAY.today&&d.kind===kind):false;
-  const hv=$("awayH").value.trim(), nv=$("awayNote").value.trim();
+  const hv=$("awayH").value.trim(), nv=$("awayNote").value.trim(), tv=$("awayThru").value;
   const j=await desk(Object.assign({action:"absence_mine",kind},
     on?{clear:true}:{},
-    (!on&&hv!=="")?{hours:Number(hv)}:{}, (!on&&nv)?{note:nv}:{}));
+    (!on&&hv!=="")?{hours:Number(hv)}:{}, (!on&&nv)?{note:nv}:{}, (!on&&tv)?{to:tv}:{}));
   if(!j.ok){ $("msg").textContent=j.error; return; }
-  if(me){ me.days=(me.days||[]).filter(d=>d.day!==AWAY.today).concat(j.rows||[]); }
-  $("awayH").value=""; $("awayNote").value="";
-  renderAway(); $("msg").textContent="";
+  $("awayH").value=""; $("awayNote").value=""; $("awayThru").value="";
+  /* a run reaches past today, so re-read rather than patch the one day */
+  await loadAway();
+  $("msg").textContent = (j.days&&j.days.length>1) ? j.days.length+" days logged" : "";
 }
 
 // ---- TODAY: deck (swipeable stack) or list (filter / sort) ----

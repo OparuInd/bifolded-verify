@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 4.2 (2026-09-10)  ·  PUBLIC (station token)  ·  the shop tablet
+  TR FINAL SOLUTION — Shop Floor 4.3 (2026-09-11)  ·  PUBLIC (station token)  ·  the shop tablet
   4.0 = the Bifolded.com design language + the crew schedule rail (tr-crew v1.0, migration 0076).
   BOARD      one column per person: the office's plan for today in time order, a live timer on what is
              started, Start / Done in two taps (pick your name once at the top), the day log (pre / post),
@@ -146,6 +146,7 @@ table.mx td.mxi.need{color:#a98a63}
 .mxhead .note{margin-left:auto}
 .mxline{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-top:1px solid var(--line);font-size:13px}
 
+input.thru{width:118px;padding:4px 6px;font-size:12px}
 .mxx{color:var(--mute);cursor:pointer;text-decoration:underline;margin-left:6px}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
@@ -320,6 +321,7 @@ function renderPeople(){
         +'<select id="plK_'+esc(p.name).replace(/\W/g,'')+'">'
         + j.kinds.map(k=>'<option value="'+k+'">'+esc(WHY[k]||k)+'</option>').join("")
         +'</select> <input class="qty" style="width:52px" id="plH_'+esc(p.name).replace(/\W/g,'')+'" inputmode="decimal" placeholder="h">'
+        +' <span class="note">thru</span> <input type="date" class="thru" id="plT_'+esc(p.name).replace(/\W/g,'')+'">'
         +'</span><span><button class="sm" onclick="plAway(\''+esc(p.name)+'\')">Log</button></span></div>';
     }
     h+='</div>';
@@ -338,14 +340,18 @@ async function plAway(name,kind,clear){
   const id=name.replace(/\W/g,'');
   const k=kind||($("plK_"+id)&&$("plK_"+id).value);
   const hEl=$("plH_"+id), hours=clear?null:(hEl&&hEl.value.trim()!==""?Number(hEl.value):null);
+  const tEl=$("plT_"+id), thru=clear?"":(tEl&&tEl.value?tEl.value:"");
   const day=$("plDay").value||PPL.today;
   const j=await desk(Object.assign({action:"absence_set",worker:name,day,kind:k},
-                                   clear?{clear:true}:(hours!=null?{hours}:{})));
+                                   clear?{clear:true}:(hours!=null?{hours}:{}),
+                                   (!clear&&thru)?{to:thru}:{}));
   if(!j.ok){ toast(j.error,true); return; }
-  const p=PPL.people.find(x=>x.name===name);
-  if(p){ p.days=(p.days||[]).filter(x=>x.day!==day).concat(j.rows||[]); }
-  if(hEl) hEl.value="";
-  renderPeople(); toast(clear?"cleared":"logged");
+  if(hEl) hEl.value=""; if(tEl) tEl.value="";
+  /* a run touches days this card is not showing, so the whole roster is re-read
+     rather than patched in place — the answer must be what the book now says. */
+  await loadPeople();
+  toast(clear?"cleared":((j.days&&j.days.length>1)?j.days.length+" days":"logged")
+        +((j.skipped&&j.skipped.length)?" · "+j.skipped.length+" not worked":""));
 }
 
 /* ================= THE MACHINE DUTY MATRIX (tr-desk 2.31 / 0116) =================
