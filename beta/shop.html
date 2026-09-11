@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 4.3 (2026-09-11)  ·  PUBLIC (station token)  ·  the shop tablet
+  TR FINAL SOLUTION — Shop Floor 4.4 (2026-09-11)  ·  PUBLIC (station token)  ·  the shop tablet
   4.0 = the Bifolded.com design language + the crew schedule rail (tr-crew v1.0, migration 0076).
   BOARD      one column per person: the office's plan for today in time order, a live timer on what is
              started, Start / Done in two taps (pick your name once at the top), the day log (pre / post),
@@ -148,6 +148,20 @@ table.mx td.mxi.need{color:#a98a63}
 
 input.thru{width:118px;padding:4px 6px;font-size:12px}
 .mxx{color:var(--mute);cursor:pointer;text-decoration:underline;margin-left:6px}
+
+table.cal{border-collapse:collapse;font-size:12.5px;min-width:100%}
+table.cal th,table.cal td{border:1px solid #2a2a2a;padding:4px 6px;text-align:center;white-space:nowrap}
+table.cal th.cn,table.cal td.cn{text-align:left;min-width:150px;font-size:13px}
+table.cal td.cn{display:table-cell}
+table.cal td.cn .av{margin-right:6px;vertical-align:middle}
+table.cal th.cd{color:var(--mute);font-weight:600;font-size:10.5px;letter-spacing:.04em}
+table.cal th.cd span{display:block;color:var(--fg);font-size:13px;letter-spacing:0}
+table.cal th.off,table.cal td.off{background:#161616;color:#5a5a5a}
+table.cal th.now,table.cal td.now{border-left:1px solid var(--gold);border-right:1px solid var(--gold)}
+table.cal td.cc{cursor:pointer;min-width:34px;height:26px;color:var(--gold)}
+table.cal td.cc.on{background:#2a2417;font-size:11px}
+table.cal td.cn2{color:var(--mute);min-width:34px}
+.cemp{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;background:#2a2a2a;color:var(--mute);font-size:10px}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
@@ -164,6 +178,7 @@ input.thru{width:118px;padding:4px 6px;font-size:12px}
   <button id="t_mach" onclick="tab('mach')">Machines</button>
   <button id="t_mx" onclick="tab('mx')">Duty matrix</button>
   <button id="t_ppl" onclick="tab('ppl')">People</button>
+  <button id="t_cal" onclick="tab('cal')">Calendar</button>
   <button id="t_med" onclick="tab('med')">Media</button>
 </nav>
 <main>
@@ -223,6 +238,21 @@ input.thru{width:118px;padding:4px 6px;font-size:12px}
       <div id="plWrap"><p class="note">Loading…</p></div>
     </div>
   </div>
+  <div id="v_cal" style="display:none">
+    <div class="wcard"><h2>Who is out, ahead</h2>
+      <div class="row" style="margin-top:0">
+        <div class="viewtog"><span id="cvWeek" onclick="calView('week')">Week</span><span id="cvMonth" onclick="calView('month')">Month</span></div>
+        <button class="sm ghost" onclick="calStep(-1)">‹</button>
+        <button class="sm ghost" onclick="calStep(0)">Today</button>
+        <button class="sm ghost" onclick="calStep(1)">›</button>
+        <b id="calTitle"></b>
+        <span style="flex:1"></span>
+        <span class="note">click marks</span>
+        <select id="calKind" style="width:auto"></select>
+      </div>
+      <div id="calWrap"><p class="note">Loading…</p></div>
+    </div>
+  </div>
   <div id="v_med" style="display:none">
     <div class="wcard"><h2>Job media — walkaround &amp; install shots</h2>
       <div class="row"><select id="medJob" onchange="medStatus()" style="flex:1"></select><span id="medChips"></span></div>
@@ -265,7 +295,98 @@ const byPrio=(a,b)=>(PR[a.priority||"normal"]-PR[b.priority||"normal"])||((a.slo
 let WHO=""; try{ WHO=localStorage.getItem("tr_station_who")||""; }catch(e){}
 const setWho=n=>{ WHO=n; try{localStorage.setItem("tr_station_who",n)}catch(e){} renderWho(); renderBoard(); };
 const who=()=>WHO;
-function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav","mx","ppl"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; } if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else if(t==="trav")loadTrav(); else if(t==="mx")loadMatrix(); else if(t==="ppl")loadPeople(); else loadShop(); }
+function tab(t){ TAB=t; for(const x of ["board","inv","mach","med","trav","mx","ppl","cal"]){ $("v_"+x).style.display=x===t?"block":"none"; $("t_"+x).className=x===t?"on":""; } if(t==="board")loadBoard(); else if(t==="med")loadMedia(); else if(t==="trav")loadTrav(); else if(t==="mx")loadMatrix(); else if(t==="ppl")loadPeople(); else if(t==="cal")loadCal(); else loadShop(); }
+
+/* ================= THE CALENDAR (tr-desk 2.33 / 0117) =================
+   People down, days across — the same shape as the duty matrix, because it is
+   the same question asked about time instead of tools. One read of crew_status
+   over the window draws either view. Non-work days are shaded, so the grid
+   reads as the SHOP's calendar and not a generic one. */
+let CAL=null, CALV="week", CALFROM=null, CALWORK=[1,2,3,4];
+const iso=d=>d.toISOString().slice(0,10);
+const addDays=(s0,n)=>{const d=new Date(s0+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return iso(d);};
+const dowOf=s0=>{const d=new Date(s0+"T12:00:00Z").getUTCDay();return d===0?7:d;};
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DOW=["","Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+function calWindow(){
+  const base=CALFROM||iso(new Date());
+  if(CALV==="week"){ const from=addDays(base,-(dowOf(base)-1)); return [from,addDays(from,6)]; }
+  const d=new Date(base+"T12:00:00Z");
+  const from=base.slice(0,8)+"01";
+  const last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0,12));
+  return [from,iso(last)];
+}
+function calView(v){ CALV=v; $("cvWeek").className=v==="week"?"on":""; $("cvMonth").className=v==="month"?"on":""; loadCal(); }
+function calStep(n){
+  const [from]=calWindow();
+  if(n===0) CALFROM=iso(new Date());
+  else if(CALV==="week") CALFROM=addDays(from,7*n);
+  else { const d=new Date(from+"T12:00:00Z"); d.setUTCMonth(d.getUTCMonth()+n); CALFROM=iso(d); }
+  loadCal();
+}
+
+async function loadCal(){
+  const [from,to]=calWindow();
+  const j=await desk({action:"crew_status",from,to});
+  if(!j.ok){ $("calWrap").innerHTML='<p class="note">⚑ '+esc(j.error)+'</p>'; return; }   // AN EMPTY LIST IS A LIE
+  CAL=j; CAL._from=from; CAL._to=to;
+  if(!$("calKind").options.length)
+    $("calKind").innerHTML=j.kinds.map(k=>'<option value="'+k+'"'+(k==="vacation"?" selected":"")+'>'+esc(WHY[k]||k)+'</option>').join("");
+  $("cvWeek").className=CALV==="week"?"on":""; $("cvMonth").className=CALV==="month"?"on":"";
+  renderCal();
+}
+
+function renderCal(){
+  const j=CAL; if(!j) return;
+  const from=j._from,to=j._to;
+  const days=[]; for(let d=from; d<=to; d=addDays(d,1)) days.push(d);
+  $("calTitle").textContent = CALV==="week"
+    ? MON[Number(from.slice(5,7))-1]+" "+Number(from.slice(8))+" – "+Number(to.slice(8))
+    : MON[Number(from.slice(5,7))-1]+" "+from.slice(0,4);
+
+  const ppl=j.people.filter(p=>p.kind!=="station");
+  const today=j.today;
+  let h='<div style="overflow-x:auto"><table class="cal"><thead><tr><th class="cn">who</th>';
+  for(const d of days){
+    const off=CALWORK.indexOf(dowOf(d))<0;
+    h+='<th class="cd'+(off?" off":"")+(d===today?" now":"")+'">'
+      +(CALV==="week"?DOW[dowOf(d)]+'<span>'+Number(d.slice(8))+'</span>'
+                     :'<span>'+Number(d.slice(8))+'</span>')+'</th>';
+  }
+  h+='<th class="cn">out</th></tr></thead><tbody>';
+  for(const p of ppl){
+    const mine={}; for(const x of (p.days||[])) (mine[x.day]=mine[x.day]||[]).push(x);
+    let n=0;
+    h+='<tr><td class="cn">'+av(p.name,22)+esc(p.name)
+      +(p.employment!=="full_time"?'<span class="cemp">'+esc((EMPL[p.employment]||p.employment).replace(" "," "))+'</span>':'')
+      +'</td>';
+    for(const d of days){
+      const off=CALWORK.indexOf(dowOf(d))<0, on=mine[d];
+      if(on) n++;
+      const lab=on?(WHY[on[0].kind]||on[0].kind):"";
+      h+='<td class="cc'+(off?" off":"")+(d===today?" now":"")+(on?" on":"")+'"'
+        +(j.may_set?' onclick="calTap(\''+esc(p.name)+'\',\''+d+'\')"':'')
+        +(on?' title="'+esc(lab+(on[0].note?" — "+on[0].note:""))+'"':'')
+        +'>'+(on?(CALV==="week"?esc(lab):"●"):"")+'</td>';
+    }
+    h+='<td class="cn2">'+(n||"")+'</td></tr>';
+  }
+  h+='</tbody></table></div>';
+  $("calWrap").innerHTML=h;
+}
+
+/* Click an empty cell to mark it with whatever the picker says; click a marked
+   one to take it off. The answer is a re-read, never the click. */
+async function calTap(name,day){
+  const p=CAL.people.find(x=>x.name===name); if(!p) return;
+  const on=(p.days||[]).find(x=>x.day===day);
+  const kind=on?on.kind:$("calKind").value;
+  const j=await desk(Object.assign({action:"absence_set",worker:name,day,kind},on?{clear:true}:{}));
+  if(!j.ok){ toast(j.error,true); return; }
+  await loadCal();
+  toast(on?"cleared":esc(WHY[kind]||kind));
+}
 
 /* ================= WHO IS HERE (tr-desk 2.33 / 0117) =================
    EMPLOYMENT is what a man IS and changes rarely. AN ABSENCE is one day.
