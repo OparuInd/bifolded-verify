@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 4.4 (2026-09-11)  ·  PUBLIC (station token)  ·  the shop tablet
+  TR FINAL SOLUTION — Shop Floor 4.5 (2026-09-11)  ·  PUBLIC (station token)  ·  the shop tablet
   4.0 = the Bifolded.com design language + the crew schedule rail (tr-crew v1.0, migration 0076).
   BOARD      one column per person: the office's plan for today in time order, a live timer on what is
              started, Start / Done in two taps (pick your name once at the top), the day log (pre / post),
@@ -162,6 +162,12 @@ table.cal td.cc{cursor:pointer;min-width:34px;height:26px;color:var(--gold)}
 table.cal td.cc.on{background:#2a2417;font-size:11px}
 table.cal td.cn2{color:var(--mute);min-width:34px}
 .cemp{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;background:#2a2a2a;color:var(--mute);font-size:10px}
+
+.col.awaycol{opacity:.72}
+.col.awaycol .ch .nm{text-decoration:line-through;text-decoration-color:var(--mute)}
+.st.away{background:#3a2f18;color:#e0c48a}
+.awaybar{margin:6px 0;padding:6px 9px;border-radius:var(--r);background:#3a2f18;color:#e0c48a;font-size:12px}
+.awaytag{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;background:#3a2f18;color:#e0c48a;font-size:10px}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
@@ -393,8 +399,7 @@ async function calTap(name,day){
    The office writes anybody's; a man writes his own from The Slip. */
 let PPL=null;
 const EMPL={full_time:"full time",part_time:"part time",on_call:"on call",reserved:"reserved"};
-const WHY={sick:"sick",vacation:"vacation",personal:"personal",holiday:"holiday",
-           left_early:"left early",late:"late",no_show:"no show",other:"out"};
+
 
 async function loadPeople(){
   const day=$("plDay").value;
@@ -674,8 +679,12 @@ async function mxPush(){
   const j=await desk({action:"matrix_push",day,tier:tier||undefined});
   if(!j.ok){ toast(j.error,true); return; }
   toast(j.pushed.length+" on the slip"+(j.missed.length?" · "+j.missed.length+" not":""));
-  if(j.missed.length) $("mxWrap").insertAdjacentHTML("afterbegin",
-    '<p class="note">⚑ '+j.missed.map(x=>esc(x.machine+(x.worker?" / "+x.worker:"")+" — "+x.why)).join(" · ")+'</p>');
+  const flags=[];
+  if(j.missed.length) flags.push(j.missed.map(x=>esc(x.machine+(x.worker?" / "+x.worker:"")+" — "+x.why)).join(" · "));
+  /* A FLAG, NEVER A WALL — the cards went on; he is just told they landed on
+     somebody the book says is out that day. */
+  if(j.on_away&&j.on_away.length) flags.push("landed on "+j.on_away.map(esc).join(" · ")+" — out that day");
+  if(flags.length) $("mxWrap").insertAdjacentHTML("afterbegin",'<p class="note">⚑ '+flags.join(" · ")+'</p>');
 }
 
 async function mxRotSet(){
@@ -686,8 +695,20 @@ async function mxRotSet(){
 }
 
 /* ================= BOARD (tr-crew) ================= */
+const WHY={sick:"sick",vacation:"vacation",personal:"personal",holiday:"holiday",
+           left_early:"left early",late:"late",no_show:"no show",other:"out"};
+let AWAYTODAY={};
 async function loadBoard(){
   const j=await crew({action:"board"});
+  /* who is not in, from the SAME book the People tab and the Calendar write.
+     A failure here must not take the board down with it. */
+  try{
+    const a=await desk({action:"crew_status"});
+    AWAYTODAY={};
+    if(a&&a.ok) for(const p of a.people){ if((p.away||[]).length) AWAYTODAY[p.name]={kinds:p.away,all_day:p.away_all_day,
+      note:(p.days||[]).filter(d=>d.day===a.today).map(d=>d.note).filter(Boolean)[0]||"",
+      hours:(p.days||[]).filter(d=>d.day===a.today).map(d=>d.hours).filter(h=>h!=null)[0]}; }
+  }catch(e){ AWAYTODAY={}; }
   if(!j.ok){ if(/not valid|bad link/i.test(j.error||"")){ try{localStorage.removeItem("tr_station_k")}catch(e){} location.replace("./"); return; } $("gate").textContent=j.error; return; }
   B=j; $("gate").style.display="none"; $("tabs").style.display="flex"; $("askbar").style.display="flex"; $("v_board").style.display=TAB==="board"?"block":"none";
   $("station").textContent=j.station+" · shop floor"; $("today").textContent=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -699,7 +720,7 @@ function renderWho(){ $("whoBar").innerHTML=`<span class="eyebrow">I am</span>`+
 function renderList(){
   const today=B.cards.filter(c=>c.day===B.day||(!c.day&&c.status!=="done"&&c.status!=="next")).sort((a,b)=>byPrio(a,b)||a.worker.localeCompare(b.worker));
   $("board").style.display="block";
-  $("board").innerHTML=`<div class="eyebrow" style="margin:0 0 8px">Everyone · today · most urgent first</div>`+today.map(c=>`<div class="lrow ${c.priority&&c.priority!=="normal"?c.priority:""} ${c.status==="started"?"live":""} ${c.status==="done"?"done":""}"><span class="when">${c.slot!=null?hhmm(c.slot):"—"}</span>${c.worker?av(c.worker,34):'<span class="av" style="background:var(--card2);border:1px dashed var(--line2);width:34px;height:34px;color:var(--mute)">?</span>'}<div class="t"><b>${c.status==="done"?"✓ ":""}${esc(c.title)}</b><small>${esc(c.worker||"OPEN — anyone")} · ${esc(c.job_no||(c.kind==="shop"?"shop":""))}${c.est_hours?" · "+fmtH(c.est_hours)+" est":""}${c.status==="started"?" · on the clock "+fmtH(c.live_hours):""}${c.ack_required&&!c.ack_at?" · 👁 confirm":""}</small></div><div class="acts">${c.open?`<button class="go" onclick="claim('${c.id}')">Take it</button>`:c.status==="done"?`<span class="tag ok">${fmtH(c.hours)}</span>`:`${c.ack_required&&!c.ack_at?`<button onclick="ackC('${c.id}','${esc(c.worker)}')">Got it</button>`:""}${c.status==="started"?`<button onclick="pauseC('${c.id}','${esc(c.worker)}')">⏸</button>`:`<button class="ok" onclick="startC('${c.id}','${esc(c.worker)}')">▶ Start</button>`}<button class="go" onclick="doneAsk('${c.id}','${esc(c.worker)}')">✓ Done</button>`}</div></div>`).join("")||'<div class="empty">Nothing on the board today.</div>';
+  $("board").innerHTML=`<div class="eyebrow" style="margin:0 0 8px">Everyone · today · most urgent first</div>`+today.map(c=>`<div class="lrow ${c.priority&&c.priority!=="normal"?c.priority:""} ${c.status==="started"?"live":""} ${c.status==="done"?"done":""}"><span class="when">${c.slot!=null?hhmm(c.slot):"—"}</span>${c.worker?av(c.worker,34):'<span class="av" style="background:var(--card2);border:1px dashed var(--line2);width:34px;height:34px;color:var(--mute)">?</span>'}<div class="t"><b>${c.status==="done"?"✓ ":""}${esc(c.title)}</b><small>${esc(c.worker||"OPEN — anyone")}${AWAYTODAY[c.worker]&&c.status!=="done"?' <span class="awaytag">out</span>':""} · ${esc(c.job_no||(c.kind==="shop"?"shop":""))}${c.est_hours?" · "+fmtH(c.est_hours)+" est":""}${c.status==="started"?" · on the clock "+fmtH(c.live_hours):""}${c.ack_required&&!c.ack_at?" · 👁 confirm":""}</small></div><div class="acts">${c.open?`<button class="go" onclick="claim('${c.id}')">Take it</button>`:c.status==="done"?`<span class="tag ok">${fmtH(c.hours)}</span>`:`${c.ack_required&&!c.ack_at?`<button onclick="ackC('${c.id}','${esc(c.worker)}')">Got it</button>`:""}${c.status==="started"?`<button onclick="pauseC('${c.id}','${esc(c.worker)}')">⏸</button>`:`<button class="ok" onclick="startC('${c.id}','${esc(c.worker)}')">▶ Start</button>`}<button class="go" onclick="doneAsk('${c.id}','${esc(c.worker)}')">✓ Done</button>`}</div></div>`).join("")||'<div class="empty">Nothing on the board today.</div>';
 }
 function cardHtml(c,mine){
   const live=c.status==="started"; const ev=(c.evidence||[]).map(e=>`<span class="tag ev">${e==="photo"?"📷":e==="second_signature"?"✍":"📐"}</span>`).join("");
@@ -708,11 +729,16 @@ function cardHtml(c,mine){
   else if(c.status==="done") btns="";
   else if(mine||true) btns=`<div class="btns">${live?`<button onclick="pauseC('${c.id}','${esc(c.worker)}')">⏸ Pause</button>`:`<button class="ok" onclick="startC('${c.id}','${esc(c.worker)}')">▶ Start</button>`}<button class="go" onclick="doneAsk('${c.id}','${esc(c.worker)}')">✓ Done</button></div>`;
   const ack=c.ack_required&&!c.ack_at&&c.status!=="done"&&!c.open?`<div class="ackbar">The office asked ${esc(c.worker)} to confirm this was seen.<button class="go sm" onclick="ackC('${c.id}','${esc(c.worker)}')">✓ Got it</button></div>`:"";
+  /* A FLAG, NEVER A WALL — the buttons stay live, because somebody in the shop
+     may well pick this up, and Ryan may be looking at a card he means to move. */
+  /* `other` reads as "out", so "is out today — out" says it twice. */
+  const awk=AWAYTODAY[c.worker]?AWAYTODAY[c.worker].kinds.map(k=>WHY[k]||k).filter(x=>x!=="out").join(" · "):"";
+  const aw=(!c.open&&c.status!=="done"&&AWAYTODAY[c.worker])?`<div class="awaybar">⚑ ${esc(c.worker)} is out today${awk?" — "+esc(awk):""}</div>`:"";
   return `<div class="card ${live?"live":""} ${c.status==="done"?"done":""} ${c.status==="next"&&c.day!==B.day?"next":""} ${c.priority&&c.priority!=="normal"?c.priority:""}" id="c_${c.id}">${c.job_no?`<div class="job">${esc(c.job_no)}${c.job_name?" · "+esc(c.job_name):""}</div>`:c.kind==="shop"?'<div class="job">shop</div>':""}
     <div class="title">${esc(c.title)}</div>
     <div class="meta">${c.priority==="urgent"?'<span class="pr urgent">urgent</span>':c.priority==="rush"?'<span class="pr rush">rush</span>':""}${c.slot!=null?`<span class="t">${hhmm(c.slot)}</span>`:""}${c.est_hours?`<span>${fmtH(c.est_hours)} est</span>`:""}${c.role==="hand"?'<span class="tag hand">hand</span>':c.open?'<span class="tag">open</span>':'<span class="tag lead">lead</span>'}${ev}${c.status==="done"?`<span class="tag ok">signed ${fmtH(c.hours)}</span>`:""}</div>
     ${live?`<div class="timer" data-start="${c.started_at}" data-run="${c.run_hours||0}">—<small>of ${fmtH(c.est_hours)} est</small></div>`:""}
-    ${c.note?`<div class="note">${esc(c.note)}</div>`:""}${ack}${btns}</div>`;
+    ${c.note?`<div class="note">${esc(c.note)}</div>`:""}${aw}${ack}${btns}</div>`;
 }
 function renderBoard(){
   if(!B)return;
@@ -720,11 +746,15 @@ function renderBoard(){
   $("board").style.display="grid";
   const cols=B.crew.map(n=>{
     const cs=B.cards.filter(c=>c.worker===n&&(c.day===B.day||(!c.day&&c.status!=="done"&&c.status!=="next"))).sort(byPrio);
-    const live=cs.find(c=>c.status==="started"); const st=live?["live","on the clock"]:cs.length&&cs.every(c=>c.status==="done")?["done","done for the day"]:cs.length?["","between cards"]:["","nothing today"];
+    const away=AWAYTODAY[n];
+    const live=cs.find(c=>c.status==="started"); let st=live?["live","on the clock"]:cs.length&&cs.every(c=>c.status==="done")?["done","done for the day"]:cs.length?["","between cards"]:["","nothing today"];
+    /* OUT beats every other state — a man on vacation is not "between cards". */
+    if(away) st=["away",(away.kinds.map(k=>WHY[k]||k).join(" · "))+(away.hours!=null?" "+away.hours+"h":"")];
     const dl=(B.day_logs||[]).find(l=>l.worker===n)||{}; const reqs=(B.messages||[]).filter(m=>m.worker===n&&!m.done_at).sort((a,b)=>(PR[a.priority||"normal"]-PR[b.priority||"normal"]));
     const planned=cs.reduce((t,c)=>t+Number(c.est_hours||0),0), signed=cs.filter(c=>c.status==="done").reduce((t,c)=>t+Number(c.hours||0),0);
     const later=B.cards.filter(c=>c.worker===n&&c.day&&c.day>B.day).sort((a,b)=>a.day.localeCompare(b.day)||(a.slot??99)-(b.slot??99)).slice(0,3);
-    return `<div class="col ${WHO===n?"me":""}"><div class="ch">${av(n,34)}<span class="nm">${esc(n)}</span><span class="st ${st[0]}">${st[1]}</span></div>
+    return `<div class="col ${WHO===n?"me":""} ${away?"awaycol":""}"><div class="ch">${av(n,34)}<span class="nm">${esc(n)}</span><span class="st ${st[0]}">${st[1]}</span></div>
+      ${away&&cs.filter(c=>c.status!=="done").length?`<div class="awaybar">⚑ ${esc(n)} is out — ${cs.filter(c=>c.status!=="done").length} card${cs.filter(c=>c.status!=="done").length===1?"":"s"} still on him${away.note?" · "+esc(away.note):""}</div>`:""}
       ${reqs.map(m=>`<div class="req ${m.priority&&m.priority!=="normal"?m.priority:""} ${m.kind==="wth"||m.kind==="kudos"?m.kind:""}"><div class="m">${m.priority==="urgent"?'<span class="pr urgent">urgent</span> ':m.priority==="rush"?'<span class="pr rush">rush</span> ':""}${m.kind==="wth"?'<span class="pr wth">WTH?</span> ':m.kind==="kudos"?'<span class="pr kudos">hell yeah</span> ':""}${m.kind==="location"?"📍 ":m.kind==="request"?"request · ":""}${esc(m.from_name)}</div>${esc(m.text)}${m.reply?`<div class="m">↩ ${esc(m.reply)}</div>`:""}${m.ack_required&&!m.ack_at?`<div class="ackbar">Confirm you saw this.<button class="go sm" onclick="ackM('${m.id}','${esc(n)}')">✓ Got it</button></div>`:""}</div>`).join("")}
       ${cs.map(c=>cardHtml(c,WHO===n)).join("")||'<div class="empty">Nothing on the board.</div>'}
       ${later.length?`<div class="eyebrow" style="margin:8px 0 4px">Coming up</div>`+later.map(c=>`<div class="card next"><div class="job">${esc(c.job_no||"")} · ${new Date(c.day+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})} ${hhmm(c.slot)}</div><div class="title" style="font-size:14px">${esc(c.title)}</div></div>`).join(""):""}
