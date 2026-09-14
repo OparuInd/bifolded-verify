@@ -247,6 +247,16 @@
    "lite_layout": "none"
   },
   "c": "louvre",
-  "rep": "shousugi"
+  "rep": "cedar"
+ },
+ {
+  "k": "slab_patina",
+  "n": "Patina steel",
+  "base": "slab",
+  "o": {
+   "lite_layout": "none"
+  },
+  "c": "metal",
+  "rep": "patina"
  }
 ]
