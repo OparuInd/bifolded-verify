@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tungsten Royce — Your Agreement</title>
+<title>Tungsten Royce — Sign</title>
 <style>
 /* ============================================================================
    TYPE — Helvetica, and only Helvetica.
@@ -223,6 +223,9 @@ button.ghost:hover{border-color:var(--plum2);color:var(--plum)}
 #signBar .box label.consent{text-transform:none;letter-spacing:0;font-weight:400;font-size:var(--s1);color:var(--ink2)}
 #signBar .padbar button{font:600 13px var(--sans);background:transparent;color:var(--plum);border:1px solid var(--line);border-radius:3px;padding:7px 12px;margin:0}#signBar .padbar button.on{border-color:var(--plum);background:var(--plumSoft)}
 .seal{font-family:Menlo,monospace;font-size:11.5px;color:var(--soft);word-break:break-all;margin-top:10px}
+/* 2.2 — a drawing set renders in its own frame, letter pages, as built */
+.sheet .frame{width:100%;border:1px solid var(--line);background:#fff;box-shadow:0 1px 2px rgba(32,24,41,.06),0 12px 40px -18px rgba(32,24,41,.25);border-top:4px solid var(--plum);display:block}
+#docPages{max-width:1140px;margin:0 auto}
 
 /* 2.1 — contract shell */
 header.tr .wm{font-weight:700;letter-spacing:.18em;font-size:13px}header.tr .wm span{color:#C9AB7F}
@@ -249,14 +252,15 @@ footer.tr{border-top:1px solid var(--line);padding:22px 0 40px;font-size:11px;le
 </style>
 </head>
 <body>
-<header class="tr"><div class="wrap"><div><div class="wm">TUNGSTEN <span>ROYCE</span><span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #b08a3a;color:#8a6a1e;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><div class="sub">Agreement · electronic signature</div></div><div class="who" id="hdrWho"></div></div></header>
+<header class="tr"><div class="wrap"><div><div class="wm">TUNGSTEN <span>ROYCE</span><span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #b08a3a;color:#8a6a1e;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle">beta</span></div><div class="sub" id="hdrSub">Agreement · electronic signature</div></div><div class="who" id="hdrWho"></div></div></header>
 <main class="sheet"><div class="wrap">
-<div id="state"><h2>Loading your agreement…</h2><p style="color:var(--soft)">One moment.</p></div>
+<div id="state"><h2>Loading…</h2><p style="color:var(--soft)">One moment.</p></div>
 <div class="exec" id="exec" style="display:none"></div>
 <article class="paper" id="doc" style="display:none"></article>
+<div id="docPages" style="display:none"><iframe class="frame" id="docFrame" title="document"></iframe></div>
 <div id="signBar" style="display:none">
   <p class="eyebrow">Sign</p>
-  <h3>Sign your agreement</h3>
+  <h3 id="signH">Sign your agreement</h3>
   <div class="box" id="loginBox">
     <p class="who">Sign in with the e-mail and password Tungsten Royce gave you. The signature is tied to your account.</p>
     <label for="lEmail">E-mail</label><input type="email" id="lEmail" autocomplete="username">
@@ -272,8 +276,8 @@ footer.tr{border-top:1px solid var(--line);padding:22px 0 40px;font-size:11px;le
     <div class="padwrap" id="padWrap"><canvas class="pad" id="pad"></canvas><div class="padbar"><button onclick="padClear()">clear</button></div></div>
     <div class="padwrap" id="typedWrap" style="display:none"><div class="typed" id="typed">&nbsp;</div></div>
     <label class="consent"><input type="checkbox" id="sigConsent" style="width:auto;margin-top:3px">
-      I agree to do business electronically and intend this to be my electronic signature on this agreement,
-      including the payment schedule and terms above.</label>
+      <span id="consentText">I agree to do business electronically and intend this to be my electronic signature on this agreement,
+      including the payment schedule and terms above.</span></label>
     <div id="err"></div>
     <button id="sigGo" onclick="doSign()">Sign the agreement</button>
   </div>
@@ -284,20 +288,22 @@ footer.tr{border-top:1px solid var(--line);padding:22px 0 40px;font-size:11px;le
 <script>
 "use strict";
 const EP="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-intake";
+const EP2="https://cwpvlcajnzxidgtrcpoa.supabase.co/functions/v1/tr-desk";   /* 2.2 — a document (the sign-off) signs through tr-desk */
 const AK="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; /* publishable — public by design; the link opens the document, the ACCOUNT signs it */
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const TOKEN=new URLSearchParams(location.search).get("t")||"";
+const QS=new URLSearchParams(location.search); const DOC=QS.get("d")||""; const TOKEN=DOC||QS.get("t")||""; const MODE_DOC=!!DOC;
 const $=id=>document.getElementById(id);
 /* customer session (0084) */
 function getSess(){ try{ return JSON.parse(localStorage.getItem("tr_cust")||"null"); }catch(e){ return null; } }
 async function jwt(){ let s=getSess(); if(!s||!s.access_token) return ""; if((s.expires_at||0)*1000<Date.now()+90000){ const j=await raw({action:"customer_refresh",refresh_token:s.refresh_token}); if(!j.ok){ localStorage.removeItem("tr_cust"); return ""; } s=j.session; localStorage.setItem("tr_cust",JSON.stringify(s)); } return s.access_token; }
 function signOut(){ try{localStorage.removeItem("tr_cust");localStorage.removeItem("tr_cust_who");}catch(e){} location.reload(); }
-async function raw(body){ try{ const r=await fetch(EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+AK},body:JSON.stringify(body)}); return await r.json(); }catch(e){ return {ok:false,error:"We could not reach the server — please try again."} } }
-async function call(body){ return raw(Object.assign({jwt:await jwt()},body)); }
+async function raw(body,ep){ try{ const r=await fetch(ep||EP,{method:"POST",headers:{"content-type":"application/json","Authorization":"Bearer "+AK},body:JSON.stringify(body)}); return await r.json(); }catch(e){ return {ok:false,error:"We could not reach the server — please try again."} } }
+async function call(body){ return raw(Object.assign({jwt:await jwt()},body), MODE_DOC?EP2:EP); }
 function state(h,p){ const s=$("state"); s.style.display="block"; s.innerHTML="<h2>"+h+"</h2><p style='color:var(--soft)'>"+p+"</p>"; }
 let V=null;
 async function load(){
   if(TOKEN.length<20){ state("This page opens from a signing link.","Use the complete link from your e-mail or text, or call us and we will resend it."); return }
+  if(MODE_DOC){ await loadDoc(); return; }
   const j=await call({action:"agree_view",token:TOKEN}); V=j;
   if(!j.ok){ state("This link is not valid.", j.error||"Call us and we will send a fresh one."); return }
   $("state").style.display="none";
@@ -307,6 +313,32 @@ async function load(){
   $("signBar").style.display="block";
   if(j.signer_email) $("lEmail").value=j.signer_email;
   if(j.signed_in){ showSig(); } else { $("lPass").focus(); }
+}
+/* 2.2 — the sign-off: tr-desk docsign_view → the built drawing set in a frame; the same account signs it */
+async function loadDoc(){
+  const j=await call({action:"docsign_view",d:DOC}); V=j;
+  if(!j.ok){ state("This link is not valid.", j.error||"Call us and we will send a fresh one."); return }
+  $("state").style.display="none";
+  $("hdrSub").textContent="Sign-off · electronic signature";
+  $("hdrWho").innerHTML="<b>"+esc(j.job_no||"")+"</b><br>"+esc((j.customer&&j.customer.name)||"");
+  $("signH").textContent="Sign the sign-off";
+  $("consentText").textContent="I agree to do business electronically and intend this to be my electronic signature on this sign-off — the drawings, dimensions and call-outs above are approved for fabrication.";
+  $("sigGo").textContent="Sign the sign-off";
+  await frameDoc(j.doc_url, j.pages);
+  if(j.signed){ showDone({name:j.signed_name,job_no:j.job_no,esign_id:j.esign_id,sealed_url:j.sealed_url,certificate_url:j.certificate_url,signed_at:j.signed_at,doc:true}); return; }
+  $("signBar").style.display="block";
+  if(j.signer_email) $("lEmail").value=j.signer_email;
+  if(j.signed_in){ showSig(); } else { $("lPass").focus(); }
+}
+async function frameDoc(url,pages){
+  const wrap=$("docPages"), fr=$("docFrame"); if(!url){ wrap.style.display="none"; return; }
+  let html=""; try{ html=await (await fetch(url)).text(); }catch(e){ html=""; }
+  if(!html){ wrap.style.display="none"; return; }
+  wrap.style.display="block";
+  const n=Math.max(1,(html.match(/class="page/g)||[]).length||Number(pages)||1);
+  fr.style.height=Math.round(Math.min(fr.clientWidth||1100,1100)*850/1100*n+24*n)+"px";
+  fr.srcdoc=html.replace("</head>","<style>body{margin:0;padding:12px 0}section.page{margin:0 auto 24px;transform-origin:top left}</style></head>");
+  fr.onload=()=>{ try{ const d=fr.contentDocument; const w=fr.clientWidth; const k=Math.min(1,(w-2)/1100); d.querySelectorAll("section.page").forEach(p=>{ p.style.transform="scale("+k+")"; p.style.marginBottom=(24-(850*(1-k)))+"px"; }); }catch(e){} };
 }
 function showSig(){ $("loginBox").style.display="none"; $("sigBox").style.display="block"; $("sigWho").textContent=localStorage.getItem("tr_cust_who")||V.signer_email||""; $("sigName").value=$("sigName").value||(V.customer&&V.customer.name)||""; padInit(); $("sigName").focus(); }
 async function doLogin(){ const f=$("lFlag"); f.textContent="…"; $("lGo").disabled=true;
@@ -334,25 +366,25 @@ async function doSign(){
   if(!consent){ err.textContent="Tick the consent box — it is what makes this a signature."; err.style.display="block"; return; }
   go.disabled=true; go.textContent="Signing…";
   const signature=MODE==="drawn"?{kind:"drawn",png:$("pad").toDataURL("image/png")}:{kind:"typed"};
-  const j=await call({action:"agree_sign",token:TOKEN,name,consent,signature});
-  if(!j.ok){ err.textContent=j.error||"Something went wrong."; err.style.display="block"; go.disabled=false; go.textContent="Sign the agreement"; if(j.needs==="login"){ $("sigBox").style.display="none"; $("loginBox").style.display="block"; } return }
+  const j=MODE_DOC?await call({action:"docsign_sign",d:DOC,name,consent,signature}):await call({action:"agree_sign",token:TOKEN,name,consent,signature});
+  if(!j.ok){ err.textContent=j.error||"Something went wrong."; err.style.display="block"; go.disabled=false; go.textContent=MODE_DOC?"Sign the sign-off":"Sign the agreement"; if(j.needs==="login"){ $("sigBox").style.display="none"; $("loginBox").style.display="block"; } return }
   $("signBar").style.display="none";
-  showDone({name:j.name,job_no:j.job_no,esign_id:j.esign_id,sealed_url:j.sealed_url,certificate_url:j.certificate_url,signed_at:new Date().toISOString()});
+  showDone({name:j.name,job_no:j.job_no,esign_id:j.esign_id,sealed_url:j.sealed_url,certificate_url:j.certificate_url,signed_at:new Date().toISOString(),doc:MODE_DOC});
   window.scrollTo(0,0);
-  fileSignedPdf(); // v3.8 doc_capture files the rendered PDF as well
+  if(!MODE_DOC) fileSignedPdf(); // v3.8 doc_capture files the rendered PDF as well (the agreement only — a sign-off is already pages)
 }
 function dl(u,name){ return u+(u.indexOf("?")>0?"&":"?")+"download="+encodeURIComponent(name); }
 function showDone(d){
   $("state").style.display="none"; $("signBar").style.display="none";
   const ex=$("exec"); ex.style.display="flex";
-  ex.innerHTML="<div><div class='k'>Agreement executed</div><div class='t'>Signed by "+esc(d.name||"you")+(d.signed_at?" · "+new Date(d.signed_at).toLocaleString([], {dateStyle:"long",timeStyle:"short"}):"")+"</div></div>"+(d.esign_id?"<div class='m'>"+esc(d.esign_id)+"</div>":"");
+  ex.innerHTML="<div><div class='k'>"+(d.doc?"Sign-off approved":"Agreement executed")+"</div><div class='t'>Signed by "+esc(d.name||"you")+(d.signed_at?" · "+new Date(d.signed_at).toLocaleString([], {dateStyle:"long",timeStyle:"short"}):"")+"</div></div>"+(d.esign_id?"<div class='m'>"+esc(d.esign_id)+"</div>":"");
   const box=$("done"); box.style.display="flex";
-  const fn="Agreement-"+(d.job_no||"")+(d.esign_id?"-"+d.esign_id:"");
+  const fn=(d.doc?"Sign-off-":"Agreement-")+(d.job_no||"")+(d.esign_id?"-"+d.esign_id:"");
   box.innerHTML="<span class='k'>Record</span>"+
-    (d.sealed_url?"<a class='pri' href='"+dl(d.sealed_url,fn+".html")+"'>Signed agreement ⤓</a>":"")+(d.certificate_url?"<a href='"+d.certificate_url+"' target='_blank'>Certificate of completion (PDF)</a>":"")+
+    (d.sealed_url?"<a class='pri' href='"+dl(d.sealed_url,fn+".html")+"'>"+(d.doc?"Signed sign-off ⤓":"Signed agreement ⤓")+"</a>":"")+(d.certificate_url?"<a href='"+d.certificate_url+"' target='_blank'>Certificate of completion (PDF)</a>":"")+
     (!d.sealed_url&&!d.certificate_url&&!V.signed_in?"<a href='portal.html'>Sign in to your portal for the signed copy and certificate</a>":"<a href='portal.html'>Your portal</a>")+
-    "<div class='seal'>Job "+esc(d.job_no||"")+" is in motion. Welcome to the wait.</div>";
-  if(d.sealed_url){ fetch(d.sealed_url).then(r=>r.ok?r.text():"").then(h=>{ if(h){ const doc=$("doc"); doc.innerHTML=h; doc.style.display="block"; } }).catch(()=>{}); }
+    "<div class='seal'>"+(d.doc?esc(d.job_no||"")+" is approved for fabrication.":"Job "+esc(d.job_no||"")+" is in motion. Welcome to the wait.")+"</div>";
+  if(d.sealed_url){ if(d.doc){ frameDoc(d.sealed_url); } else fetch(d.sealed_url).then(r=>r.ok?r.text():"").then(h=>{ if(h){ const doc=$("doc"); doc.innerHTML=h; doc.style.display="block"; } }).catch(()=>{}); }
 }
 // rasterize the agreement THIS page rendered into US-Letter page images and
 // file it as a PDF the moment it is signed (office can regenerate if it fails)
