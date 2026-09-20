@@ -20,7 +20,7 @@ button.go{width:100%;margin-top:14px;background:var(--bronze);border:1px solid v
 <input type="text" id="u" name="username" autocomplete="username" style="position:absolute;left:-9999px" tabindex="-1" aria-hidden="true">
 <label for="p">Password</label><div class="row"><input type="password" id="p" name="password" autocomplete="current-password" required minlength="6"><button type="button" class="eye" onclick="const p=$('p');p.type=p.type==='password'?'text':'password'">👁</button></div>
 <button class="go" id="goBtn" type="submit" disabled>Sign in</button>
-<div style="margin-top:14px;text-align:center"><a href="#" id="offLink" onclick="officeMode();return false" style="font-family:var(--fm,monospace);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute,#8f8a82);text-decoration:none">office</a></div>
+<div style="margin-top:14px;text-align:center"><a href="#" id="offLink" onclick="officeMode();return false" style="font-family:var(--fm,monospace);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute,#8f8a82);text-decoration:none">not listed</a></div>
 <div id="offBox" style="display:none;margin-top:10px"><label for="on">Name</label><input type="text" id="on" autocomplete="off" placeholder="" oninput="WHO=this.value.trim();$('u').value=WHO;$('goBtn').disabled=!WHO"></div>
 <div class="flag" id="flag"></div></form></div>
 <script>
