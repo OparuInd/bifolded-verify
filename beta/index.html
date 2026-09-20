@@ -35,7 +35,9 @@ let WHO="";
   try{ const s=JSON.parse(localStorage.getItem("tr_sess")||"null"); const p=localStorage.getItem("tr_page"); if(s&&s.refresh_token&&p){ location.replace(NEXT&&(p==="desk.html"||NEXT==="laser.html")?NEXT:p); return; } }catch(e){}
   const j=await crew({action:"roster"}).catch(()=>null);
   if(!j||!j.ok){ $("names").innerHTML='<div class="empty">'+esc((j&&j.error)||"offline")+'</div>'; return; }
-  $("names").innerHTML=j.rows.map(r=>`<button type="button" onclick="pick(this,'${esc(r.name)}')">${esc(r.name)}<small>${r.kind}</small></button>`).join("")||'<div class="empty">no accounts yet</div>';
+  const btn=r=>`<button type="button" onclick="pick(this,'${esc(r.name)}')">${esc(r.name)}<small>${r.avail==="on_call"?"on call":r.kind}</small></button>`;
+  const every=j.rows.filter(r=>r.avail!=="on_call"), onc=j.rows.filter(r=>r.avail==="on_call");
+  $("names").innerHTML=(every.map(btn).join("")||'<div class="empty">no accounts yet</div>')+(onc.length?`<div style="grid-column:1/-1;margin-top:6px;font-family:var(--fm,monospace);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute,#8f8a82)">on call</div>`+onc.map(btn).join(""):"");
   const last=localStorage.getItem("tr_who"); if(last){ const b=[...document.querySelectorAll("#names button")].find(b=>b.textContent.startsWith(last)); if(b) pick(b,last); else if(localStorage.getItem("tr_page")==="desk.html"||new URL(location.href).searchParams.has("office")){ officeMode(); $("on").value=last; WHO=last; $("u").value=last; $("goBtn").disabled=false; $("p").focus(); } }
   if(new URL(location.href).searchParams.has("office")&&!WHO) officeMode();
 })();
