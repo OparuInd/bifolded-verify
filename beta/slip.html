@@ -13,6 +13,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>The Slip — Tungsten Royce</title>
 <!--
+  THE SLIP 2.2 (19 Sep 2026) — VIEW AS: an office link (the Desk's) opens the Slip as a viewer — pick a name, see exactly
+  what they see, read-only (tr-crew 2.2 `mine` with `as`; nothing swept, nothing written). The Desk has a 👁 for it.
   THE SLIP 2.1 (18 Sep 2026) — "↷ Not finished": the worker rolls their own card to the next shop day; the clock so
   far is banked on today (tr-crew 2.1 carry). And it handles itself: saving the end-of-day note carries every card
   still open, and opening the Slip in the morning sweeps yesterday's leftovers onto today. Nothing for the office.
@@ -128,6 +130,8 @@ img.prev{width:100%;max-height:240px;object-fit:contain;border:1px solid var(--l
 [data-theme=light] .src .jh{background:#efeae2!important}[data-theme=light] .ocr{background:#faf8f4!important}
 .themebtn{border:1px solid var(--line2);background:transparent;color:var(--mute);border-radius:var(--r);padding:4px 8px;font-size:13px;min-height:0;flex:0 0 auto;cursor:pointer;line-height:1}
 .flag{color:var(--warn)}
+#roBar{display:flex;align-items:center;gap:10px;background:#d9a441;color:#141414;font-weight:600;font-size:13px;padding:6px 14px}#roBar select{font:inherit;padding:2px 6px;border-radius:4px;border:1px solid #8a6a1e;background:#f7e9c6;color:#141414}
+body.ro .btns button,body.ro .ackbar button,body.ro #bell,body.ro textarea,body.ro input.hrs,body.ro input.qty,body.ro .row button{pointer-events:none;opacity:.35}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
@@ -210,7 +214,8 @@ const SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co";
 const INTAKE=SB_URL+"/functions/v1/tr-intake", CREW=SB_URL+"/functions/v1/tr-crew";
 const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN"; // publishable — public by design
 let TOKEN=new URLSearchParams(location.search).get("k")||"";
-try{ if(TOKEN.length>=20) localStorage.setItem("tr_k",TOKEN); else TOKEN=localStorage.getItem("tr_k")||""; }catch(e){}
+try{ if(TOKEN.length>=20) localStorage.setItem("tr_k",TOKEN); else TOKEN=localStorage.getItem("tr_k")||localStorage.getItem("tr_dk")||""; }catch(e){}   // 2.2: an office link (the Desk's) also opens the Slip — as a viewer
+const AS=new URLSearchParams(location.search).get("as")||"";                       // 2.2: ?as=<name> — view someone's Slip, read-only
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 /* 0083 — session. The home page signs in (name + password) and leaves {access_token, refresh_token, expires_at} here;
@@ -267,8 +272,11 @@ function tick(){
 }
 async function boot(){
   if(TOKEN.length<20){ location.replace("./"); return; }
-  const j=await crew({action:"mine"});
-  if(!j.ok){ if(/not valid|bad link/i.test(j.error||"")){ try{localStorage.removeItem("tr_k")}catch(e){} location.replace("./"); return; } $("gate").textContent=j.error; return; }
+  const j=await crew({action:"mine",as:AS||undefined});
+  if(!j.ok){ if(j.office){ $("gate").innerHTML=`<div class="eyebrow" style="margin-bottom:8px">View the Slip as</div>`+(j.roster||[]).map(n=>`<button class="ghost" style="margin:0 6px 6px 0" onclick="location.search='?as='+encodeURIComponent('${esc(n)}')">${esc(n)}</button>`).join(""); return; }
+    if(/not valid|bad link/i.test(j.error||"")){ try{localStorage.removeItem("tr_k")}catch(e){} location.replace("./"); return; } $("gate").textContent=j.error; return; }
+  if(j.readonly){ document.body.classList.add("ro"); let bar=$("roBar"); if(!bar){ bar=document.createElement("div"); bar.id="roBar"; document.body.insertBefore(bar,document.body.firstChild); }
+    bar.innerHTML=`<span>Viewing as <b>${esc(j.viewing_as)}</b> · read-only</span><select onchange="location.search='?as='+encodeURIComponent(this.value)">${(j.roster||[]).map(n=>`<option ${n===j.viewing_as?"selected":""}>${esc(n)}</option>`).join("")}</select>`; }
   M=j; for(const k of ["now","next","later","overdue","open"]) j[k]=(j[k]||[]).slice().sort(byPrio); j.messages=(j.messages||[]).slice().sort((a,b)=>(PR[a.priority||"normal"]-PR[b.priority||"normal"])||(new Date(b.created_at)-new Date(a.created_at)));
   $("gate").style.display="none"; $("app").style.display="block";
   $("who").textContent=j.name+" · The Slip"; $("hello").textContent=j.name;
