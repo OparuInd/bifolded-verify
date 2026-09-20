@@ -20,6 +20,8 @@ button.go{width:100%;margin-top:14px;background:var(--bronze);border:1px solid v
 <input type="text" id="u" name="username" autocomplete="username" style="position:absolute;left:-9999px" tabindex="-1" aria-hidden="true">
 <label for="p">Password</label><div class="row"><input type="password" id="p" name="password" autocomplete="current-password" required minlength="6"><button type="button" class="eye" onclick="const p=$('p');p.type=p.type==='password'?'text':'password'">👁</button></div>
 <button class="go" id="goBtn" type="submit" disabled>Sign in</button>
+<div style="margin-top:14px;text-align:center"><a href="#" id="offLink" onclick="officeMode();return false" style="font-family:var(--fm,monospace);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute,#8f8a82);text-decoration:none">office</a></div>
+<div id="offBox" style="display:none;margin-top:10px"><label for="on">Name</label><input type="text" id="on" autocomplete="off" placeholder="" oninput="WHO=this.value.trim();$('u').value=WHO;$('goBtn').disabled=!WHO"></div>
 <div class="flag" id="flag"></div></form></div>
 <script>
 const APIKEY="sb_publishable_rfo4gZSOvpieHeb1I8aong_Jeha4eqN", SB_URL="https://cwpvlcajnzxidgtrcpoa.supabase.co";
@@ -34,8 +36,10 @@ let WHO="";
   const j=await crew({action:"roster"}).catch(()=>null);
   if(!j||!j.ok){ $("names").innerHTML='<div class="empty">'+esc((j&&j.error)||"offline")+'</div>'; return; }
   $("names").innerHTML=j.rows.map(r=>`<button type="button" onclick="pick(this,'${esc(r.name)}')">${esc(r.name)}<small>${r.kind}</small></button>`).join("")||'<div class="empty">no accounts yet</div>';
-  const last=localStorage.getItem("tr_who"); if(last){ const b=[...document.querySelectorAll("#names button")].find(b=>b.textContent.startsWith(last)); if(b) pick(b,last); }
+  const last=localStorage.getItem("tr_who"); if(last){ const b=[...document.querySelectorAll("#names button")].find(b=>b.textContent.startsWith(last)); if(b) pick(b,last); else if(localStorage.getItem("tr_page")==="desk.html"||new URL(location.href).searchParams.has("office")){ officeMode(); $("on").value=last; WHO=last; $("u").value=last; $("goBtn").disabled=false; $("p").focus(); } }
+  if(new URL(location.href).searchParams.has("office")&&!WHO) officeMode();
 })();
+function officeMode(){ $("names").style.display="none"; $("offLink").style.display="none"; $("offBox").style.display="block"; WHO=""; $("goBtn").disabled=true; $("on").focus(); }
 function pick(btn,n){ WHO=n; document.querySelectorAll("#names button").forEach(b=>b.classList.toggle("on",b===btn)); $("u").value=n; $("goBtn").disabled=false; $("flag").textContent=""; $("p").focus(); }
 async function go(e){ e.preventDefault(); if(!WHO)return false; $("goBtn").disabled=true; $("flag").textContent="…";
   const j=await crew({action:"login",name:WHO,password:$("p").value}).catch(()=>({ok:false,error:"offline"}));

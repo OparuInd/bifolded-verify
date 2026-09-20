@@ -1,6 +1,6 @@
 {
-  "name": "BETA Input Desk — Tungsten Royce",
-  "short_name": "Input Desk",
+  "name": "TR Desk — Tungsten Royce",
+  "short_name": "TR Desk",
   "start_url": "/beta/desk.html",
   "scope": "/beta/",
   "display": "standalone",
