@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Tungsten Royce — Shop Floor</title>
 <!--
-  TR FINAL SOLUTION — Shop Floor 4.5 (2026-09-11)  ·  PUBLIC (station token)  ·  the shop tablet
+  TR FINAL SOLUTION — Shop Floor 4.6 (2026-10-03) — 4.5 (2026-09-11)  ·  PUBLIC (station token)  ·  the shop tablet
   4.0 = the Bifolded.com design language + the crew schedule rail (tr-crew v1.0, migration 0076).
   BOARD      one column per person: the office's plan for today in time order, a live timer on what is
              started, Start / Done in two taps (pick your name once at the top), the day log (pre / post),
@@ -850,7 +850,7 @@ async function serviced(id){ const p=prompt("What was performed? (blank keeps th
 async function ask(){ const q=$("aQ").value.trim(); if(!WHO){ toast("Pick your name first.",true); return; } if(q.length<3){ toast("Type the question first.",true); return; } const j=await pub({action:"shop_ask",worker:WHO,question:q}); if(!j.ok){ toast(j.error,true); return; } $("aQ").value=""; toast("Sent to the office."); }
 
 /* ================= live ================= */
-try{ const sb=supabase.createClient(SB_URL,APIKEY); sb.channel("tr-crew").on("broadcast",{event:"change"},()=>{ if(TAB==="board") loadBoard(); }).subscribe(st=>{ $("liveDot").className="livedot"+(st==="SUBSCRIBED"?" on":""); }); }catch(e){}
+try{ const sb=supabase.createClient(SB_URL,APIKEY); sb.channel("tr-crew").on("broadcast",{event:"change"},()=>{ if(TAB==="board") loadBoard(); else if(TAB==="trav") loadTrav(); })   /* 4.6 — a step the office signs in the Job Tracker lands on the traveler at once (tr-crew 3.1 broadcasts step_set / step_sign / labor_add) */.subscribe(st=>{ $("liveDot").className="livedot"+(st==="SUBSCRIBED"?" on":""); }); }catch(e){}
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 if(TOKEN.length<20){ location.replace("./"); } else { loadBoard(); }
 setInterval(()=>{ if(document.visibilityState!=="visible")return; if(TAB==="board")loadBoard(); else if(TAB==="trav")loadTrav(); else if(TAB!=="med")loadShop(); }, 45000);
