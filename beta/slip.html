@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>The Slip — Tungsten Royce</title>
 <!--
+  THE SLIP 2.3 (3 Oct 2026) — a message shows what it is about: the file (.skp, pdf, image) as a link, or the fab-pack page / step / card it points at (tr-crew 3.4, book 2038).
   THE SLIP 2.2 (19 Sep 2026) — VIEW AS: an office link (the Desk's) opens the Slip as a viewer — pick a name, see exactly
   what they see, read-only (tr-crew 2.2 `mine` with `as`; nothing swept, nothing written). The Desk has a 👁 for it.
   THE SLIP 2.1 (18 Sep 2026) — "↷ Not finished": the worker rolls their own card to the next shop day; the clock so
@@ -404,6 +405,7 @@ function renderMsgs(j){
   $("msgs").innerHTML=ms.map(m=>`<div class="card ${m.priority&&m.priority!=="normal"?m.priority:""} ${m.kind==="wth"||m.kind==="kudos"?m.kind:""}" style="${m.read_at||m.priority!=="normal"?"":"border-color:#4a3d2a"}">
     <div class="meta">${m.priority==="urgent"?'<span class="pr urgent">urgent</span>':m.priority==="rush"?'<span class="pr rush">rush</span>':""}<span class="tag ${m.kind==="request"?"ev":m.kind==="location"?"hand":m.kind==="wth"?"wth":m.kind==="kudos"?"kudos":""}">${m.kind==="location"?"where are you?":m.kind==="request"?"request":m.kind==="status"?"status check":m.kind==="wth"?"explain":m.kind==="kudos"?"from the office":"message"}</span><span>${esc(m.from_name)} · ${new Date(m.created_at).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}</span>${m.job_no?`<span class="job">${esc(m.job_no)}</span>`:""}</div>
     <div class="title" style="font-size:16px">${esc(m.text)}</div>
+    ${m.attach?`<div class="row">${m.attach.url?`<a class="tag" href="${m.attach.url}" target="_blank">📎 ${esc(m.attach.title||m.attach.kind)}</a>`:`<span class="tag">${m.attach.kind==="fabpack"?"fab pack · "+esc(String(m.attach.section||"")):m.attach.kind==="step"?"step":m.attach.kind==="card"?"card":esc(m.attach.title||"")}</span>`}</div>`:""}
     ${m.reply?`<div class="ans"><b>you</b> ${esc(m.reply)}${m.lat!=null?` · 📍 ${esc(m.loc_label||"location shared")}`:""}</div>`:""}
     ${m.ack_required&&!m.ack_at?`<div class="ackbar">${esc(m.from_name)} asked you to confirm you read this.<button class="go sm" onclick="ack('${m.id}','message')">✓ Got it</button></div>`:m.ack_at?'<div class="note">✓ you confirmed at '+new Date(m.ack_at).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})+'</div>':""}
     <div class="row"><input id="mr_${m.id}" placeholder="reply…"><button class="go sm" onclick="msgReply('${m.id}')">Send</button></div>
