@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.27</title>
+<title>Tungsten Royce — Input Desk 2.28</title>
 <link rel="manifest" href="desk.webmanifest">
 <link rel="icon" type="image/png" href="tr-icon-192.png">
 <link rel="apple-touch-icon" href="tr-icon-192.png">
@@ -1630,6 +1630,8 @@ async function enablePush(){ try{ const perm=await Notification.requestPermissio
 window.enablePush=enablePush;
 
 if(HASH0==="#rcvd") setTimeout(()=>tab("rcvd"),300);
+/* 2.28 (3 Oct) — opened from another app (TR LINK, e.g. the Job Tracker's "open in · Desk"): ?job=<id> / ?customer=<id> → the Job tab ON it */
+(async()=>{ try{ const u=new URL(location.href); const j=u.searchParams.get("job"), c=u.searchParams.get("customer"); if(!j&&!c) return; tab("job"); if(!SHT) SHT=await desk({action:"survey_targets"}); jbPick(j?"j:"+j:"c:"+c); }catch(e){ console.warn("deep link",e); } })();
 load();
 </script>
 </body>
