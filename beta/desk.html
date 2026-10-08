@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#141414">
-<title>Tungsten Royce — Input Desk 2.28</title>
+<title>Tungsten Royce — Input Desk 2.29</title>
 <link rel="manifest" href="desk.webmanifest">
 <link rel="icon" type="image/png" href="tr-icon-192.png">
 <link rel="apple-touch-icon" href="tr-icon-192.png">
@@ -14,11 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- =====================================================================
-     TR INPUT DESK 1.8 (SURVEYS tab — every laser survey in the cloud with its drawing; 1.7 Agreement ↗ link — the web Agreement 2.0; 1.6 SCANS: the scan database — every scan / photo / document in the cloud, click to view from anywhere; 1.5 part #: quick reference fast0001 + the box's mfg part number, two fields; 1.4 lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
-     Dru's desk. Ryan, verbatim: "a functional Input app that presents the data required in a clear and
-     concise manner … separated out by category … shows a sample of what he's looking for if it's an
-     inventory item. If that sample photo does not exist, then an option to capture a picture, which
-     automatically populates to the database, and is linked by date and cost" · "first card of inventory
+     TR INPUT DESK 2.29 (8 Oct 2026): the Job tab shows WHAT THE JOB NEEDS for a job — every option sold on the contract and every unit's lines (track · dollies · pivots · steel …) → on the job · on the shelf · ORDER · make · paint shop, with estimates and sold vs cost (tr2 3.42 job_needs through tr-desk 2.51 office_call). · TR INPUT DESK 1.8 (SURVEYS tab — every laser survey in the cloud with its drawing; 1.7 Agreement ↗ link — the web Agreement 2.0; 1.6 SCANS: the scan database — every scan / photo / document in the cloud, click to view from anywhere; 1.5 part #: quick reference fast0001 + the box's mfg part number, two fields; 1.4 lines: category → item · code fast0001; vendor required for a scan; ⚑ lines not entered; 1.3 receipts: store/vendor list + add vendor, save the scan on its own, fix a saved receipt; 1.2 parts: qty on hand · vendors · order from · ⚑ new vendor; questions in the deck) · 6 Sep 2026 · OFFICE TOOL — NEVER PUBLISH. Carries the office key.
+     Dru's desk.  · "first card of inventory
      or data is highlighted and he can answer 1) the answer 2) Enter later 3) Needs research 4) Request
      Ryan or Chase to assist; … Ryan or Chase is notified and we have a polished entry gateway to answer"
      · "the most High end Visual, streamlined, picture based system for Dru" · "Receipts to Inventory …
@@ -146,11 +143,17 @@ main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
 .themebtn{border:1px solid var(--line2);background:transparent;color:var(--mute);border-radius:var(--r);padding:4px 8px;font-size:13px;min-height:0;flex:0 0 auto;cursor:pointer;line-height:1}
 .vt{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px}.vt td{padding:4px 6px;border-top:1px solid var(--line)}.vt tr.pref td{color:var(--bronze2)}
 .lines input.ln{width:118px}.lines select{max-width:116px}.lines input.lp{width:86px}.lines input.lq{width:44px!important}.lines input.lc{width:64px!important}
+.nds{margin-top:4px}.nds-k{display:flex;gap:26px;flex-wrap:wrap;margin:4px 0 10px}.nds-k div{font-family:var(--fm,monospace);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute,#8f8a82)}.nds-k b{display:block;font-size:20px;letter-spacing:0;text-transform:none;color:var(--fg,#f4f2ee);font-weight:600}.nds-k i{display:block;font-style:normal;font-size:10px;letter-spacing:0;text-transform:none}.nds-k .nds-w b{color:var(--warn,#d9a441)}
+.nds-t{width:100%;border-collapse:collapse;margin:6px 0 10px;font-size:12.5px}.nds-t th{font-family:var(--fm,monospace);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute,#8f8a82);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line2,#3a3a3a)}.nds-t td{padding:3px 6px;border-bottom:1px solid var(--line,#2c2c2c);vertical-align:top}
+.nds-r{text-align:right;font-family:var(--fm,monospace);white-space:nowrap}.nds-m{color:var(--mute,#8f8a82);font-size:11px}.nds-u td{color:var(--bronze2,#c9ab7f);font-family:var(--fm,monospace);font-size:11.5px;padding-top:8px}.nds-flag{color:var(--warn,#d9a441);font-family:var(--fm,monospace);font-size:11px}
+.nds-fl{display:inline-block;margin-left:8px;color:var(--warn,#d9a441);font-size:10.5px}.nds-fl summary{cursor:pointer}
+.nds-st{font-family:var(--fm,monospace);font-size:10px;letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--line2,#3a3a3a);border-radius:3px;padding:1px 6px;white-space:nowrap;color:var(--mute,#8f8a82)}
+.nds-order{border-color:var(--warn,#d9a441);color:var(--warn,#d9a441)}.nds-make{border-color:var(--bronze,#a98a63);color:var(--bronze2,#c9ab7f)}.nds-check{border-color:var(--bad,#d95c5c);color:var(--bad,#d95c5c)}.nds-on_the_shelf,.nds-on_the_job{border-color:var(--ok,#6cba85);color:var(--ok,#6cba85)}
 </style>
 <script>(function(){try{var t=localStorage.getItem("tr_theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}window.toggleTheme=function(){var d=document.documentElement;var t=d.dataset.theme==="light"?"dark":"light";d.dataset.theme=t;try{localStorage.setItem("tr_theme",t)}catch(e){}};})();</script>
 </head>
 <body>
-<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.20</span>
+<header><div class="wm">TUNGSTEN <b>ROYCE</b></div><h1>Input Desk</h1><span class="v">2.29</span>
   <div class="tabs"><button class="on" id="t_deck" onclick="tab('deck')">Deck</button><button id="t_assist" onclick="tab('assist')">Assists<span class="pip" id="asN" style="display:none"></span></button><button id="t_rcpt" onclick="tab('rcpt')">Receipts</button><button id="t_shelf" onclick="tab('shelf')">Shelf</button><button id="t_parts" onclick="tab('parts')">Parts</button><button id="t_vend" onclick="tab('vend')">Vendors<span class="pip" id="vendN" style="display:none"></span></button><button id="t_cust" onclick="tab('cust')">Customers<span class="pip" id="cuN" style="display:none"></span></button><button id="t_pd" onclick="tab('pd')">Pipedrive<span class="pip" id="pdN" style="display:none"></span></button><button id="t_scans" onclick="tab('scans')">Scans</button><button id="t_surveys" onclick="tab('surveys')">Surveys</button><button id="t_rcvd" onclick="tab('rcvd')">Received<span class="pip" id="rcvdN" style="display:none"></span></button><button id="t_open" onclick="tab('open')">Openings<span class="pip" id="opN" style="display:none"></span></button><button id="t_steel" onclick="tab('steel')">Track &amp; Steel</button><button id="t_job" onclick="tab('job')">Job</button><a href="service.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Service ↗</a><a href="laser.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Laser ↗</a><a href="agree.html" style="border:1px solid transparent;color:var(--mute);padding:7px 12px;border-radius:var(--r);font-weight:600;text-decoration:none">Agreement ↗</a></div>
   <div class="r"><button class="go scanbtn" id="scanBtn" onclick="scanPaper()" title="Scan a receipt, invoice or packing slip with the camera">📷 Scan</button><button class="themebtn" id="bell" onclick="enablePush()" title="notify me when a customer sends something" style="display:none">🔔</button><a class="themebtn" href="slip.html" title="see the crew's Slip — pick a name, read-only" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">👁</a><button class="themebtn" onclick="toggleTheme()" title="light / dark">◐</button><button class="themebtn" onclick="signOut()" title="sign out">⏻</button><span id="stat"></span><span id="by" class="mono" style="font-size:12px;color:var(--bronze2)"></span></div></header>
 <main>
@@ -484,7 +487,7 @@ function renderWork(r){
     <div style="display:flex;gap:8px;margin:2px 0 8px"><button class="sm ok" onclick="saveHeader('${r.id}')">${r.id==="new"?"Save receipt":"Save changes"}</button></div>
     <div class="tblwrap"><table class="lines" id="lines"><tr><th>Line</th><th>Qty</th><th>Each</th><th>Category</th><th>Item · code</th><th>Part #</th><th>Stock</th><th></th></tr></table></div>
     <div style="display:flex;gap:8px;margin-top:8px"><button class="sm" onclick="addLine()">+ line</button><span style="flex:1"></span><button class="go" onclick="saveLines('${r.id}')">Save lines to inventory</button></div>
-    
+
     <div class="ocr" id="ocrText" style="margin-top:10px">${esc(r.ocr_text||"")}</div></div></div></div>`;
   if(r.ocr_text){ OCR=r.ocr_text; linesFromText(OCR); }
 }
@@ -541,7 +544,7 @@ async function saveLines(id){
 window.tab=tab;window.answer=answer;window.later=later;window.research=research;window.assist=assist;window.assistClose=assistClose;window.assistAnswer=assistAnswer;window.pickRc=pickRc;window.vendorPick=vendorPick;window.saveHeader=saveHeader;window.lineOpts=lineOpts;window.attachScan=attachScan;window.scanPaper=scanPaper;window.setKind=setKind;window.runOcr=runOcr;window.addLine=addLine;window.saveLines=saveLines;window.renderCats=renderCats;window.renderDeck=renderDeck;window.loadShelf=loadShelf;window.loadVend=loadVend;window.renderVend=renderVend;window.renderVbList=renderVbList;window.vendPick=vendPick;window.vendSave=vendSave;window.vendAdd=vendAdd;window.vendSource=vendSource;window.leadsFor=leadsFor;window.leadAdd=leadAdd;window.leadCalled=leadCalled;window.leadStatus=leadStatus;window.leadWin=leadWin;window.renderShelf=renderShelf;window.shelfPick=shelfPick;window.renderShList=renderShList;window.shFilter=shFilter;window.shelfGrab=shelfGrab;window.vbFilter=vbFilter;window.kindAdd=kindAdd;window.loadParts=loadParts;window.renderParts=renderParts;window.renderPtList=renderPtList;window.ptFilter=ptFilter;window.partPick=partPick;window.partSave=partSave;window.partGrab=partGrab;window.ptCatAdd=ptCatAdd;window.ptCatOpts=ptCatOpts;window.partLink=partLink;window.partUnlink=partUnlink;window.stRoles=stRoles;window.stTakeConcept=stTakeConcept;window.loadPd=loadPd;window.renderPd=renderPd;window.renderPdList=renderPdList;window.pdFilter=pdFilter;window.pdPick=pdPick;window.pdTake=pdTake;window.loadCust=loadCust;window.cuFilter=cuFilter;window.cuDebounce=cuDebounce;window.cuPick=cuPick;window.cuSet=cuSet;window.cuTake=cuTake;window.cuTakeAll=cuTakeAll;window.pdOnward=pdOnward;window.opForCustomer=opForCustomer;window.opAllCust=opAllCust;window.pdDebounce=pdDebounce;window.jbAllBills=jbAllBills;window.shelfSave=shelfSave;window.vendorOpts=vendorOpts;
 window.opFilter=opFilter;window.opDebounce=opDebounce;window.opPick=opPick;window.opSet=opSet;window.opTakeSteel=opTakeSteel;
 /* ===== SHELF (2.13) — every item on the shelf, whether or not it is in the deck.
-   Ryan: "where can I change or update a photo of an item?" — and the rename that only reached deck cards. */
+    — and the rename that only reached deck cards. */
 let SH=[], SHSEL=null, SHROW=null, SHPHOTO=null, SHQ="", SHF="";
 /* 2.15 — the counts he could only get from me become work lists. A chip is a filter, never a wall:
    press it again and the whole shelf comes back. */
@@ -612,7 +615,7 @@ async function shelfSave(){ const fields=collect("#shWork");
     renderShList(); shelfPick(SHSEL,true); }
   catch(e){ toast(e.message,true); } }
 /* ===== PARTS (2.17) — the LAST record type that could only be reached through the deck.
-   Ryan, 8 Sep: "Please build the parts". A part is `vendor_parts` grouped by part_key + one `part_stock` row;
+    A part is `vendor_parts` grouped by part_key + one `part_stock` row;
    the card and the save already existed (tr-desk 1.5) — what was missing was any way to FIND one. */
 let PT=[], PTSEL=null, PTROW=null, PTPHOTO=null, PTQ="", PTF="", PTCATS=[], PTITEMS=[];
 const PTCHIP={ noqty:{t:"no count", f:r=>r.qty===null||r.qty===undefined}, novend:{t:"no vendor", f:r=>!r.preferred_vendor_id},
@@ -736,12 +739,11 @@ async function partSave(){
     renderPtList(); partPick(PTSEL,true); }
   catch(e){ toast(e.message,true); } }
 /* ===== VENDORS (2.14) \u2014 the book, and who we could call.
-   Ryan: "nowhere as a tab where you can view and edit all the pertinent information … business name,
-   physical address, email, sales email, web address, phone #, sales person, direct line/extension" ·
+    ·
    "if we flag something for look for new vendor we also need a list of potential vendors … who to call,
    or who has been called" · "like a potential new vendor list". 0102 + tr-desk 2.19. */
 let VB=[], NEEDS=[], LEADS=[], VSEL=null, VQ="", VFOR=null, VF="", KINDS=[];
-/* 2.16 — Ryan: "you can check more than 1". The list is the shop's (shop_settings.vendor_kinds), so
+/* 2.16 —  The list is the shop's (shop_settings.vendor_kinds), so
    ＋ new kind… adds one for good; a vendor that sells three things says so. */
 function kindBoxes(sel){ const on=(sel||[]).map(x=>String(x).toLowerCase());
   return `<div class="kinds" id="g_kinds">${KINDS.map(k=>`<label class="${on.includes(k)?"on":""}"><input type="checkbox" value="${esc(k)}" ${on.includes(k)?"checked":""} onchange="this.parentNode.classList.toggle('on',this.checked)">${esc(k)}</label>`).join("")}`
@@ -777,7 +779,7 @@ function vbChips(){ const q=VQ.toLowerCase().trim();
     return `<button class="${VF===k?"on":(n?"":"off")}" onclick="vbFilter('${k}')">${VCHIP[k].t}<b>${n}</b></button>`; }).join(""); }
 function vbFilter(k){ VF=(VF===k?"":k); renderVbList(); }
 /* =================== PIPEDRIVE (2.19, 0106) ===================
-   Ryan: "I need a way to update from the latest pipedrive lists."
+
    The mirror already refreshes 3x a day — this is the screen it never had.
    A name match is OFFERED, never taken: he presses it. */
 var PD=[], PDQ="", PDF="new", PDST=null;
@@ -1545,14 +1547,13 @@ function stTrackCostFor(label,parts,pcsL,ft){ const want=[]; (pcsL||[]).filter(x
   const out=[]; let total=0, na=false; for(const c in use){ const u=use[c]; const line=`${label} · ${u.n} × ${fmtFt(u.len)} stick · ${esc(c)}${u.p.vendor?" · "+esc(u.p.vendor):""}`; if(u.p.unit_cost!=null){ total+=u.p.unit_cost*u.n; out.push(`<div class="cost"><span>${line}</span><span class="ok">${money(u.p.unit_cost)} × ${u.n} = ${money(u.p.unit_cost*u.n)}</span></div>`); } else { na=true; out.push(`<div class="cost"><span>${line}</span><span class="na">${u.p.cost_known&&!u.p.accepted?"link not accepted — Part Mapper":"cost unknown — "+esc(u.p.cost_source||"ask")}</span></div>`); } }
   if(bad!=null) out.push(`<div class="cost"><span>${label} · a ${fmtFt(bad)} piece</span><span class="na">longer than any stick in the book</span></div>`); return out.join(""); }
 
-/* ===== JOB (2.3) — who installs, and rush / expedited / extra charges (tr-desk 2.9). Ryan, 7 Sep: "$150 per bearing roller bracket × 2 and
-   $250 rush … be able to add rush/expedited costs separate … selectable per job who is going to be installing … charge a line item to the install". */
+/* ===== JOB (2.3) — who installs, and rush / expedited / extra charges (tr-desk 2.9).  */
 let JB=null, JBT=null, JBSAVE=null, INST_ADD=false;
 async function loadJob(){ const el=$("v_job"); if(!SHT){ try{ SHT=await desk({action:"survey_targets"}); }catch(e){ el.innerHTML=`<div class="empty">${esc(e.message)}</div>`; return; } }
   if(!JBT){ try{ JBT=localStorage.getItem("tr_steel_t")||""; }catch(e){ JBT=""; } }
   renderJob(); if(JBT) jobPull(); }
 function jbTgt(){ if(!JBT) return null; const [k,id]=JBT.split(":"); return k==="j"?{job_id:id}:k==="q"?{quote_id:id}:{customer_id:id}; }
-async function jobPull(){ const t=jbTgt(); if(!t) return; try{ JB=await desk(Object.assign({action:"install_get"},t)); }catch(e){ toast(e.message,true); return; } renderJob(); }
+async function jobPull(){ const t=jbTgt(); if(!t) return; try{ JB=await desk(Object.assign({action:"install_get"},t)); }catch(e){ toast(e.message,true); return; } renderJob(); jbNeeds(); }
 function jbPick(v){ JBT=v; try{ localStorage.setItem("tr_steel_t",v); }catch(e){} JB=null; renderJob(); if(v) jobPull(); }
 function jbSel(){ const on=v=>JBT===v?"selected":""; return `<optgroup label="Jobs">${(SHT.jobs||[]).map(j=>`<option value="j:${j.id}" ${on("j:"+j.id)}>${esc(j.label)}</option>`).join("")}</optgroup><optgroup label="Open quotes">${(SHT.quotes||[]).map(q=>`<option value="q:${q.id}" ${on("q:"+q.id)}>${esc(q.label)}</option>`).join("")}</optgroup><optgroup label="Customers">${(SHT.customers||[]).map(c=>`<option value="c:${c.id}" ${on("c:"+c.id)}>${esc(c.label)}</option>`).join("")}</optgroup>`; }
 const CH_KINDS=[["rush","Rush"],["expedite","Expedited"],["part","Part"],["install","Install"],["other","Other"]], CH_TO=[["customer","customer"],["install","the installer"],["tr","TR absorbs"]];
@@ -1602,7 +1603,36 @@ function renderJob(){ const el=$("v_job");
     <div class="tot" id="jbTot">${jbTotHtml(ch)}</div>
     ${unb.length?`<div class="r" style="display:flex;gap:8px;align-items:center;margin-top:10px"><button class="sm go" onclick="jbBill()">Bill the installer · ${money(unbTot)}</button>${unb.some(c=>c.charge==null)?'<span class="flag">⚑ at cost where no bill amount</span>':""}</div>`:""}
     ${bills.length?`<div style="margin-top:10px">${bills.map(bl=>`<div class="cost" data-bill="${bl.id}"><span>${esc(bl.bill_no)} · ${esc((JB.installers||[]).find(i=>i.id===bl.installer_id)?.name||"")} · <b>${money(bl.total)}</b> · <span class="${bl.status==="paid"?"ok":bl.status==="void"?"na":""}">${esc(bl.status)}</span>${bl.sent_at?` · sent ${esc(String(bl.sent_at).slice(0,10))}`:""}${bl.paid_at?` · paid ${esc(String(bl.paid_at).slice(0,10))}`:""}</span><span class="seg" style="gap:4px"><button class="sm ghost" onclick="jbBillPrint('${bl.id}')">Print</button>${bl.status==="draft"?`<button class="sm ghost" onclick="jbBillSet('${bl.id}','sent')">Sent</button>`:""}${bl.status==="sent"?`<button class="sm ghost" onclick="jbBillSet('${bl.id}','paid')">Paid</button>`:""}${bl.status!=="void"&&bl.status!=="paid"?`<button class="sm ghost" onclick="jbBillSet('${bl.id}','void')">Void</button>`:""}</span></div>`).join("")}</div>`:""}
-   </div></div>`; }
+   </div></div>`+jbNeedsBox(); }
+/* ---- WHAT THE JOB NEEDS (tr2 3.42 job_needs) — every unit's lines + every option sold on the contract → on the job · on the shelf · order · make · paint shop, with estimates; sold vs cost ---- */
+const NDS_ORDER={"order":0,"make":1,"check":2,"on the shelf":3,"on the job":4,"paint shop":5};
+const ndsMoney=v=>v==null||isNaN(v)?"—":"$"+Math.round(+v).toLocaleString();
+const ndsChip=s=>`<span class="nds-st nds-${String(s||"").replace(/\W+/g,"_")}">${esc(s||"")}</span>`;
+function needsHtml(N,opt){ opt=opt||{}; if(!N) return ""; if(N.ok===false) return `<div class="nds-flag">⚑ ${esc(N.error||"")}</div>`;
+  const T=N.totals||{}; const only=!!opt.onlyOrder;
+  const rowsU=(N.units||[]).map(u=>{ const ls=(u.lines||[]).slice().sort((a,b)=>(NDS_ORDER[a.state]??9)-(NDS_ORDER[b.state]??9)).filter(l=>!only||l.state==="order"||l.state==="make");
+    const fl=[...(u.missing||[]).map(m=>"missing: "+m),...(u.flags||[])];
+    return `<tr class="nds-u"><td colspan="5">${esc(u.unit_code)}${u.name?" · "+esc(u.name):""}${u.system?` <span class="nds-m">${esc(typeof u.system==="string"?u.system:"")}</span>`:""}${u.labor?` <span class="nds-m">labour plan ${ndsMoney(u.labor)}${u.labor_hours?" · "+u.labor_hours+" h":""}</span>`:""}${fl.length?`<details class="nds-fl"><summary>⚑ ${fl.length}</summary>${fl.map(f=>esc(f)).join("<br>")}</details>`:""}</td></tr>`+
+      ls.map(l=>`<tr><td>${esc(l.what)}${l.code?` <span class="nds-m">${esc(l.code)}</span>`:""}</td><td class="nds-r">${l.qty??""} ${esc(l.unit||"")}</td><td>${ndsChip(l.state)}</td><td class="nds-m">${esc(l.detail||"")}</td><td class="nds-r" title="${esc(l.est_src||"")}">${ndsMoney(l.est)}</td></tr>`).join("")+(ls.length?"":`<tr><td colspan="5" class="nds-m">${only?"nothing to order":"no lines — the unit needs a system / size"}</td></tr>`); }).join("");
+  const sold=(N.sold||[]).slice().sort((a,b)=>(NDS_ORDER[a.state]??9)-(NDS_ORDER[b.state]??9)).filter(l=>!only||l.state==="order"||l.state==="check");
+  const rowsS=sold.map(l=>`<tr><td>${esc(l.sold)} <span class="nds-m">sold ${ndsMoney(l.amount)}</span></td><td>${esc(l.need||"")}${l.qty>1?" × "+l.qty:""}</td><td>${ndsChip(l.state)}</td><td class="nds-m">${esc(l.detail||"")}</td><td class="nds-r" title="${esc(l.est_src||"")}">${ndsMoney(l.est)}</td></tr>`).join("");
+  const S=N.steel||{}; const st=[S.supports,S.arm,S.bracket].filter(Boolean);
+  const rowsT=st.map(x=>`<tr><td>${esc(x.what)}</td><td class="nds-r">${x.sticks?x.sticks+" × 20 ft":""}</td><td>${ndsChip(x.state)}</td><td class="nds-m">${esc(x.detail||"")}${x.quote?" · quote "+ndsMoney(x.quote):""}</td><td class="nds-r">${ndsMoney(x.est)}</td></tr>`).join("")+(S.flags||[]).map(f=>`<tr><td colspan="5" class="nds-flag">⚑ ${esc(f)}</td></tr>`).join("");
+  const n=N.counts||{};
+  return `<div class="nds">
+    <div class="nds-k"><div>sold<b>${ndsMoney(T.sold_subtotal)}</b></div><div>cost, estimated<b>${ndsMoney(T.cost_est)}</b><i>materials ${ndsMoney(T.materials_est)} · labour ${ndsMoney(T.labor_plan)}</i></div><div class="${T.margin_pc!=null&&T.margin_pc<20?"nds-w":""}">margin<b>${T.margin_pc!=null?T.margin_pc+"%":"—"}</b><i>${T.unpriced?"⚑ "+T.unpriced+" line(s) without a price · paint shop not in it":"paint shop not in it"}</i></div><div class="nds-w">to order<b>${(n.order||0)+(n.make||0)}</b><i>est ${ndsMoney(T.to_order_est)}</i></div></div>
+    ${N.contract?"":`<div class="nds-flag">⚑ no contract on this job — the sold options are not known</div>`}
+    <table class="nds-t"><thead><tr><th>sold on the contract${N.contract?" · #"+esc(N.contract.quote_no):""}</th><th>what it makes us buy</th><th></th><th></th><th class="nds-r">est</th></tr></thead><tbody>${rowsS||`<tr><td colspan="5" class="nds-m">—</td></tr>`}</tbody></table>
+    <table class="nds-t"><thead><tr><th>the units</th><th class="nds-r">qty</th><th></th><th></th><th class="nds-r">est</th></tr></thead><tbody>${rowsU||`<tr><td colspan="5" class="nds-m">no units</td></tr>`}</tbody></table>
+    <table class="nds-t"><thead><tr><th>steel supports</th><th></th><th></th><th></th><th class="nds-r">est</th></tr></thead><tbody>${rowsT||`<tr><td colspan="5" class="nds-m">—</td></tr>`}</tbody></table></div>`; }
+
+/* 2.29 — what the job needs (tr2 job_needs, through office_call) */
+let JBN={}, JBN_ONLY=false;
+function jbNeedsBox(){ const t=jbTgt(); if(!t||!t.job_id) return ""; const N=JBN[t.job_id];
+  return `<div class="box" style="margin-top:12px"><h3 style="display:flex;gap:6px;align-items:center">What the job needs <span style="flex:1"></span><button class="sm ghost" onclick="JBN_ONLY=!JBN_ONLY;renderJob()">${JBN_ONLY?"show all":"to order only"}</button><button class="sm ghost" onclick="jbNeeds(true)">↻</button></h3>${N==="…"?'<div class="empty">reading the units and the contract…</div>':N?needsHtml(N,{onlyOrder:JBN_ONLY}):'<div class="empty">—</div>'}</div>`; }
+async function jbNeeds(fresh){ const t=jbTgt(); if(!t||!t.job_id) return; const id=t.job_id; if(JBN[id]&&JBN[id]!=="…"&&!fresh) return; JBN[id]="…"; renderJob();
+  try{ JBN[id]=await desk({action:"office_call",fn:"tr2",body:{action:"job_needs",job_id:id}}); }catch(e){ JBN[id]={ok:false,error:e.message}; } renderJob(); }
+window.jbNeeds=jbNeeds;
 async function jbBill(){ const t=jbTgt(); if(!t) return; try{ const r=await desk(Object.assign({action:"installer_bill_new"},t)); toast(r.bill.bill_no+" · "+money(r.bill.total)); await jobPull(); }catch(e){ toast(e.message,true); } }
 async function jbBillSet(id,status){ if(status==="void"&&!confirm("Void the bill?")) return; try{ await desk({action:"installer_bill_set",id,status}); await jobPull(); }catch(e){ toast(e.message,true); } }
 async function jbBillPrint(id){ let r; try{ r=await desk({action:"installer_bill_get",id}); }catch(e){ toast(e.message,true); return; } const b=r.bill, L=r.lines||[], rec=r.record||{}; const who=rec.job_no?`Job ${esc(String(rec.job_no))} · ${esc(rec.name||"")}${rec.client?" · "+esc(rec.client):""}`:rec.quote_no?`Quote ${esc(String(rec.quote_no))} · ${esc(rec.customer_name||"")}`:`${esc(rec.name||"")}${rec.site_address?" · "+esc(rec.site_address):""}`;
