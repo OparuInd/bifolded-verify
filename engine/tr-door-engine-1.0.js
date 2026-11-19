@@ -73,11 +73,17 @@ function liteRects(w,h,layout,opt){
   const out=[];
   if(!layout||layout==="none") return out;
   if(layout==="single"){ const gw=w-2*rv, ghh=gh>0?Math.min(gh,h*0.6):Math.min(h*0.3,gw*0.7); out.push(R(rv,h-rv-ghh,gw,ghh)); }
-  else if(layout==="squares_side"||layout==="both_sides"){ const q=Math.min(13,(w-2*rv)*0.47), g=5, cnt=3;
-    for(let k=0;k<cnt;k++){ const z=h-rv-q-k*(q+g); out.push(mirror(R(rv,z,q,q))); if(layout==="both_sides") out.push(mirror(R(w-rv-q,z,q,q))); } }
-  else if(layout==="long_side"){ const q=Math.min(10,(w-2*rv)*0.36), g=4, cnt=3, L=(h-2*rv-(cnt-1)*g)/cnt; for(let k=0;k<cnt;k++) out.push(mirror(R(rv,h-rv-L-k*(L+g),q,L))); }
-  else if(layout==="offset"){ const q=Math.min(10,(w-2*rv)*0.36), g=4; let z=h-rv, k=0; while(z-q>rv){ const L=(k%2? q*2.4 : q); if(z-L<rv) break; out.push(mirror(R(rv,z-L,q,L))); z-=L+g; k++; } }
-  else if(layout==="verticals"){ const q=Math.min(10,(w-2*rv)*0.28); out.push(mirror(R(rv+ (w-2*rv-q)*0.32, rv, q, h-2*rv))); }   // ONE tall pane per leaf, set off centre toward the jamb
+  /* 18 Nov 2026 - Ryan picked the cleaned-up geometry for four layouts (rules in _REFERENCE\LITE LAYOUTS - PROPORTION RULES ...md): shapes from a small family (square, double square),
+     gaps from the lite, a stack that ends on a line. "Squares both sides" stays as it was. Every size is a share of the leaf, so the 2D (drawn off the opening) and the model (off the leaf) always carry the same count. */
+  else if(layout==="both_sides"){ const q=Math.min(13,(w-2*rv)*0.47), g=5, cnt=3;
+    for(let k=0;k<cnt;k++){ const z=h-rv-q-k*(q+g); out.push(mirror(R(rv,z,q,q))); out.push(mirror(R(w-rv-q,z,q,q))); } }
+  else if(layout==="squares_side"){ const q=Math.min(13,(w-2*rv)*0.47), cnt=3, g=Math.max(q/4,(h-rv-h/3-cnt*q)/(cnt-1));      // three squares, the stack ending on the lower-third line (gap about half a square)
+    for(let k=0;k<cnt;k++) out.push(mirror(R(rv,h-rv-q-k*(q+g),q,q))); }
+  else if(layout==="long_side"){ const H=h-2*rv, g=4, cnt=Math.max(2,Math.round((H+g)/(2*11.4+g))), L=(H-(cnt-1)*g)/cnt, q=Math.min(L/2,(w-2*rv)*0.4);      // double squares (1 : 2), margin to margin
+    for(let k=0;k<cnt;k++) out.push(mirror(R(rv,h-rv-L-k*(L+g),q,L))); }
+  else if(layout==="offset"){ const H=h-2*rv, g=4, pr=Math.max(1,Math.round((H+g)/(3*10.75+2*g))), sq=(H-(2*pr-1)*g)/(3*pr), q=Math.min(sq,(w-2*rv)*0.4); let z=h-rv;      // short = a square, long = a double square, in pairs, margin to margin
+    for(let k=0;k<2*pr;k++){ const L=(k%2?2*sq:sq); out.push(mirror(R(rv,z-L,q,L))); z-=L+g; } }
+  else if(layout==="verticals"){ const q=Math.min(10,(w-2*rv)*0.28); out.push(mirror(R(Math.max(rv,w/3-q/2), rv, q, h-2*rv))); }   // ONE tall pane per leaf, centred on the third line
   else if(layout==="slim"){ const ghh=gh>0?gh:8; out.push(R(rv,h-h*0.22-ghh,w-2*rv,ghh)); }
   else if(layout==="trapezoid"||layout==="trap_door"){ // the top edge follows ONE slope — across the whole opening (each leaf takes its segment) or per door
     const gw=w-2*rv, zb=h-rv-Math.max(gh>0?gh:h*0.42,12); const zlo=zb+8, zhi=h-rv; const t0=layout==="trap_door"?0:i/n, t1=layout==="trap_door"?1:(i+1)/n;
