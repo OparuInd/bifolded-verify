@@ -238,8 +238,9 @@ function renderDoorViz(s,opts){
       o.push('<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+(isWood?fill:shade(fin.hex,0.9))+'" stroke="'+edge+'" stroke-width="1"/>');
       o.push('<path d="M '+x+' '+y+' L '+(x+w)+' '+y+' L '+(x+w-bv)+' '+(y+bv)+' L '+(x+bv)+' '+(y+bv)+' L '+(x+bv)+' '+(y+h-bv)+' L '+x+' '+(y+h)+' Z" fill="'+shade(fin.hex,1.14)+'" opacity="'+(isWood?0.35:1)+'"/>');
       o.push('<path d="M '+(x+w)+' '+(y+h)+' L '+x+' '+(y+h)+' L '+(x+bv)+' '+(y+h-bv)+' L '+(x+w-bv)+' '+(y+h-bv)+' L '+(x+w-bv)+' '+(y+bv)+' L '+(x+w)+' '+y+' Z" fill="'+shade(fin.hex,0.74)+'" opacity="'+(isWood?0.45:1)+'"/>');
-      o.push('<rect x="'+(x+Math.max(4,1.1*sc))+'" y="'+(y+Math.max(4,1.1*sc))+'" width="'+(w-2*Math.max(4,1.1*sc))+'" height="'+(h-2*Math.max(4,1.1*sc))+'" fill="'+(isWood?fill:shade(fin.hex,1.02))+'" stroke="'+shade(fin.hex,0.85)+'" stroke-width="1"/>');
-      o.push('<rect x="'+(x+Math.max(7,2*sc))+'" y="'+(y+Math.max(7,2*sc))+'" width="'+(w-2*Math.max(7,2*sc))+'" height="'+(h-2*Math.max(7,2*sc))+'" fill="none" stroke="'+shade(fin.hex,1.1)+'" stroke-width="0.8"/>');
+      { const i1=Math.max(4,1.1*sc), i2=Math.max(7,2*sc);   // 21 Nov: a field too short or narrow for its inner bevels draws without them (no negative rects)
+      if(w>2*i1&&h>2*i1) o.push('<rect x="'+(x+i1)+'" y="'+(y+i1)+'" width="'+(w-2*i1)+'" height="'+(h-2*i1)+'" fill="'+(isWood?fill:shade(fin.hex,1.02))+'" stroke="'+shade(fin.hex,0.85)+'" stroke-width="1"/>');
+      if(w>2*i2&&h>2*i2) o.push('<rect x="'+(x+i2)+'" y="'+(y+i2)+'" width="'+(w-2*i2)+'" height="'+(h-2*i2)+'" fill="none" stroke="'+shade(fin.hex,1.1)+'" stroke-width="0.8"/>'); }
     } else if(pstyle==="vgroove"){
       // 1/8" deep x 1/4" wide at the face (Ryan, 18 Aug) - a dark cut with a lit lower edge
       o.push('<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+(isWood?fill:shade(fin.hex,0.96))+'" stroke="'+edge+'" stroke-width="1"/>');
