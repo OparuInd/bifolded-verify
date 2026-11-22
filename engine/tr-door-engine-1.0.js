@@ -544,6 +544,9 @@ function clipPoly(poly,rx0,rz0,rx1,rz1){   // Sutherland–Hodgman against an ax
   return p.map(q=>[+q[0].toFixed(4),+q[1].toFixed(4)]);
 }
 function boardPoly(x1,z1,x2,z2,w){ const dx=x2-x1,dz=z2-z1,L=Math.hypot(dx,dz),nx=-dz/L*w/2,nz=dx/L*w/2,ex=dx/L*w,ez=dz/L*w; return [[x1-ex+nx,z1-ez+nz],[x2+ex+nx,z2+ez+nz],[x2+ex-nx,z2+ez-nz],[x1-ex-nx,z1-ez-nz]]; }
+/* SUNKEN THRESHOLD (Ryan 22 Nov): 3/4" of the 1" threshold goes into the slab, 1/4" stays proud - the leaf grows by what the threshold sinks. Standard units; E3 keeps its own sill. */
+function thrSunk(S){ return !!S&&(S.threshold==="sunken"||!!(S.situations&&S.situations.sunken_threshold))&&!/(^|[^A-Z0-9])E3([^0-9]|$)|T24|TITLE.?24/i.test(String(S.track||S.system||S.track_system||S.hw_system||"")); }
+function thrProud(S,M){ return thrSunk(S)?0.25:M.threshold; }
 function leafParts(S,fam,fo,fi){
   const CDm=rlCladDims(); const RBF=rbFor(fam); const M=CDm?Object.assign({},RBF,{clad_board:CDm.fin_w||RBF.clad_board,clad_reveal:(CDm.cover>0&&CDm.fin_w>0)?Math.max(0,CDm.cover-CDm.fin_w):RBF.clad_reveal,clad_t:CDm.fin_t||RBF.clad_t,louvre_pitch:CDm.cover||RBF.louvre_pitch,louvre_w:CDm.fin_w||RBF.louvre_w,louvre_deg:CDm.angle??RBF.louvre_deg}):RBF; const g=M.gaps, n=S.doors, W=S.width_in-2*(g.shim_side||0), H=S.height_in-(g.shim_top||0);   /* 8.1 the form's size is the OPENING; the unit sits a shim inside it (side) and under it (top) - as the Sign-off reads the record */   // book 2024: the picked cladding row's numbers drive the boards / blades · 4.7: the frame is the picked track system's standard
   const field=W-2*M.jamb, center=n%2===0?n/2:null;
@@ -552,7 +555,7 @@ function leafParts(S,fam,fo,fi){
   if(S.mandoor){ const md=S.mandoor.door-1, gi=((S.mandoor.hinge||"L")!=="R")?md:md-1; if(gi>=0&&gi<n-1) gapsBetween[gi]=0.25; }
   const door_w=(field-g.jamb_l-g.jamb_r-gapsBetween.reduce((a,b)=>a+b,0))/n;
   const hinged=!!S.dtype&&S.dtype!=="bifold";   /* 7.9 a hinged unit: the head is the head jamb, not a track box */
-  const z_thr=M.threshold, z_head=hinged?H-(M.jamb||0.75):H-M.header_face, door_h=z_head-g.head-(z_thr+g.sill), z_door=z_thr+g.sill;   // 4.7: the drip edge is the lowest point of the face board — the head gap is struck from it
+  const z_thr=thrProud(S,M), z_head=hinged?H-(M.jamb||0.75):H-M.header_face, door_h=z_head-g.head-(z_thr+g.sill), z_door=z_thr+g.sill;   // 4.7: the drip edge is the lowest point of the face board — the head gap is struck from it
   const isTB=fam.base==="tb"||fam.base==="tbclad", isClad=fam.base==="tbclad", clad=isClad?(fam.clad||S.clad_look):null;
   const t=isTB?M.leaf_tb:M.leaf_rs, st=+S.rs_face||5, bar=+S.bar_w||1.5;   /* 6.2 the actual leaf, from RB — was 2.5 / 1.75 written in here */
   const mL=/^(\d+)L/.exec(S.split||""); const L=mL?+mL[1]:(String(S.split||"").endsWith("L")?n:0);
