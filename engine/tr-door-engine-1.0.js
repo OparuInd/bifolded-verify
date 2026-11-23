@@ -373,7 +373,7 @@ function renderDoorViz(s,opts){
       const pTop=(hasG?g1+rr:g0), pBot=y0+uh-Math.max(rr,8*sc);   // bottom rail 8"
       const lower=(s.lower&&s.lower!=="auto")?s.lower:((card.sig&&card.sig.lower)||"2h");   /* 7.9 the form's Lower pick draws (was the family's only) */
       if(/^[3-9]h$/.test(lower)||lower==="1"){ const k=lower==="1"?1:+lower[0], ph=(pBot-pTop-(k-1)*rr)/k; if(ph>4) for(let q=0;q<k;q++) out.push(panelFace(inX,pTop+q*(ph+rr),inW,ph)); else if(pBot-pTop>4) out.push(panelFace(inX,pTop,inW,pBot-pTop)); }
-      else if(lower==="2v"&&inW>4*rr){ const pwid=(inW-rr)/2; for(let q=0;q<2;q++) out.push(panelFace(inX+q*(pwid+rr),pTop,pwid,pBot-pTop)); }
+      else if(/^[2-6]v$/.test(lower)&&inW>2*(+lower[0])*rr){ const k=+lower[0], pwid=(inW-(k-1)*rr)/k; for(let q=0;q<k;q++) out.push(panelFace(inX+q*(pwid+rr),pTop,pwid,pBot-pTop)); }   /* 23 Nov: N vertical panels between N-1 plant-on stiles (was 2 or 3 only) */
       else if(lower==="3v"&&inW>6*rr){
         // three vertical recessed panels between two intermediate stiles (the shop's paint-grade door)
         const pwid=(inW-2*rr)/3;
@@ -633,7 +633,7 @@ function leafParts(S,fam,fo,fi){
           if(fam.base!=="fullview"){ P.push(["box","Mid Rail",inX,0,zg-rm,inW,t,rm,"fin_o"]); gTop=zg-rm; } else gTop=zg; }
         const pTop=z_door+rb, ph=gTop-pTop;
         if(ph>2&&fam.k==="carriagesolid"){ const zr=zTop-rt-door_h*0.28; P.push(["box","Mid Rail",inX,0,zr-rm,inW,t,rm,"fin_o"]); const save=pstyle; pstyle="plank"; panel("Upper Panel",inX,zr,inW,gTop-zr); pstyle=save; panel("Lower Panel",inX,pTop,inW,zr-rm-pTop); }   /* 17 Nov: the lower panel is the PICK (Family default = cross-buck); it was cross-buck whatever was picked */
-        else if(ph>2){ const nv=lower==="3v"?3:lower==="2v"?2:0;
+        else if(ph>2){ const nv=/^[2-6]v$/.test(lower)?+lower[0]:0;   /* 23 Nov: 2-6 vertical panels (was 2 or 3 only) */
           if(nv){ const pwn=(inW-(nv-1)*st)/nv; for(let q=0;q<nv;q++) panel("Panel "+(q+1),inX+q*(pwn+st),pTop,pwn,ph); for(let q=1;q<nv;q++) P.push(["box","Mullion Stile "+q,inX+q*pwn+(q-1)*st,0,pTop,st,t,ph,"fin_o"]); }
           else if(/^[3-9]h$/.test(lower)){ const k=+lower[0], hp=(ph-(k-1)*rm)/k; for(let q=0;q<k;q++){ panel("Panel "+(q+1),inX,pTop+q*(hp+rm),inW,hp); if(q<k-1) P.push(["box","Divider Rail "+(q+1),inX,0,pTop+q*(hp+rm)+hp,inW,t,rm,"fin_o"]); } }   /* 7.9 N stacked panels, equal, a divider rail between (Bicay: 4 on the pair, 5 on the entry) */
           else if(lower==="1"||fam.base==="glasspanel"||ph<14) panel("Panel",inX,pTop,inW,ph);
