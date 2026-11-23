@@ -567,7 +567,7 @@ function leafParts(S,fam,fo,fi){
   // the one arc (carriage): chord across the opening or per door, rise as the picture draws it
   const archOn=fam.base==="carriage"&&glassMode!=="none"; const perDoor=(S.arch||"opening")==="door";
   const arcFor=(cx0,cx1,zTop)=>{ const chord=cx1-cx0, rise=Math.min(H*0.11,chord*0.16), r=chord*chord/(8*rise)+rise/2, xm=(cx0+cx1)/2, zc=zTop-r; return {r,xm,zc,rise,zAt:xx=>zc+Math.sqrt(Math.max(0,r*r-(xx-xm)*(xx-xm)))}; };
-  const unitArc=archOn&&!perDoor?arcFor(M.jamb+g.jamb_l, M.jamb+g.jamb_l+n*door_w+gapsBetween.reduce((a,b)=>a+b,0), z_door+door_h-M.rail_top*0.4):null;
+  const unitArc=archOn&&!perDoor?arcFor(M.jamb+g.jamb_l, M.jamb+g.jamb_l+n*door_w+gapsBetween.reduce((a,b)=>a+b,0), z_door+door_h-(S.arch_rail>0?+S.arch_rail:M.rail_top*0.4)):null;   /* 23 Nov: S.arch_rail = the rail left over the top of the arc (website: 5) */
   for(let i=0;i<n;i++){
     const side=i<L?"L":"R", man=S.mandoor&&+S.mandoor.door===i+1, P=[];
     const x0=x, x1=x+door_w, inX=x0+st, inW=door_w-2*st, zTop=z_door+door_h;
@@ -610,7 +610,7 @@ function leafParts(S,fam,fo,fi){
       P.push(["box","Stile L",x0,0,z_door,st,t,door_h,"fin_o"],["box","Stile R",x1-st,0,z_door,st,t,door_h,"fin_o"]);
       P.push(["box","Bottom Rail",inX,0,z_door,inW,t,rb,"fin_o"]);
       let gTop=zTop-rt, gh=0;
-      if(archOn){ const arc=perDoor?arcFor(inX,inX+inW,zTop-rt*0.4):unitArc; const zBot=zTop-(S.glass_h>0?S.glass_h:door_h*0.28);
+      if(archOn){ const arc=perDoor?arcFor(inX,inX+inW,zTop-(S.arch_rail>0?+S.arch_rail:rt*0.4)):unitArc; const zBot=zTop-(S.glass_h>0?S.glass_h:door_h*0.28);
         // the arched head rail: door top straight, the arc below it; the glass follows the arc
         const N=12, top=[], glass=[]; for(let k=0;k<=N;k++){ const xx=inX+inW*k/N; top.push([+xx.toFixed(4),+Math.min(zTop-0.5,arc.zAt(xx)).toFixed(4)]); }
         P.push(["poly","Arched Top Rail",0,t,[[inX,zTop],[inX+inW,zTop]].concat(top.slice().reverse()),"fin_o"]);
@@ -659,12 +659,13 @@ function leafParts(S,fam,fo,fi){
 }
 const DESIGNS=[   // ONE row per LOOK — never the same glass twice in another finish (Ryan). Finish and construction are picked on the cards;
    // `rep` = the finish the card wears on the range (variety across the range — grey wood, bourbon, burgundy, white wash …), the Finish card changes it.
- {k:"carriage_arc",n:"One arc across the opening",base:"carriage",rep:"white",o:{glass:"full",arch:"opening",lites_w:1}},
- {k:"carriage_arc_door",n:"One arc per door",base:"carriage",rep:"swiss",o:{glass:"full",arch:"door",lites_w:2}},
+ {k:"carriage_arc",n:"One arc across the opening",base:"carriage",rep:"white",o:{glass:"full",arch:"opening",lites_w:1,glass_h:36}}   /* 23 Nov Ryan: taller glass on the single arc */,
+ {k:"carriage_arc_door",n:"One arc per door",base:"carriage",rep:"tricorn",o:{glass:"full",arch:"door",lites_w:2}},
  {k:"carriage_solid",n:"Carriage · cross-buck",base:"carriage",rep:"whitetail",o:{glass:"none",panel_style:"xbuck"}},   /* 17 Nov: the design SAYS cross-buck, so the Panel pick shows it and the 2D draws it (it drew whatever the pick was left on); another pick changes the lower panel in the 2D, the parts and the 3D alike */
  {k:"rs_3x2",n:"3 × 2 lites over three panels",base:"rs",rep:"white",o:{glass:"divided",lites_w:3,lites_h:2,panel_style:"shaker"}},
- {k:"rs_awning",n:"Awning row over three panels",base:"rs",rep:"behrgrey",o:{glass:"awning",lites_w:3,lites_h:2,panel_style:"shaker"}},
- {k:"rs_xcross",n:"3 × 2 lites over X-cross",base:"rs",rep:"lightgrey",o:{glass:"divided",lites_w:3,lites_h:2,panel_style:"xcross"}},
+ {k:"rs_awning",n:"Awning row over three panels",base:"rs",rep:"teal",o:{glass:"awning",lites_w:3,lites_h:2,panel_style:"shaker"}},
+ {k:"rs_xcross",n:"3 × 2 lites over X-cross",base:"rs",rep:"portobello",o:{glass:"divided",lites_w:3,lites_h:2,panel_style:"xcross"}},
+ {k:"rs_xcross_cedar",n:"3 × 2 lites over X-cross · Western Cedar",base:"rs",rep:"cedar",o:{glass:"divided",lites_w:3,lites_h:2,panel_style:"xcross"}},   /* 23 Nov Ryan: "can we make a Western Cedar version of it" - the same door on the softwood family */
  {k:"rs_2x2",n:"2 × 2 lites over raised panels",base:"rs",rep:"walnut",o:{glass:"divided",lites_w:2,lites_h:2,panel_style:"raised"}},
  {k:"rs_3x1",n:"3 × 1 lites over shaker",base:"rs",rep:"sapele",o:{glass:"divided",lites_w:3,lites_h:1,panel_style:"shaker"}},
  {k:"rs_clear",n:"One clear lite over flat",base:"rs",rep:"coffee",o:{glass:"full",panel_style:"flat"}},
@@ -698,6 +699,8 @@ const DESIGNS=[   // ONE row per LOOK — never the same glass twice in another 
  {k:"clad_h_slim",n:"Clad — horizontal · slim band",base:"slab",rep:"walnut",o:{lite_layout:"slim"},c:"h",web:false},
  {k:"clad_h_squares",n:"Clad — horizontal · three squares",base:"slab",rep:"greywash",o:{lite_layout:"squares_side"},c:"h",web:false},
  {k:"clad_v",n:"Clad — vertical slat · plain",base:"slab",rep:"cedar",o:{lite_layout:"none"},c:"v",web:false},
+ {k:"clad_tg",n:"Clad — T&G",base:"slab",rep:"walnut",cp:"tg",o:{lite_layout:"none"},c:"v"},   /* 23 Nov Ryan: T&G clad and board and batten shown as their own cards - cp = the cladding profile type the card picks */
+ {k:"clad_bb",n:"Clad — board and batten",base:"slab",rep:"cedar",cp:"bb",o:{lite_layout:"none"},c:"v"},
  {k:"clad_v_squares",n:"Clad — vertical slat · three squares",base:"slab",rep:"whitewash",o:{lite_layout:"squares_side"},c:"v",web:false},
  {k:"clad_v_offset",n:"Clad — vertical slat · short + long offset",base:"slab",rep:"cedar",o:{lite_layout:"offset"},c:"v",web:false},
  {k:"clad_v_trapezoid",n:"Clad — vertical slat · trapezoid",base:"slab",rep:"burgundy",o:{lite_layout:"trapezoid"},c:"v",web:false},
@@ -711,7 +714,7 @@ const CONSTR=[{v:"seamless",t:"Seamless — flush with the house",fam:"tbflush"}
 function famFor(d,finKey,constr){ // the design + the finish + the construction → the family that draws and builds it
   const fin=finBy(finKey||S.finish_out), stain=fin.type==="stain";
   if(d.base==="carriage") return d.o.glass==="none"?"carriagesolid":"carriage";
-  if(d.base==="rs") return stain?(d.k==="rs_4row"?"softwood":d.k==="rs_clear"?"okoume":"hardwood"):"paintgrade";
+  if(d.base==="rs") return stain?((d.k==="rs_4row"||d.k==="rs_xcross_cedar")?"softwood":d.k==="rs_clear"?"okoume":"hardwood"):"paintgrade";
   if(d.base==="glasspanel") return "glasspanel"; if(d.base==="fullview") return "fullview";
   const c=CONSTR.find(x=>x.v===(constr||d.c||"seamless"))||CONSTR[0]; return c.fam;
 }
