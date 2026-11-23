@@ -340,8 +340,8 @@ function renderDoorViz(s,opts){
       const bandTop=y0+uh*0.08,bandBot=ghPx?Math.min(bandTop+ghPx,y0+uh*0.78):y0+uh*0.36;
       if(s.glass!=="none"){
         // ONE arc (Ryan): across the whole opening — every leaf's glass follows its segment of the same arc (Abrahamsson) — or one arc per door
-        const perDoor=(s.arch||"opening")==="door";
-        const cx0=perDoor?inX:x0, cx1=perDoor?inX+inW:x0+uw, chord=cx1-cx0, rise=Math.min(uh*0.11,chord*0.16);
+        const aT=s.situations&&!Array.isArray(s.situations)&&s.situations.arched_top, perDoor=!aT&&(s.arch||"opening")==="door";   /* 23 Nov: under an arched top the glass follows the one arc across the pair - never an arc per door */
+        const cx0=perDoor?inX:x0, cx1=perDoor?inX+inW:x0+uw, chord=cx1-cx0, rise=aT?Math.min((parseFloat(aT.fields&&aT.fields.rise)||12)*sc,chord*0.45):Math.min(uh*0.11,chord*0.16);
         const r=chord*chord/(8*rise)+rise/2, xm=(cx0+cx1)/2, cy=bandTop+r;
         const yA=x=>cy-Math.sqrt(Math.max(0,r*r-(x-xm)*(x-xm)));
         const lx=inX+3,lww=inW-6, y1=yA(lx), y2=yA(lx+lww);
@@ -439,7 +439,7 @@ function renderDoorViz(s,opts){
     //   lever   38" centreline off the BOTTOM of the door
     //   deadbolt 42" centreline off the bottom   (was 43-1/2 — corrected)
     //   escutcheon 2-3/8" SQUARE around the cylinder and around the lever
-    const md=s.mandoor&&+s.mandoor.door===i+1?s.mandoor:null;
+    const md=s.mandoor&&+s.mandoor.door===i+1?s.mandoor:((s.lock_set&&!s.motorized&&!s.mandoor&&+s.doors===2&&s.split==="1L1R"&&i===(s.lock_leaf==="L"?0:1))?(s.lock_leaf==="L"?{door:1,hinge:"L"}:{door:2,hinge:"R"}):null);   /* which leaf = the pick (lock_leaf L / R) */   /* 23 Nov (Ryan): a manual conventional swing-out pair with a handle set picked draws it - on the right leaf, at the meeting edge */
     if(md&&!opts.mini){
       const hingeL=md.hinge!=="R";               // hinges left -> hardware right
       const hwx=hingeL?(px+pw-HW_BACKSET*sc):(px+HW_BACKSET*sc);
@@ -578,6 +578,8 @@ function leafParts(S,fam,fo,fi){
   const archOn=fam.base==="carriage"&&glassMode!=="none"; const perDoor=(S.arch||"opening")==="door";
   const arcFor=(cx0,cx1,zTop)=>{ const chord=cx1-cx0, rise=Math.min(H*0.11,chord*0.16), r=chord*chord/(8*rise)+rise/2, xm=(cx0+cx1)/2, zc=zTop-r; return {r,xm,zc,rise,zAt:xx=>zc+Math.sqrt(Math.max(0,r*r-(xx-xm)*(xx-xm)))}; };
   const unitArc=archOn&&!perDoor?arcFor(M.jamb+g.jamb_l, M.jamb+g.jamb_l+n*door_w+gapsBetween.reduce((a,b)=>a+b,0), z_door+door_h-(S.arch_rail>0?+S.arch_rail:M.rail_top*0.4)):null;   /* 23 Nov: S.arch_rail = the rail left over the top of the arc (website: 5) */
+  /* 23 Nov (Ryan): an arched-top swing-out pair - "the cathedral glass as you have drawn will not work, unless those are inswing. it would need at least 4in of curved rail above the tops of the glass". The door tops follow the opening's arc (the 3D engine strikes it from this same centre), so the glass follows that arc too, concentric, 4in or more below it - never an arc per door. */
+  const topArc=(()=>{ const a=S.situations&&!Array.isArray(S.situations)&&S.situations.arched_top; if(!a||!archOn) return null; const xA=M.jamb+g.jamb_l, xB=xA+n*door_w+gapsBetween.reduce((p,q)=>p+q,0), hw=(xB-xA)/2, v=parseFloat(a.fields&&a.fields.rise), rise=Math.min(isFinite(v)&&v>0?v:12,hw*0.9), r=(hw*hw+rise*rise)/(2*rise), xm=(xA+xB)/2, zc=z_door+door_h-r, ri=r-Math.max(4,+S.arch_rail||0); return {r:ri,xm,zc,rise,zAt:xx=>zc+Math.sqrt(Math.max(0,ri*ri-(xx-xm)*(xx-xm)))}; })();
   for(let i=0;i<n;i++){
     const side=i<L?"L":"R", man=S.mandoor&&+S.mandoor.door===i+1, P=[];
     const x0=x, x1=x+door_w, inX=x0+st, inW=door_w-2*st, zTop=z_door+door_h;
@@ -620,7 +622,7 @@ function leafParts(S,fam,fo,fi){
       P.push(["box","Stile L",x0,0,z_door,st,t,door_h,"fin_o"],["box","Stile R",x1-st,0,z_door,st,t,door_h,"fin_o"]);
       P.push(["box","Bottom Rail",inX,0,z_door,inW,t,rb,"fin_o"]);
       let gTop=zTop-rt, gh=0;
-      if(archOn){ const arc=perDoor?arcFor(inX,inX+inW,zTop-(S.arch_rail>0?+S.arch_rail:rt*0.4)):unitArc; const zBot=zTop-(S.glass_h>0?S.glass_h:door_h*0.28);
+      if(archOn){ const arc=topArc||(perDoor?arcFor(inX,inX+inW,zTop-(S.arch_rail>0?+S.arch_rail:rt*0.4)):unitArc); const zBot=zTop-(S.glass_h>0?S.glass_h:door_h*0.28);
         // the arched head rail: door top straight, the arc below it; the glass follows the arc
         const N=12, top=[], glass=[]; for(let k=0;k<=N;k++){ const xx=inX+inW*k/N; top.push([+xx.toFixed(4),+Math.min(zTop-0.5,arc.zAt(xx)).toFixed(4)]); }
         P.push(["poly","Arched Top Rail",0,t,[[inX,zTop],[inX+inW,zTop]].concat(top.slice().reverse()),"fin_o"]);
@@ -657,6 +659,9 @@ function leafParts(S,fam,fo,fi){
       /* 6.1 an IN-swing man door carries its astragal on the INSIDE face (+Y), so it swings clear of the door it laps */
       if(S.mandoor.swing==="in") for(const q of sec) q[1]=t-q[1];
       if(n>1) P.push(["prismz","Astragal",z_door,door_h,sec,"fin_o"]); }   /* 7.9 a single entry door closes on its stops - no astragal */
+    if(!S.mandoor&&S.lock_set&&!S.motorized&&n===2&&S.split==="1L1R"&&i===(S.lock_leaf==="L"?0:1)){ /* 23 Nov (Ryan): the website's manual swing-out pair, handle set picked - the entry door's own set (2-3/4 backset, lever 38, deadbolt 42) on the right leaf's meeting edge */
+      const lf=S.lock_leaf==="L", hx=lf?x1-2.75:x0+2.75, HW=hwFinBy(S.hw_finish).n, set=(HWSETS.find(h=>h.v===S.hw_set)||{}).t||"";   /* the picked leaf (lock_leaf L / R, right to start), at its meeting edge */
+      P.push(["box","Deadbolt · "+HW,hx-1.1875,-0.35,z_door+42-1.1875,2.375,0.35,2.375,"dark"],["box","Lever · "+HW+" · "+set,hx-1.1875,-0.35,z_door+38-1.1875,2.375,0.35,2.375,"dark"],["box","Lever arm",lf?hx-4.5:hx,-0.9,z_door+38-0.3,4.5,0.6,0.6,"dark"]); }
     if(hinged&&S.mandoor&&S.mandoor.pair&&!man){ /* 7.9 the pair's inactive leaf: flush bolts top and bottom on the meeting stile, inside face (Ryan's installed pairs) */
       const bx=side==="L"?x1-1.0:x0+0.5; P.push(["box","Flush bolt top",bx,t,zTop-8,0.5,0.25,7,"dark"],["box","Flush bolt bottom",bx,t,z_door+1,0.5,0.25,7,"dark"]); }
     if(hinged){ /* 7.9 three 4in butt hinges on the hinge stile, knuckles on the face the leaf swings toward: 7 down, 11 up, one centred */
