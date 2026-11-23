@@ -33,6 +33,16 @@ const FIN=[
  {k:"whitewash",n:"White Wash",hex:"#d5cec1",type:"stain",src:"cladding / R&S",sh:"White Wash"},
  {k:"greywash",n:"Weathered Grey",hex:"#88847d",type:"stain",src:"cladding / R&S",sh:"Weathered"},
  {k:"patina",n:"Patina steel",hex:"#583c31",type:"stain",src:"metal cladding",sh:"Patina"},
+ /* 23 Nov Ryan: "we use GF stains" - General Finishes Exterior 450 water based wood stain, the colours read off GF's own chips (shown on cedar), 23 Nov 2026. GF Coffee Bean is the row above (its own scan). No scan of their own: the 3D wears the birch figure under the colour. */
+ {k:"gf_natural",n:"GF Natural Base",hex:"#d7a056",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Natural Base"},
+ {k:"gf_butternut",n:"GF Butternut",hex:"#cd7f24",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Butternut"},
+ {k:"gf_cedar",n:"GF Cedar",hex:"#a04717",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Cedar"},
+ {k:"gf_chestnut",n:"GF Chestnut",hex:"#936a49",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Chestnut"},
+ {k:"gf_mesquite",n:"GF Mesquite",hex:"#8a564e",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Mesquite"},
+ {k:"gf_redmahogany",n:"GF Red Mahogany",hex:"#5c2d1c",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Red Mahogany"},
+ {k:"gf_blackwalnut",n:"GF Black Walnut",hex:"#221d1b",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Black Walnut"},
+ {k:"gf_agedgray",n:"GF Aged Gray",hex:"#796e64",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Aged Gray"},
+ {k:"gf_stormygray",n:"GF Stormy Gray",hex:"#53514f",type:"stain",src:"GF Exterior 450 · chip on cedar",sh:"Stormy Gray"},
  // --- BRIGHTER TONES, added 18 Aug. NOTE: these are screen colours chosen to a
  // description - there is NO sprayed sample behind any of them yet. Everything above
  // is matched to a real sample; keep the distinction visible in the swatch tooltip.
@@ -667,14 +677,14 @@ const DESIGNS=[   // ONE row per LOOK — never the same glass twice in another 
  {k:"rs_xcross",n:"3 × 2 lites over X-cross",base:"rs",rep:"portobello",o:{glass:"divided",lites_w:3,lites_h:2,panel_style:"xcross"}},
  {k:"rs_xcross_cedar",n:"3 × 2 lites over X-cross · Western Cedar",base:"rs",rep:"cedar",o:{glass:"divided",lites_w:3,lites_h:2,panel_style:"xcross"}},   /* 23 Nov Ryan: "can we make a Western Cedar version of it" - the same door on the softwood family */
  {k:"rs_2x2",n:"2 × 2 lites over raised panels",base:"rs",rep:"walnut",o:{glass:"divided",lites_w:2,lites_h:2,panel_style:"raised"}},
- {k:"rs_3x1",n:"3 × 1 lites over shaker",base:"rs",rep:"sapele",o:{glass:"divided",lites_w:3,lites_h:1,panel_style:"shaker"}},
+ {k:"rs_3x1",n:"3 × 1 lites over shaker",base:"rs",rep:"birch",o:{glass:"divided",lites_w:3,lites_h:1,panel_style:"shaker"}},
  {k:"rs_clear",n:"One clear lite over flat",base:"rs",rep:"coffee",o:{glass:"full",panel_style:"flat"}},
  {k:"rs_4row",n:"4-lite row over V-groove",base:"rs",rep:"cedar",o:{glass:"divided",lites_w:4,lites_h:1,panel_style:"vgroove",vg_dir:"v",vg_n:5}},
  {k:"glass_panel",n:"Glass over a lower panel",base:"glasspanel",rep:"birch",o:{}},
  {k:"fullview",n:"Full-view · three bands",base:"fullview",rep:"tricorn",o:{lites_h:3}},
  {k:"fullview_clear",n:"Full-view · clear",base:"fullview",rep:"jet",o:{lites_h:1}},
  {k:"slab",n:"Plain",base:"slab",rep:"falgray",o:{lite_layout:"none"},c:"seamless"},
- {k:"slab_single",n:"One lite · top",base:"slab",rep:"cedar",o:{lite_layout:"single"},c:"v"},
+ {k:"slab_single",n:"One lite · top",base:"slab",rep:"whitewash",o:{lite_layout:"single"},c:"v"},
  {k:"slab_squares",n:"Three squares down one side",base:"slab",rep:"whitewash",o:{lite_layout:"squares_side"},c:"seamless"},
  {k:"slab_long",n:"Long panes down one side",base:"slab",rep:"burgundy",o:{lite_layout:"long_side"},c:"v"},
  {k:"slab_offset",n:"Short + long · offset",base:"slab",rep:"tricorn",o:{lite_layout:"offset"},c:"paint"},
