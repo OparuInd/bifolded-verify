@@ -440,7 +440,7 @@ function renderDoorViz(s,opts){
     //   deadbolt 42" centreline off the bottom   (was 43-1/2 — corrected)
     //   escutcheon 2-3/8" SQUARE around the cylinder and around the lever
     const md=s.mandoor&&+s.mandoor.door===i+1?s.mandoor:((s.lock_set&&!s.motorized&&!s.mandoor&&+s.doors===2&&s.split==="1L1R"&&i===(s.lock_leaf==="L"?0:1))?(s.lock_leaf==="L"?{door:1,hinge:"L"}:{door:2,hinge:"R"}):null);   /* which leaf = the pick (lock_leaf L / R) */   /* 23 Nov (Ryan): a manual conventional swing-out pair with a handle set picked draws it - on the right leaf, at the meeting edge */
-    if(md&&!opts.mini){
+    if(md&&!md.noset&&!opts.mini){   /* 23 Nov: a pair with no handle set (bolts only, or automated) draws none */
       const hingeL=md.hinge!=="R";               // hinges left -> hardware right
       const hwx=hingeL?(px+pw-HW_BACKSET*sc):(px+HW_BACKSET*sc);
       const hy=y0+uh-HW_LEVER_H*sc, dy=y0+uh-HW_DEADBOLT_H*sc;
@@ -653,7 +653,7 @@ function leafParts(S,fam,fo,fi){
       }
     }
     if(man){ const hingeL=(S.mandoor.hinge||"L")!=="R"; const hx=hingeL?x1-2.75:x0+2.75; const HW=hwFinBy(S.hw_finish).n, set=(HWSETS.find(h=>h.v===S.hw_set)||{}).t||"";
-      P.push(["box","Deadbolt · "+HW,hx-1.1875,-0.35,z_door+42-1.1875,2.375,0.35,2.375,"dark"],["box","Lever · "+HW+" · "+set,hx-1.1875,-0.35,z_door+38-1.1875,2.375,0.35,2.375,"dark"],["box","Lever arm",hingeL?hx-4.5:hx,-0.9,z_door+38-0.3,4.5,0.6,0.6,"dark"]);
+      if(!S.mandoor.noset) P.push(["box","Deadbolt · "+HW,hx-1.1875,-0.35,z_door+42-1.1875,2.375,0.35,2.375,"dark"],["box","Lever · "+HW+" · "+set,hx-1.1875,-0.35,z_door+38-1.1875,2.375,0.35,2.375,"dark"],["box","Lever arm",hingeL?hx-4.5:hx,-0.9,z_door+38-0.3,4.5,0.6,0.6,"dark"]);   /* 23 Nov: mandoor.noset = the pair has no handle set */
       /* 5.9 the astragal: ONE piece attached to the man door's face (Ryan) - 1 1/2 x 3/4: 5/8 glued at the strike edge, the 7/8 that laps the next door relieved 1/8 (Levy). Its L section in plan, run the door height. */
       const sec=hingeL?[[x1-0.625,-0.75],[x1+0.875,-0.75],[x1+0.875,-0.125],[x1,-0.125],[x1,0],[x1-0.625,0]]:[[x0-0.875,-0.75],[x0+0.625,-0.75],[x0+0.625,0],[x0,0],[x0,-0.125],[x0-0.875,-0.125]];
       /* 6.1 an IN-swing man door carries its astragal on the INSIDE face (+Y), so it swings clear of the door it laps */
@@ -662,7 +662,7 @@ function leafParts(S,fam,fo,fi){
     if(!S.mandoor&&S.lock_set&&!S.motorized&&n===2&&S.split==="1L1R"&&i===(S.lock_leaf==="L"?0:1)){ /* 23 Nov (Ryan): the website's manual swing-out pair, handle set picked - the entry door's own set (2-3/4 backset, lever 38, deadbolt 42) on the right leaf's meeting edge */
       const lf=S.lock_leaf==="L", hx=lf?x1-2.75:x0+2.75, HW=hwFinBy(S.hw_finish).n, set=(HWSETS.find(h=>h.v===S.hw_set)||{}).t||"";   /* the picked leaf (lock_leaf L / R, right to start), at its meeting edge */
       P.push(["box","Deadbolt · "+HW,hx-1.1875,-0.35,z_door+42-1.1875,2.375,0.35,2.375,"dark"],["box","Lever · "+HW+" · "+set,hx-1.1875,-0.35,z_door+38-1.1875,2.375,0.35,2.375,"dark"],["box","Lever arm",lf?hx-4.5:hx,-0.9,z_door+38-0.3,4.5,0.6,0.6,"dark"]); }
-    if(hinged&&S.mandoor&&S.mandoor.pair&&!man){ /* 7.9 the pair's inactive leaf: flush bolts top and bottom on the meeting stile, inside face (Ryan's installed pairs) */
+    if(hinged&&S.mandoor&&S.mandoor.pair&&!man&&!S.motorized){   /* 23 Nov (Ryan): an automated pair has no locking / door hardware */ /* 7.9 the pair's inactive leaf: flush bolts top and bottom on the meeting stile, inside face (Ryan's installed pairs) */
       const bx=side==="L"?x1-1.0:x0+0.5; P.push(["box","Flush bolt top",bx,t,zTop-8,0.5,0.25,7,"dark"],["box","Flush bolt bottom",bx,t,z_door+1,0.5,0.25,7,"dark"]); }
     if(hinged){ /* 7.9 three 4in butt hinges on the hinge stile, knuckles on the face the leaf swings toward: 7 down, 11 up, one centred */
       const hl=side==="L", yh=(S.mandoor&&S.mandoor.swing==="in")?t:-0.5, hx=hl?x0-0.25:x1-0.25;
