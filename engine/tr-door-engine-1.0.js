@@ -15,6 +15,7 @@ ENGINE.theme=ENGINE.themes.office;
 const esc=(s)=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const FIN=[
  {k:"white",n:"Vista OTS White",hex:"#f0ede3",type:"paint",src:"SBG / Tyler Pass",sh:"White"},
+ {k:"primed",n:"Primed",hex:"#dcdad3",type:"paint",src:"shop primer",sh:"Primed"},   /* 24 Nov (Ryan): torsion box doors "built and primed and/or painted ready for customer cladding" */
  {k:"swiss",n:"BM Swiss Coffee",hex:"#edebdd",type:"paint",src:"Tyler Pass",sh:"Swiss Coffee"},
  {k:"whitetail",n:"SW Whitetail",hex:"#eae6da",type:"paint",src:"Kimmie",sh:"Whitetail"},
  {k:"behrgrey",n:"Behr Grey match",hex:"#e0ded7",type:"paint",src:"Living Waters int.",sh:"Behr Grey"},
@@ -709,6 +710,7 @@ const DESIGNS=[   // ONE row per LOOK — never the same glass twice in another 
  {k:"seamless_slim",n:"Seamless — slim band",base:"slab",rep:"behrgrey",o:{lite_layout:"slim"},c:"seamless",web:false},
  {k:"flush_trim",n:"Flush — trimmed · plain",base:"slab",rep:"falgray",o:{lite_layout:"none"},c:"trim",web:false},
  {k:"flush_paint",n:"Flush — painted · plain",base:"slab",rep:"white",o:{lite_layout:"none"},c:"paint",web:false},
+ {k:"ready_clad",n:"Ready for your cladding",base:"slab",rep:"primed",o:{lite_layout:"none"},c:"paint"},   /* 24 Nov (Ryan): the flush door as we deliver it, primed or painted, for cladding by the customer - the website asks the cladding type, a dimensioned profile and the weight; never drawn clad */
  {k:"flush_paint_squares",n:"Flush — painted · three squares",base:"slab",rep:"tricorn",o:{lite_layout:"squares_side"},c:"paint",web:false},
  {k:"clad_h",n:"Clad — horizontal · plain",base:"slab",rep:"cedar",o:{lite_layout:"none"},c:"h",web:false},
  {k:"clad_h_slim",n:"Clad — horizontal · slim band",base:"slab",rep:"walnut",o:{lite_layout:"slim"},c:"h",web:false},
